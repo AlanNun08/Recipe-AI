@@ -2206,7 +2206,7 @@ function App() {
                   </div>
                   
                   <button
-                    onClick={generateWalmartUrl}
+                    onClick={copyUrlToClipboard}
                     disabled={cartItems.length === 0}
                     className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
                       cartItems.length > 0
