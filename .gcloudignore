@@ -1,0 +1,100 @@
+# .gcloudignore - Files to exclude from Google Cloud deployment
+
+# Git and version control
+.gcloudignore
+.git
+.gitignore
+.github/
+README.md
+.gitattributes
+
+# Node.js and frontend development
+node_modules/
+frontend/node_modules/
+frontend/src/
+frontend/public/
+frontend/package.json
+frontend/package-lock.json
+frontend/yarn.lock
+frontend/tailwind.config.js
+frontend/postcss.config.js
+frontend/craco.config.js
+
+# Python cache and development files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Testing and coverage
+.coverage
+.pytest_cache/
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Documentation
+docs/
+*.md
+CHANGELOG*
+LICENSE*
+
+# Development and build tools
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.black
+.isort.cfg
+setup.cfg
+pyproject.toml
+requirements-dev.txt
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+.tmp/
+
+# Database files (if any local databases)
+*.db
+*.sqlite3
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Keep only the built frontend and essential backend files
+# The deployment will include:
+# - main.py (entry point)
+# - app.yaml (config)
+# - backend/ (Python backend code)
+# - frontend/build/ (built React app)
+# - requirements.txt (Python dependencies)
