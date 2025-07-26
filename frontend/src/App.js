@@ -2027,70 +2027,76 @@ function App() {
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             
             {/* Left Column - Recipe Instructions */}
-            <div className="xl:col-span-2 space-y-6">
+            <div className="xl:col-span-2 space-y-8">
               
               {/* Recipe Quick Stats */}
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                  <span className="mr-3 text-3xl">📊</span>
-                  Recipe Overview
+              <div className="bg-white rounded-3xl shadow-xl p-8 transform hover:shadow-2xl transition-all duration-300 border border-gray-100">
+                <h2 className="text-2xl font-bold text-gray-800 mb-8 flex items-center">
+                  <span className="mr-4 text-3xl">📊</span>
+                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Recipe Overview</span>
                 </h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl">
-                    <div className="text-3xl mb-2">⏱️</div>
-                    <div className="text-sm text-gray-600 font-medium">Prep Time</div>
-                    <div className="text-xl font-bold text-gray-800">{recipe.prep_time || '30'} min</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="text-center p-6 bg-gradient-to-br from-orange-100 to-orange-200 rounded-2xl transform hover:scale-105 transition-all duration-300 hover:shadow-lg">
+                    <div className="text-4xl mb-3 animate-pulse">⏱️</div>
+                    <div className="text-sm text-gray-600 font-medium mb-1">Prep Time</div>
+                    <div className="text-2xl font-bold text-orange-800">{recipe.prep_time || '30'}</div>
+                    <div className="text-sm text-orange-600 font-medium">minutes</div>
                   </div>
-                  <div className="text-center p-4 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl">
-                    <div className="text-3xl mb-2">🍽️</div>
-                    <div className="text-sm text-gray-600 font-medium">Servings</div>
-                    <div className="text-xl font-bold text-gray-800">{recipe.servings || '4'}</div>
+                  <div className="text-center p-6 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl transform hover:scale-105 transition-all duration-300 hover:shadow-lg">
+                    <div className="text-4xl mb-3 animate-pulse">🍽️</div>
+                    <div className="text-sm text-gray-600 font-medium mb-1">Servings</div>
+                    <div className="text-2xl font-bold text-blue-800">{recipe.servings || '4'}</div>
+                    <div className="text-sm text-blue-600 font-medium">people</div>
                   </div>
-                  <div className="text-center p-4 bg-gradient-to-br from-green-100 to-green-200 rounded-xl">
-                    <div className="text-3xl mb-2">🔥</div>
-                    <div className="text-sm text-gray-600 font-medium">Difficulty</div>
-                    <div className="text-xl font-bold text-gray-800">{recipe.difficulty || 'Medium'}</div>
+                  <div className="text-center p-6 bg-gradient-to-br from-green-100 to-green-200 rounded-2xl transform hover:scale-105 transition-all duration-300 hover:shadow-lg">
+                    <div className="text-4xl mb-3 animate-pulse">🔥</div>
+                    <div className="text-sm text-gray-600 font-medium mb-1">Difficulty</div>
+                    <div className="text-2xl font-bold text-green-800">{recipe.difficulty || 'Medium'}</div>
+                    <div className="text-sm text-green-600 font-medium">level</div>
                   </div>
-                  <div className="text-center p-4 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl">
-                    <div className="text-3xl mb-2">💰</div>
-                    <div className="text-sm text-gray-600 font-medium">Est. Cost</div>
-                    <div className="text-xl font-bold text-gray-800">${calculateTotal().toFixed(2)}</div>
+                  <div className="text-center p-6 bg-gradient-to-br from-purple-100 to-purple-200 rounded-2xl transform hover:scale-105 transition-all duration-300 hover:shadow-lg">
+                    <div className="text-4xl mb-3 animate-pulse">💰</div>
+                    <div className="text-sm text-gray-600 font-medium mb-1">Est. Cost</div>
+                    <div className="text-2xl font-bold text-purple-800">${calculateTotal().toFixed(2)}</div>
+                    <div className="text-sm text-purple-600 font-medium">total</div>
                   </div>
                 </div>
               </div>
 
               {/* Ingredients List */}
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                  <span className="mr-3 text-3xl">🥘</span>
-                  Ingredients
+              <div className="bg-white rounded-3xl shadow-xl p-8 transform hover:shadow-2xl transition-all duration-300 border border-gray-100">
+                <h3 className="text-2xl font-bold text-gray-800 mb-8 flex items-center">
+                  <span className="mr-4 text-3xl">🥘</span>
+                  <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">Ingredients</span>
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {(recipe.ingredients || []).map((ingredient, index) => (
-                    <div key={index} className="flex items-center p-3 bg-slate-50 rounded-lg">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm mr-3 flex-shrink-0">
+                    <div key={index} className="flex items-center p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl hover:from-slate-100 hover:to-blue-100 transition-all duration-200 group">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm mr-4 flex-shrink-0 group-hover:scale-110 transition-transform">
                         {index + 1}
                       </div>
-                      <span className="text-gray-700 font-medium">{ingredient}</span>
+                      <span className="text-gray-700 font-medium flex-1">{ingredient}</span>
+                      <div className="w-2 h-2 bg-green-400 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Cooking Instructions */}
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                  <span className="mr-3 text-3xl">👨‍🍳</span>
-                  Cooking Instructions
+              <div className="bg-white rounded-3xl shadow-xl p-8 transform hover:shadow-2xl transition-all duration-300 border border-gray-100">
+                <h3 className="text-2xl font-bold text-gray-800 mb-8 flex items-center">
+                  <span className="mr-4 text-3xl">👨‍🍳</span>
+                  <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Cooking Instructions</span>
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {(recipe.instructions || []).map((instruction, index) => (
-                    <div key={index} className="flex items-start p-4 bg-slate-50 rounded-xl">
-                      <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 flex-shrink-0">
+                    <div key={index} className="flex items-start p-6 bg-gradient-to-r from-slate-50 to-indigo-50 rounded-2xl hover:from-slate-100 hover:to-indigo-100 transition-all duration-300 group">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-6 flex-shrink-0 group-hover:scale-110 transition-transform">
                         {index + 1}
                       </div>
                       <div className="flex-1">
-                        <p className="text-gray-700 leading-relaxed font-medium">{instruction}</p>
+                        <p className="text-gray-700 leading-relaxed font-medium text-lg">{instruction}</p>
+                        <div className="mt-3 h-1 bg-gradient-to-r from-green-400 to-blue-500 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
                       </div>
                     </div>
                   ))}
