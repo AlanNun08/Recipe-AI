@@ -1982,122 +1982,257 @@ function App() {
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 p-4">
-        <div className="max-w-6xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+        <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-6">
             {showBackButton && (
               <button
                 onClick={() => setCurrentScreen('dashboard')}
-                className="mb-4 flex items-center space-x-2 text-orange-600 hover:text-orange-700 font-medium"
+                className="mb-4 flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
               >
-                <span>←</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
                 <span>Back to Dashboard</span>
               </button>
             )}
             
-            <div className="text-center">
-              <h1 className="text-4xl font-bold text-gray-800 mb-2">
+            <div className="bg-white rounded-3xl shadow-xl p-8 text-center">
+              <div className="text-6xl mb-4">🍳</div>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3">
                 {recipe.title || 'Delicious Recipe'}
               </h1>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                {recipe.description || 'A wonderful recipe created just for you!'}
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                {recipe.description || 'A wonderful recipe created just for you with real Walmart shopping integration!'}
               </p>
             </div>
           </div>
 
-          {/* Recipe Info Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             
-            {/* Recipe Details Card */}
-            <div className="lg:col-span-2">
+            {/* Left Column - Recipe Instructions */}
+            <div className="xl:col-span-2 space-y-6">
+              
+              {/* Recipe Quick Stats */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
-                
-                {/* Recipe Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="text-center p-3 bg-orange-50 rounded-xl">
-                    <div className="text-2xl mb-1">⏱️</div>
-                    <div className="text-sm text-gray-600">Prep Time</div>
-                    <div className="font-bold text-gray-800">{recipe.prep_time || '30 min'}</div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                  <span className="mr-3 text-3xl">📊</span>
+                  Recipe Overview
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl">
+                    <div className="text-3xl mb-2">⏱️</div>
+                    <div className="text-sm text-gray-600 font-medium">Prep Time</div>
+                    <div className="text-xl font-bold text-gray-800">{recipe.prep_time || '30'} min</div>
                   </div>
-                  <div className="text-center p-3 bg-blue-50 rounded-xl">
-                    <div className="text-2xl mb-1">🍽️</div>
-                    <div className="text-sm text-gray-600">Servings</div>
-                    <div className="font-bold text-gray-800">{recipe.servings || '4'}</div>
+                  <div className="text-center p-4 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl">
+                    <div className="text-3xl mb-2">🍽️</div>
+                    <div className="text-sm text-gray-600 font-medium">Servings</div>
+                    <div className="text-xl font-bold text-gray-800">{recipe.servings || '4'}</div>
                   </div>
-                  <div className="text-center p-3 bg-green-50 rounded-xl">
-                    <div className="text-2xl mb-1">🔥</div>
-                    <div className="text-sm text-gray-600">Calories</div>
-                    <div className="font-bold text-gray-800">{recipe.calories || '350'}</div>
+                  <div className="text-center p-4 bg-gradient-to-br from-green-100 to-green-200 rounded-xl">
+                    <div className="text-3xl mb-2">🔥</div>
+                    <div className="text-sm text-gray-600 font-medium">Difficulty</div>
+                    <div className="text-xl font-bold text-gray-800">{recipe.difficulty || 'Medium'}</div>
                   </div>
-                  <div className="text-center p-3 bg-purple-50 rounded-xl">
-                    <div className="text-2xl mb-1">💰</div>
-                    <div className="text-sm text-gray-600">Est. Cost</div>
-                    <div className="font-bold text-gray-800">${calculateTotal().toFixed(2)}</div>
+                  <div className="text-center p-4 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl">
+                    <div className="text-3xl mb-2">💰</div>
+                    <div className="text-sm text-gray-600 font-medium">Est. Cost</div>
+                    <div className="text-xl font-bold text-gray-800">${calculateTotal().toFixed(2)}</div>
                   </div>
                 </div>
+              </div>
 
-                {/* Ingredients Section with Product Selection */}
-                <div className="mb-8">
-                  <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                    <span className="mr-2">🥘</span>
-                    Ingredients & Product Selection
-                  </h3>
-                  
+              {/* Ingredients List */}
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                  <span className="mr-3 text-3xl">🥘</span>
+                  Ingredients
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {(recipe.ingredients || []).map((ingredient, index) => (
+                    <div key={index} className="flex items-center p-3 bg-slate-50 rounded-lg">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm mr-3 flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      <span className="text-gray-700 font-medium">{ingredient}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cooking Instructions */}
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                  <span className="mr-3 text-3xl">👨‍🍳</span>
+                  Cooking Instructions
+                </h3>
+                <div className="space-y-4">
+                  {(recipe.instructions || []).map((instruction, index) => (
+                    <div key={index} className="flex items-start p-4 bg-slate-50 rounded-xl">
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-gray-700 leading-relaxed font-medium">{instruction}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Walmart Shopping */}
+            <div className="xl:col-span-1">
+              <div className="sticky top-6 space-y-6">
+                
+                {/* Walmart Shopping Section */}
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-white text-2xl font-bold">W</span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-800 mb-2">Walmart Shopping</h3>
+                    <p className="text-gray-600">Real products, real prices</p>
+                  </div>
+
                   {loadingCart ? (
-                    <div className="text-center py-8">
-                      <div className="w-8 h-8 border-3 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                      <p className="text-gray-600">Loading product options from Walmart...</p>
+                    <div className="text-center py-12">
+                      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                      <p className="text-gray-600 font-medium">Finding products...</p>
+                      <p className="text-sm text-gray-500 mt-1">Searching Walmart's inventory</p>
                     </div>
                   ) : (
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                       {Object.entries(productOptions).map(([ingredientName, ingredientOptions], index) => {
                         const selectedProductId = selectedProducts[ingredientName];
+                        const selectedProduct = ingredientOptions.find(p => p.product_id === selectedProductId) || ingredientOptions[0];
                         
                         return (
-                          <div key={index} className="bg-gray-50 rounded-xl p-4">
+                          <div key={index} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
                             {/* Ingredient Header */}
-                            <div className="flex items-center mb-3">
-                              <span className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold text-sm mr-3">
-                                {index + 1}
-                              </span>
-                              <h4 className="text-lg font-semibold text-gray-800">{ingredientName}</h4>
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-semibold text-gray-800 flex items-center">
+                                <span className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold mr-2">
+                                  {index + 1}
+                                </span>
+                                {ingredientName}
+                              </h4>
+                              <span className="text-xs text-gray-500">{ingredientOptions.length} options</span>
                             </div>
                             
-                            {/* Product Options */}
-                            {ingredientOptions.length > 0 ? (
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                {ingredientOptions.slice(0, 3).map((product, productIndex) => (
-                                  <div
-                                    key={productIndex}
-                                    className={`border-2 rounded-lg p-3 cursor-pointer transition-all duration-200 ${
-                                      selectedProductId === product.product_id
-                                        ? 'border-green-500 bg-green-50'
-                                        : 'border-gray-200 bg-white hover:border-green-300'
-                                    }`}
-                                    onClick={() => handleProductSelection(ingredientName, product.product_id)}
-                                  >
-                                    <div className="flex items-start justify-between mb-2">
-                                      <div className="flex-1">
-                                        <h5 className="font-medium text-gray-800 text-sm leading-tight mb-1">
-                                          {product.name}
-                                        </h5>
-                                        <p className="text-lg font-bold text-green-600">
-                                          ${parseFloat(product.price).toFixed(2)}
-                                        </p>
-                                      </div>
-                                      <div className="ml-2">
-                                        {selectedProductId === product.product_id ? (
-                                          <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                                            <span className="text-white text-xs">✓</span>
-                                          </div>
-                                        ) : (
-                                          <div className="w-5 h-5 border-2 border-gray-300 rounded-full"></div>
-                                        )}
-                                      </div>
+                            {/* Selected Product Display */}
+                            {selectedProduct && (
+                              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-3 mb-3">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <h5 className="font-medium text-gray-800 text-sm leading-tight mb-1">
+                                      {selectedProduct.name}
+                                    </h5>
+                                    <p className="text-lg font-bold text-green-600 mb-1">
+                                      ${parseFloat(selectedProduct.price).toFixed(2)}
+                                    </p>
+                                    <div className="flex items-center text-xs text-gray-500">
+                                      <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                                      Available
                                     </div>
-                                    
-                                    <div className="text-xs text-gray-500 mb-2">
+                                  </div>
+                                  {selectedProduct.image_url && (
+                                    <img 
+                                      src={selectedProduct.image_url} 
+                                      alt={selectedProduct.name}
+                                      className="w-12 h-12 object-cover rounded-lg ml-3"
+                                      onError={(e) => {
+                                        e.target.style.display = 'none';
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Product Selection Dropdown */}
+                            {ingredientOptions.length > 1 && (
+                              <select 
+                                value={selectedProductId || ingredientOptions[0]?.product_id || ''} 
+                                onChange={(e) => handleProductSelection(ingredientName, e.target.value)}
+                                className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              >
+                                {ingredientOptions.map((product, productIndex) => (
+                                  <option key={productIndex} value={product.product_id}>
+                                    {product.name} - ${parseFloat(product.price).toFixed(2)}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Shopping Cart Summary */}
+                <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl shadow-lg p-6 text-white">
+                  <h4 className="text-xl font-bold mb-4 flex items-center">
+                    <span className="mr-2 text-2xl">🛒</span>
+                    Shopping Cart
+                  </h4>
+                  
+                  <div className="space-y-3 mb-6">
+                    {cartItems.length > 0 ? (
+                      cartItems.map((item, index) => (
+                        <div key={index} className="flex justify-between items-center py-2 border-b border-blue-500">
+                          <span className="text-sm font-medium truncate flex-1 mr-2">{item.name}</span>
+                          <span className="text-lg font-bold">${parseFloat(item.price).toFixed(2)}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-6 text-blue-200">
+                        <div className="text-3xl mb-2">🛍️</div>
+                        <p>No items selected</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="border-t border-blue-500 pt-4 mb-6">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xl font-bold">Total:</span>
+                      <span className="text-2xl font-bold">${calculateTotal().toFixed(2)}</span>
+                    </div>
+                    <p className="text-sm text-blue-200 mt-1">{cartItems.length} items selected</p>
+                  </div>
+                  
+                  <button
+                    onClick={generateWalmartUrl}
+                    disabled={cartItems.length === 0}
+                    className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
+                      cartItems.length > 0
+                        ? 'bg-white text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl'
+                        : 'bg-blue-800 text-blue-300 cursor-not-allowed'
+                    }`}
+                  >
+                    {cartItems.length > 0 ? (
+                      <>
+                        🛍️ Shop at Walmart
+                        <div className="text-sm font-normal mt-1">Get these ingredients now</div>
+                      </>
+                    ) : (
+                      <>
+                        🛍️ Select Products First
+                        <div className="text-sm font-normal mt-1">Choose your ingredients above</div>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
                                       Product ID: {product.product_id}
                                     </div>
                                     
