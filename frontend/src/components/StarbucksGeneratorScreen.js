@@ -464,6 +464,123 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user, AP
   );
 };
 
+// RecipeCard Component for displaying curated and community recipes
+const RecipeCard = ({ 
+  recipe, 
+  isCommunity = false, 
+  onLike, 
+  isLiked = false, 
+  onCopyOrder, 
+  onShare, 
+  user 
+}) => {
+  const recipeName = recipe.drink_name || recipe.name || recipe.recipe_name || "Secret Menu Drink";
+  const description = recipe.description || recipe.vibe || "A delicious Starbucks creation";
+  const orderScript = recipe.ordering_script || recipe.order_instructions || "Order instructions not available";
+  const category = recipe.category || "unknown";
+  const likesCount = recipe.likes_count || 0;
+  const author = recipe.author || "Anonymous";
+  const difficulty = recipe.difficulty_level || "medium";
+  const tags = recipe.tags || [];
+  
+  // Get category emoji
+  const getCategoryEmoji = (category) => {
+    switch(category?.toLowerCase()) {
+      case 'frappuccino': return '🥤';
+      case 'refresher': return '🧊';
+      case 'lemonade': return '🍋';
+      case 'iced_matcha_latte': return '🍵';
+      default: return '☕';
+    }
+  };
+  
+  // Get difficulty color
+  const getDifficultyColor = (difficulty) => {
+    switch(difficulty?.toLowerCase()) {
+      case 'easy': return 'bg-green-100 text-green-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'hard': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+  
+  const categoryEmoji = getCategoryEmoji(category);
+  const difficultyColor = getDifficultyColor(difficulty);
+  
+  return (
+    <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+      {/* Header */}
+      <div className="text-center mb-4">
+        <div className="text-4xl mb-2">{categoryEmoji}</div>
+        <h3 className="text-xl font-bold text-gray-800 mb-1">{recipeName}</h3>
+        <p className="text-gray-600 text-sm italic">"{description}"</p>
+      </div>
+      
+      {/* Badges */}
+      <div className="flex flex-wrap gap-2 mb-4 justify-center">
+        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+          {category.charAt(0).toUpperCase() + category.slice(1)}
+        </span>
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${difficultyColor}`}>
+          {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+        </span>
+      </div>
+      
+      {/* Tags */}
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-4 justify-center">
+          {tags.slice(0, 3).map((tag, index) => (
+            <span key={index} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
+              #{tag}
+            </span>
+          ))}
+        </div>
+      )}
+      
+      {/* Order Script Preview */}
+      <div className="mb-4">
+        <div className="bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400">
+          <p className="text-gray-700 text-sm">
+            {orderScript.length > 80 ? `${orderScript.substring(0, 80)}...` : orderScript}
+          </p>
+        </div>
+      </div>
+      
+      {/* Community Info */}
+      {isCommunity && (
+        <div className="flex items-center justify-between mb-4 text-sm text-gray-600">
+          <span>By {author}</span>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onLike}
+              className={`flex items-center gap-1 ${isLiked ? 'text-red-500' : 'text-gray-500'} hover:text-red-500`}
+            >
+              {isLiked ? '❤️' : '🤍'} {likesCount}
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Action Buttons */}
+      <div className="flex gap-2 justify-center">
+        <button
+          onClick={onCopyOrder}
+          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+        >
+          📋 Copy Order
+        </button>
+        
+        <button
+          onClick={onShare}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+        >
+          🔗 Share
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // DrinkCard Component for displaying generated drinks
 const DrinkCard = ({ 
   drink, 
