@@ -502,9 +502,9 @@ class SignupResetPasswordTester:
             # Test if email service is properly configured
             self.log("Testing email service configuration...")
             
-            # Check if Mailjet client is initialized
-            if hasattr(email_service, 'mailjet_client'):
-                self.log("✅ Mailjet client is initialized")
+            # Check if email service is initialized
+            if hasattr(email_service, 'initialized') and email_service.initialized:
+                self.log("✅ Email service is initialized")
                 
                 # Test code generation
                 test_code = email_service.generate_verification_code()
@@ -515,7 +515,7 @@ class SignupResetPasswordTester:
                     self.log(f"❌ Invalid verification code generated: {test_code}")
                     return False
             else:
-                self.log("❌ Mailjet client not initialized")
+                self.log("❌ Email service not initialized")
                 return False
                 
         except Exception as e:
