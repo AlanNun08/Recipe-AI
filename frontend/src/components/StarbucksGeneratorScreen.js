@@ -224,14 +224,34 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user, AP
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-green-100 to-green-200 p-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 p-4 relative overflow-hidden">
+      {/* Magical Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-10 left-10 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+        <div className="absolute top-20 right-20 w-6 h-6 bg-pink-400 rounded-full animate-bounce"></div>
+        <div className="absolute bottom-20 left-20 w-5 h-5 bg-blue-400 rounded-full animate-ping"></div>
+        <div className="absolute bottom-10 right-10 w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
+        <div className="absolute top-1/2 left-1/4 w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
+        <div className="absolute top-1/3 right-1/3 w-4 h-4 bg-orange-400 rounded-full animate-ping"></div>
+      </div>
+      
+      <div className="max-w-6xl mx-auto relative z-10">
         
-        {/* Header */}
+        {/* Enhanced Header */}
         <div className="text-center mb-8">
-          <div className="text-6xl mb-4">☕</div>
-          <h1 className="text-4xl font-bold text-green-800 mb-2">Starbucks Secret Menu</h1>
-          <p className="text-lg text-green-700">Generate, discover, and share viral drink hacks</p>
+          <div className="text-8xl mb-4 animate-bounce">☕</div>
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+            ✨ Starbucks Secret Menu ✨
+          </h1>
+          <p className="text-xl text-gray-700 font-medium">Generate magical drinks, discover viral hacks, and share your creations!</p>
+          <div className="flex justify-center mt-4 space-x-2">
+            <span className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-sm font-bold animate-pulse">
+              🌟 AI-Powered
+            </span>
+            <span className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-full text-sm font-bold animate-pulse">
+              🚀 Viral Ready
+            </span>
+          </div>
         </div>
 
         {/* Tab Navigation */}
