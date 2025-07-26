@@ -327,38 +327,60 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user, AP
                 </div>
               </div>
 
-              {/* Flavor Inspiration */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Flavor Inspiration (Optional)</label>
-                <input
-                  type="text"
-                  value={flavorInspiration}
-                  onChange={(e) => setFlavorInspiration(e.target.value)}
-                  placeholder='e.g., "tres leches", "ube", "mango tajin", "birthday cake"'
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-                <p className="text-xs text-gray-500 mt-1">Add a flavor twist to inspire your drink creation!</p>
+              {/* Enhanced Flavor Inspiration */}
+              <div className="mb-8">
+                <label className="block text-lg font-bold text-gray-700 mb-4 text-center">
+                  🌟 Add Your Flavor Magic (Optional)
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={flavorInspiration}
+                    onChange={(e) => setFlavorInspiration(e.target.value)}
+                    placeholder='e.g., "tres leches", "ube", "mango tajin", "birthday cake", "cotton candy"'
+                    className="w-full px-6 py-4 border-3 border-purple-200 rounded-2xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 text-lg bg-gradient-to-r from-purple-50 to-pink-50 placeholder-purple-400 transition-all duration-300"
+                  />
+                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-2xl animate-pulse">
+                    ✨
+                  </div>
+                </div>
+                <p className="text-sm text-purple-600 mt-2 text-center font-medium">
+                  🎨 Let your creativity flow! Add any flavor inspiration to make your drink unique
+                </p>
               </div>
 
-              {/* Generate Button */}
-              <button
-                onClick={generateDrink}
-                disabled={isGenerating}
-                className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-200 ${
-                  isGenerating 
-                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
-                }`}
-              >
-                {isGenerating ? (
-                  <span className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                    Brewing Your Secret Drink...
-                  </span>
-                ) : (
-                  <span>✨ Generate My Secret Drink ✨</span>
-                )}
-              </button>
+              {/* Magical Generate Button */}
+              <div className="text-center">
+                <button
+                  onClick={generateDrink}
+                  disabled={isGenerating}
+                  className={`px-12 py-6 rounded-3xl font-bold text-xl transition-all duration-300 transform hover:scale-105 ${
+                    isGenerating 
+                      ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:from-purple-600 hover:via-pink-600 hover:to-orange-600 text-white shadow-2xl hover:shadow-3xl'
+                  }`}
+                >
+                  {isGenerating ? (
+                    <span className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-4 border-white mr-4"></div>
+                      <span className="text-lg">🔮 Brewing Your Magical Creation...</span>
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center">
+                      <span className="text-2xl mr-3 animate-bounce">🪄</span>
+                      <span>Generate My Magical Drink</span>
+                      <span className="text-2xl ml-3 animate-bounce">✨</span>
+                    </span>
+                  )}
+                </button>
+                
+                {/* Magical sparkles around button */}
+                <div className="relative mt-4">
+                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-2xl animate-ping">⭐</div>
+                  <div className="absolute -top-6 left-1/4 text-xl animate-bounce">💫</div>
+                  <div className="absolute -top-6 right-1/4 text-xl animate-pulse">🌟</div>
+                </div>
+              </div>
             </div>
 
             {/* Generated Drink Display */}
