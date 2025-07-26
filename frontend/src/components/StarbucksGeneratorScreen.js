@@ -464,4 +464,129 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user, AP
   );
 };
 
+// DrinkCard Component for displaying generated drinks
+const DrinkCard = ({ 
+  drink, 
+  showFullDetails = true, 
+  onCopyOrder, 
+  onShare, 
+  onGenerateAnother, 
+  onBackToDashboard, 
+  showActionButtons = true 
+}) => {
+  const [showFullScript, setShowFullScript] = useState(false);
+  
+  const drinkName = drink.drink_name || drink.name || drink.recipe_name || "Secret Menu Drink";
+  const description = drink.description || drink.vibe || "A delicious Starbucks creation";
+  const orderScript = drink.ordering_script || drink.order_instructions || "Order instructions not available";
+  const category = drink.category || "unknown";
+  const baseDrink = drink.base_drink || "";
+  const modifications = drink.modifications || [];
+  
+  // Get category emoji
+  const getCategoryEmoji = (category) => {
+    switch(category?.toLowerCase()) {
+      case 'frappuccino': return '🥤';
+      case 'refresher': return '🧊';
+      case 'lemonade': return '🍋';
+      case 'iced_matcha_latte': return '🍵';
+      default: return '☕';
+    }
+  };
+  
+  const categoryEmoji = getCategoryEmoji(category);
+  
+  return (
+    <div className="bg-white rounded-2xl shadow-lg p-6 max-w-2xl mx-auto">
+      {/* Header */}
+      <div className="text-center mb-6">
+        <div className="text-6xl mb-4">{categoryEmoji}</div>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">{drinkName}</h2>
+        <p className="text-gray-600 text-lg italic">"{description}"</p>
+        <div className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mt-2">
+          {category.charAt(0).toUpperCase() + category.slice(1)}
+        </div>
+      </div>
+      
+      {/* Ingredients */}
+      {baseDrink && (
+        <div className="mb-6">
+          <h3 className="font-bold text-gray-800 mb-3">🥤 Base Drink</h3>
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <span className="text-blue-800 font-medium">{baseDrink}</span>
+          </div>
+        </div>
+      )}
+      
+      {modifications.length > 0 && (
+        <div className="mb-6">
+          <h3 className="font-bold text-gray-800 mb-3">✨ Modifications</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {modifications.map((mod, index) => (
+              <div key={index} className="bg-purple-50 p-3 rounded-lg">
+                <span className="text-purple-800">{mod}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Order Script */}
+      <div className="mb-6">
+        <h3 className="font-bold text-gray-800 mb-3">📝 How to Order</h3>
+        <div className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
+          <p className="text-gray-700">
+            {showFullScript ? orderScript : `${orderScript.substring(0, 120)}...`}
+          </p>
+          {orderScript.length > 120 && (
+            <button 
+              onClick={() => setShowFullScript(!showFullScript)}
+              className="text-blue-600 hover:text-blue-800 text-sm mt-2"
+            >
+              {showFullScript ? 'Show less' : 'Show full script'}
+            </button>
+          )}
+        </div>
+      </div>
+      
+      {/* Action Buttons */}
+      {showActionButtons && (
+        <div className="flex flex-wrap gap-3 justify-center">
+          <button
+            onClick={onCopyOrder}
+            className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200 flex items-center gap-2"
+          >
+            📋 Copy Order
+          </button>
+          
+          <button
+            onClick={onShare}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200 flex items-center gap-2"
+          >
+            🔗 Share
+          </button>
+          
+          {onGenerateAnother && (
+            <button
+              onClick={onGenerateAnother}
+              className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200 flex items-center gap-2"
+            >
+              🎲 Generate Another
+            </button>
+          )}
+          
+          {onBackToDashboard && (
+            <button
+              onClick={onBackToDashboard}
+              className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200 flex items-center gap-2"
+            >
+              🏠 Back to Dashboard
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default StarbucksGeneratorScreen;
