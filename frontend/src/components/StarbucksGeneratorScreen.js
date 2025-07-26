@@ -254,38 +254,43 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user, AP
           </div>
         </div>
 
-        {/* Tab Navigation */}
+        {/* Enhanced Tab Navigation */}
         <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-2xl shadow-lg p-2 flex space-x-2">
+          <div className="bg-white rounded-3xl shadow-2xl p-3 flex space-x-3 border-4 border-gradient-to-r from-purple-200 to-pink-200">
             <button
               onClick={() => setCurrentTab('generator')}
-              className={`px-6 py-3 rounded-xl font-bold transition-all duration-200 ${
+              className={`px-8 py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 ${
                 currentTab === 'generator'
-                  ? 'bg-green-500 text-white shadow-md'
-                  : 'text-gray-600 hover:text-green-600'
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              ✨ AI Generator
+              <span className="text-2xl mr-2">🎨</span>
+              Generator
             </button>
+            
             <button
               onClick={() => setCurrentTab('curated')}
-              className={`px-6 py-3 rounded-xl font-bold transition-all duration-200 ${
+              className={`px-8 py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 ${
                 currentTab === 'curated'
-                  ? 'bg-purple-500 text-white shadow-md'
-                  : 'text-gray-600 hover:text-purple-600'
+                  ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              📚 Curated Recipes
+              <span className="text-2xl mr-2">⭐</span>
+              Curated
             </button>
+            
             <button
               onClick={() => setCurrentTab('community')}
-              className={`px-6 py-3 rounded-xl font-bold transition-all duration-200 ${
+              className={`px-8 py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 ${
                 currentTab === 'community'
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : 'text-gray-600 hover:text-blue-600'
+                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              👥 Community
+              <span className="text-2xl mr-2">👥</span>
+              Community
             </button>
           </div>
         </div>
