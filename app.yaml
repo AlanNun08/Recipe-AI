@@ -1,32 +1,33 @@
 # app.yaml - Google App Engine Configuration
+# This file is ready for Google Cloud deployment
+# Set all environment variables through Google Cloud Console → Variables & Secrets
 runtime: python39
 
-# Environment variables for your AI Recipe + Grocery Delivery App
-# SECURITY WARNING: NEVER commit real API keys to version control!
-# Use Google Secret Manager or set these during deployment
+# Environment variables will be set through Google Cloud Console
+# Go to: Cloud Run → [Your Service] → Edit Container → Variables & Secrets
 env_variables:
   # Database Configuration
-  MONGO_URL: "YOUR_MONGODB_ATLAS_CONNECTION_STRING"  # Replace with MongoDB Atlas connection string
+  MONGO_URL: "mongodb://localhost:27017"  # Set your MongoDB Atlas connection string in Google Cloud
   DB_NAME: "buildyoursmartcart_production"
   
   # OpenAI API Configuration
-  OPENAI_API_KEY: "YOUR_OPENAI_API_KEY"  # Replace with your actual OpenAI API key
+  OPENAI_API_KEY: "your-openai-api-key"  # Set your OpenAI API key in Google Cloud
   
   # Walmart API Configuration
-  WALMART_CONSUMER_ID: "YOUR_WALMART_CONSUMER_ID"  # Replace with your actual Walmart Consumer ID
+  WALMART_CONSUMER_ID: "your-walmart-consumer-id"  # Set your Walmart Consumer ID in Google Cloud
   WALMART_KEY_VERSION: "1"
-  WALMART_PRIVATE_KEY: "YOUR_WALMART_PRIVATE_KEY"  # Replace with your actual Walmart private key
+  WALMART_PRIVATE_KEY: "your-walmart-private-key"  # Set your Walmart private key in Google Cloud
   
   # Mailjet Email Service Configuration
-  MAILJET_API_KEY: "YOUR_MAILJET_API_KEY"  # Replace with your actual Mailjet API key
-  MAILJET_SECRET_KEY: "YOUR_MAILJET_SECRET_KEY"  # Replace with your actual Mailjet secret key
-  SENDER_EMAIL: "YOUR_SENDER_EMAIL@example.com"  # Replace with your actual sender email
+  MAILJET_API_KEY: "your-mailjet-api-key"  # Set your Mailjet API key in Google Cloud
+  MAILJET_SECRET_KEY: "your-mailjet-secret-key"  # Set your Mailjet secret key in Google Cloud
+  SENDER_EMAIL: "your-sender-email@example.com"  # Set your sender email in Google Cloud
   
   # Stripe Configuration
-  STRIPE_API_KEY: "YOUR_STRIPE_API_KEY"  # Replace with your actual Stripe API key
+  STRIPE_API_KEY: "your-stripe-api-key"  # Set your Stripe API key in Google Cloud
   
   # JWT Secret Key
-  SECRET_KEY: "YOUR_STRONG_RANDOM_JWT_SECRET"  # Generate a strong, random secret key
+  SECRET_KEY: "your-jwt-secret-key"  # Set a strong, random secret key in Google Cloud
 
 # Route handlers
 handlers:
