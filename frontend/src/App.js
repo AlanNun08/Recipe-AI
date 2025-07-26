@@ -1394,72 +1394,92 @@ function App() {
     };
 
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-md mx-auto">
-          <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
-            <div className="flex items-center space-x-3 mb-6">
+      <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100 p-4 relative overflow-hidden">
+        {/* Magical Background Elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-10 left-10 w-5 h-5 bg-yellow-400 rounded-full animate-pulse"></div>
+          <div className="absolute top-20 right-20 w-7 h-7 bg-pink-400 rounded-full animate-bounce"></div>
+          <div className="absolute bottom-20 left-20 w-6 h-6 bg-blue-400 rounded-full animate-ping"></div>
+          <div className="absolute bottom-10 right-10 w-4 h-4 bg-purple-400 rounded-full animate-pulse"></div>
+          <div className="absolute top-1/2 left-1/4 w-3 h-3 bg-green-400 rounded-full animate-bounce"></div>
+          <div className="absolute top-1/3 right-1/3 w-5 h-5 bg-orange-400 rounded-full animate-ping"></div>
+        </div>
+        
+        <div className="max-w-2xl mx-auto relative z-10">
+          {/* Enhanced Header Card */}
+          <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8 border-4 border-gradient-to-r from-purple-200 to-pink-200">
+            <div className="flex items-center justify-between mb-6">
               <button
                 onClick={() => setCurrentScreen('dashboard')}
-                className="text-gray-600 hover:text-gray-800"
+                className="flex items-center space-x-2 text-purple-600 hover:text-purple-700 font-bold transition-all duration-200 hover:scale-105"
               >
-                ← Back
+                <span className="text-2xl">←</span>
+                <span>Back</span>
               </button>
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">🤖 Generate AI Recipe</h2>
-                <p className="text-gray-600 text-sm">Create a personalized recipe just for you</p>
+              <div className="text-center flex-1">
+                <div className="text-6xl mb-2 animate-bounce">🤖</div>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  Generate AI Recipe
+                </h2>
+                <p className="text-gray-600 text-lg font-medium">Create a personalized recipe just for you</p>
               </div>
             </div>
+          </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Recipe Category Selection */}
+          {/* Enhanced Form Card */}
+          <div className="bg-white rounded-3xl shadow-2xl p-8 border-4 border-gradient-to-r from-purple-200 to-pink-200">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Enhanced Recipe Category Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">Recipe Category *</label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Cuisine Card */}
+                <label className="block text-2xl font-bold text-gray-700 mb-6 text-center">
+                  🎯 Choose Your Recipe Adventure
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Enhanced Cuisine Card */}
                   <div 
-                    className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 ${
+                    className={`border-4 rounded-3xl p-6 cursor-pointer transition-all duration-300 transform hover:scale-105 ${
                       formData.recipe_type === 'cuisine' 
-                        ? 'border-green-500 bg-green-50' 
-                        : 'border-gray-200 hover:border-green-300'
+                        ? 'border-purple-500 bg-gradient-to-br from-purple-100 to-pink-100 shadow-lg scale-105' 
+                        : 'border-gray-200 hover:border-purple-300 bg-white hover:shadow-lg'
                     }`}
                     onClick={() => setFormData({...formData, recipe_type: 'cuisine', snack_type: '', beverage_type: ''})}
                   >
                     <div className="text-center">
-                      <div className="text-3xl mb-2">🍝</div>
-                      <h3 className="font-bold text-gray-800">Cuisine</h3>
-                      <p className="text-xs text-gray-600">Traditional dishes from around the world</p>
+                      <div className="text-5xl mb-4 animate-bounce">🍝</div>
+                      <h3 className="font-bold text-gray-800 text-lg">Cuisine</h3>
+                      <p className="text-sm text-gray-600">Traditional dishes from around the world</p>
                     </div>
                   </div>
 
-                  {/* Snacks Card */}
+                  {/* Enhanced Snacks Card */}
                   <div 
-                    className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 ${
+                    className={`border-4 rounded-3xl p-6 cursor-pointer transition-all duration-300 transform hover:scale-105 ${
                       formData.recipe_type === 'snack' 
-                        ? 'border-green-500 bg-green-50' 
-                        : 'border-gray-200 hover:border-green-300'
+                        ? 'border-green-500 bg-gradient-to-br from-green-100 to-blue-100 shadow-lg scale-105' 
+                        : 'border-gray-200 hover:border-green-300 bg-white hover:shadow-lg'
                     }`}
                     onClick={() => setFormData({...formData, recipe_type: 'snack', cuisine_type: '', beverage_type: ''})}
                   >
                     <div className="text-center">
-                      <div className="text-3xl mb-2">🍪</div>
-                      <h3 className="font-bold text-gray-800">Snacks</h3>
-                      <p className="text-xs text-gray-600">Healthy bowls, treats, and bite-sized delights</p>
+                      <div className="text-5xl mb-4 animate-bounce">🍪</div>
+                      <h3 className="font-bold text-gray-800 text-lg">Snacks</h3>
+                      <p className="text-sm text-gray-600">Healthy bowls, treats, and bite-sized delights</p>
                     </div>
                   </div>
 
-                  {/* Beverages Card */}
+                  {/* Enhanced Beverages Card */}
                   <div 
-                    className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 ${
+                    className={`border-4 rounded-3xl p-6 cursor-pointer transition-all duration-300 transform hover:scale-105 ${
                       formData.recipe_type === 'beverage' 
-                        ? 'border-green-500 bg-green-50' 
-                        : 'border-gray-200 hover:border-green-300'
+                        ? 'border-orange-500 bg-gradient-to-br from-orange-100 to-red-100 shadow-lg scale-105' 
+                        : 'border-gray-200 hover:border-orange-300 bg-white hover:shadow-lg'
                     }`}
                     onClick={() => setFormData({...formData, recipe_type: 'beverage', cuisine_type: '', snack_type: ''})}
                   >
                     <div className="text-center">
-                      <div className="text-3xl mb-2">🧋</div>
-                      <h3 className="font-bold text-gray-800">Beverages</h3>
-                      <p className="text-xs text-gray-600">Boba, tea, and specialty drinks</p>
+                      <div className="text-5xl mb-4 animate-bounce">🧋</div>
+                      <h3 className="font-bold text-gray-800 text-lg">Beverages</h3>
+                      <p className="text-sm text-gray-600">Boba, tea, and specialty drinks</p>
                     </div>
                   </div>
                 </div>
