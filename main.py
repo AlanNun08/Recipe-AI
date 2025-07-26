@@ -91,8 +91,9 @@ async def health_check():
     }
 
 # This block is for local development with `python main.py`
-# App Engine will use the `app.yaml` configuration to run the 'app' object
+# Google Cloud Run will use the `app` object directly
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 8080))  # Use PORT env var provided by App Engine
+    # Google Cloud Run provides the PORT environment variable
+    port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
