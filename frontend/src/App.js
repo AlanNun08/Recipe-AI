@@ -140,53 +140,95 @@ function App() {
   // Landing Screen Component
   const LandingScreen = () => {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 p-4">
-        <div className="max-w-6xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100 p-4 relative overflow-hidden">
+        {/* Magical Background Elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-10 left-10 w-6 h-6 bg-yellow-400 rounded-full animate-pulse"></div>
+          <div className="absolute top-20 right-20 w-8 h-8 bg-pink-400 rounded-full animate-bounce"></div>
+          <div className="absolute bottom-20 left-20 w-7 h-7 bg-blue-400 rounded-full animate-ping"></div>
+          <div className="absolute bottom-10 right-10 w-5 h-5 bg-purple-400 rounded-full animate-pulse"></div>
+          <div className="absolute top-1/2 left-1/4 w-4 h-4 bg-green-400 rounded-full animate-bounce"></div>
+          <div className="absolute top-1/3 right-1/3 w-6 h-6 bg-orange-400 rounded-full animate-ping"></div>
+          <div className="absolute top-2/3 left-1/3 w-3 h-3 bg-red-400 rounded-full animate-pulse"></div>
+        </div>
+        
+        <div className="max-w-6xl mx-auto relative z-10">
           
-          {/* Hero Section */}
-          <div className="text-center py-16">
-            <div className="mb-8">
-              <div className="text-8xl mb-4">👨‍🍳</div>
-              <h1 className="text-5xl md:text-6xl font-bold text-gray-800 mb-4">
-                Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">AI Chef</span>
+          {/* Enhanced Hero Section */}
+          <div className="text-center py-20">
+            <div className="mb-12">
+              <div className="text-9xl mb-6 animate-bounce">👨‍🍳</div>
+              <h1 className="text-6xl md:text-7xl font-bold mb-6">
+                Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 animate-pulse">AI Chef</span>
               </h1>
-              <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-                Your personal cooking assistant that creates custom recipes, generates viral Starbucks drinks, and builds automatic shopping lists!
+              <p className="text-2xl md:text-3xl text-gray-700 mb-8 max-w-4xl mx-auto font-medium">
+                ✨ Your magical cooking assistant that creates custom recipes, generates viral Starbucks drinks, and builds automatic shopping lists! 🌟
               </p>
-            </div>
-
-            {/* Feature Highlights */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-              <div className="bg-white rounded-2xl shadow-lg p-8 transform hover:scale-105 transition-all duration-300">
-                <div className="text-4xl mb-4">🍳</div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">AI Recipe Generator</h3>
-                <p className="text-gray-600">Create personalized recipes with automatic Walmart shopping lists</p>
-              </div>
-              <div className="bg-white rounded-2xl shadow-lg p-8 transform hover:scale-105 transition-all duration-300">
-                <div className="text-4xl mb-4">☕</div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">Starbucks Secret Menu</h3>
-                <p className="text-gray-600">Generate viral TikTok drink hacks with drive-thru ordering scripts</p>
-              </div>
-              <div className="bg-white rounded-2xl shadow-lg p-8 transform hover:scale-105 transition-all duration-300">
-                <div className="text-4xl mb-4">🛒</div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">Smart Shopping</h3>
-                <p className="text-gray-600">One-click Walmart integration for all your ingredients</p>
+              
+              {/* Magic badges */}
+              <div className="flex flex-wrap justify-center gap-4 mb-8">
+                <span className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full font-bold text-lg shadow-lg animate-pulse">
+                  🤖 AI-Powered
+                </span>
+                <span className="px-6 py-3 bg-gradient-to-r from-blue-500 to-green-500 text-white rounded-full font-bold text-lg shadow-lg animate-pulse">
+                  🛒 Real Shopping
+                </span>
+                <span className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full font-bold text-lg shadow-lg animate-pulse">
+                  🚀 Viral Ready
+                </span>
               </div>
             </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            {/* Enhanced Feature Highlights */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+              <div className="bg-white rounded-3xl shadow-2xl p-10 transform hover:scale-105 transition-all duration-300 border-4 border-gradient-to-r from-purple-200 to-pink-200 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-pink-50 opacity-50"></div>
+                <div className="relative z-10">
+                  <div className="text-6xl mb-6 animate-bounce">🍳</div>
+                  <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">AI Recipe Generator</h3>
+                  <p className="text-gray-700 text-lg">Create personalized recipes with automatic Walmart shopping lists</p>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-3xl shadow-2xl p-10 transform hover:scale-105 transition-all duration-300 border-4 border-gradient-to-r from-green-200 to-blue-200 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-blue-50 opacity-50"></div>
+                <div className="relative z-10">
+                  <div className="text-6xl mb-6 animate-bounce">☕</div>
+                  <h3 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-4">Starbucks Secret Menu</h3>
+                  <p className="text-gray-700 text-lg">Generate viral TikTok drink hacks with drive-thru ordering scripts</p>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-3xl shadow-2xl p-10 transform hover:scale-105 transition-all duration-300 border-4 border-gradient-to-r from-orange-200 to-red-200 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-50 to-red-50 opacity-50"></div>
+                <div className="relative z-10">
+                  <div className="text-6xl mb-6 animate-bounce">🛒</div>
+                  <h3 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-4">Smart Shopping</h3>
+                  <p className="text-gray-700 text-lg">One-click Walmart integration for all your ingredients</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
               <button
                 onClick={() => setCurrentScreen('register')}
-                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 text-lg"
+                className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:from-purple-600 hover:via-pink-600 hover:to-orange-600 text-white font-bold py-6 px-12 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-300 text-xl relative overflow-hidden"
               >
-                🚀 Start Cooking for Free
+                <span className="relative z-10 flex items-center">
+                  <span className="text-2xl mr-3 animate-bounce">🚀</span>
+                  Start Cooking for Free
+                  <span className="text-2xl ml-3 animate-bounce">✨</span>
+                </span>
               </button>
               <button
                 onClick={() => setCurrentScreen('login')}
-                className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 text-lg"
+                className="bg-gradient-to-r from-gray-600 to-gray-800 hover:from-gray-700 hover:to-gray-900 text-white font-bold py-6 px-12 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-300 text-xl"
               >
-                🔑 Sign In
+                <span className="flex items-center">
+                  <span className="text-2xl mr-3">🔑</span>
+                  Sign In
+                </span>
               </button>
             </div>
           </div>
