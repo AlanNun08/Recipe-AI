@@ -750,44 +750,57 @@ const DrinkCard = ({
             )}
           </div>
         </div>
-      
-      {/* Action Buttons */}
-      {showActionButtons && (
-        <div className="flex flex-wrap gap-3 justify-center">
-          <button
-            onClick={onCopyOrder}
-            className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200 flex items-center gap-2"
-          >
-            📋 Copy Order
-          </button>
-          
-          <button
-            onClick={onShare}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200 flex items-center gap-2"
-          >
-            🔗 Share
-          </button>
-          
-          {onGenerateAnother && (
-            <button
-              onClick={onGenerateAnother}
-              className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200 flex items-center gap-2"
-            >
-              🎲 Generate Another
-            </button>
-          )}
-          
-          {onBackToDashboard && (
-            <button
-              onClick={onBackToDashboard}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200 flex items-center gap-2"
-            >
-              🏠 Back to Dashboard
-            </button>
-          )}
-        </div>
-      )}
+        
+        {/* Enhanced Action Buttons */}
+        {showActionButtons && (
+          <div className="text-center relative z-10">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center justify-center">
+              <span className="text-3xl mr-3 animate-bounce">🎯</span>
+              Take Action
+            </h3>
+            <div className="flex flex-wrap gap-4 justify-center">
+              <button
+                onClick={onCopyOrder}
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-3"
+              >
+                <span className="text-2xl animate-bounce">📋</span>
+                Copy Order
+              </button>
+              
+              <button
+                onClick={onShare}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-3"
+              >
+                <span className="text-2xl animate-pulse">🔗</span>
+                Share
+              </button>
+              
+              {onGenerateAnother && (
+                <button
+                  onClick={onGenerateAnother}
+                  className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-3"
+                >
+                  <span className="text-2xl animate-bounce">🎲</span>
+                  Generate Another
+                </button>
+              )}
+              
+              {onBackToDashboard && (
+                <button
+                  onClick={onBackToDashboard}
+                  className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-3"
+                >
+                  <span className="text-2xl animate-pulse">🏠</span>
+                  Back to Dashboard
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
+  );
+};
   );
 };
 
