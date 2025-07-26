@@ -400,18 +400,25 @@ class AIRecipeAppTester:
             return False
         
         try:
-            # Test getting user's recipes
-            response = await self.client.get(f"{BACKEND_URL}/recipes", params={"user_id": self.user_id})
+            # Test getting user's recipe history (correct endpoint)
+            response = await self.client.get(f"{BACKEND_URL}/recipes/history/{self.user_id}")
             
             if response.status_code == 200:
                 result = response.json()
                 recipes = result.get("recipes", [])
+                total_count = result.get("total_count", 0)
+                regular_recipes = result.get("regular_recipes", 0)
+                starbucks_recipes = result.get("starbucks_recipes", 0)
                 
-                self.log(f"✅ Retrieved {len(recipes)} recipes from database")
+                self.log(f"✅ Retrieved {total_count} recipes from database")
+                self.log(f"   Regular recipes: {regular_recipes}")
+                self.log(f"   Starbucks recipes: {starbucks_recipes}")
                 
                 if recipes:
                     for i, recipe in enumerate(recipes[:3]):  # Show first 3 recipes
-                        self.log(f"  Recipe {i+1}: {recipe.get('title', 'Unknown')} (ID: {recipe.get('id', 'Unknown')})")
+                        recipe_name = recipe.get('title') or recipe.get('drink_name', 'Unknown')
+                        recipe_type = recipe.get('type', 'Unknown')
+                        self.log(f"  Recipe {i+1}: {recipe_name} (Type: {recipe_type})")
                     
                     return True
                 else:
