@@ -352,14 +352,15 @@ class SignupResetPasswordTester:
             
             # Find reset codes for our test email
             reset_codes = []
-            async for code in db.password_reset_codes.find({"email": self.test_email, "is_used": False}).sort("created_at", -1).limit(5):
+            cursor = db.password_reset_codes.find({"email": self.test_email, "is_used": False}).sort("created_at", -1).limit(5)
+            async for code in cursor:
                 reset_codes.append({
                     "code": code["code"],
                     "expires_at": code["expires_at"],
                     "created_at": code["created_at"]
                 })
             
-            await client.close()
+            client.close()
             
             if reset_codes:
                 self.log(f"✅ Found {len(reset_codes)} reset codes")
