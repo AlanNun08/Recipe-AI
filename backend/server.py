@@ -365,65 +365,85 @@ async def generate_starbucks_drink(request: StarbucksRequest):
             
         # Define specific prompts for each drink type
         if request.drink_type == "frappuccino":
-            prompt = f"""Create a **whimsical and aesthetic Starbucks-style Frappuccino** recipe using only real or customizable ingredients found at Starbucks, crafted for **ordering at the drive-thru**{flavor_context}.
+            prompt = f"""Create a **magical and whimsical Starbucks-style Frappuccino** recipe using only real Starbucks ingredients{flavor_context}.
 
-Requirements:
-* A **creative name** (do not reuse the name in the recipe steps)
-* Use exactly **3 to 5 Starbucks ingredients** (e.g., caramel syrup, oat milk, cookie topping, espresso shot, vanilla sweet cream foam)
-* Include at least **one twist or aesthetic effect** (e.g., blended espresso layer, raspberry syrup swirl, matcha drizzle)
-* Provide a **clear order line** the user can say at the drive-thru
-* End with a **vibe description** (e.g., "Tastes like a candy cloud on a starry night")
+**Examples of Creative Names & Vibes:**
+- "Butterbeer Bliss" - Sweet and buttery like a cozy wizard's delight
+- "Cotton Candy Clouds" - Fluffy sweetness with a nostalgic carnival feel
+- "Chocolate Mint Chill" - Cool minty chocolate bliss in every sip
+
+**Requirements:**
+* A **magical, creative name** (like "Starlight Swirl" or "Dreamy Caramel Galaxy")
+* Use exactly **3 to 5 Starbucks ingredients** (syrups, milk alternatives, toppings, drizzles, foam)
+* Include **colorful, aesthetic elements** (drizzles, foam, powder, inclusions)
+* Provide **clear drive-thru ordering instructions**
+* End with a **poetic, dreamy vibe description**
+
+**Available Ingredients:** Vanilla Bean Frappuccino, Coffee Frappuccino, Mocha Frappuccino, caramel syrup, vanilla syrup, raspberry syrup, toffee nut syrup, peppermint syrup, mocha sauce, whipped cream, caramel drizzle, chocolate drizzle, java chips, cookie crumbles, various milk alternatives
 
 Respond with JSON in this exact format:
 {{
-  "drink_name": "Creative unique name",
-  "description": "Vibe description (e.g., 'Tastes like a candy cloud on a starry night')",
+  "drink_name": "Magical creative name",
+  "description": "Enchanting vibe description",
   "base_drink": "Base Frappuccino to order",
-  "modifications": ["ingredient 1", "ingredient 2", "ingredient 3"],
-  "ordering_script": "Hi, can I get a grande [frappuccino base], with [ingredient 1], [ingredient 2], [ingredient 3]...",
+  "modifications": ["ingredient 1", "ingredient 2", "ingredient 3", "ingredient 4"],
+  "ordering_script": "Hi, can I get a grande [base] with [ingredient 1], [ingredient 2], [ingredient 3], and [ingredient 4]?",
   "category": "frappuccino",
-  "vibe": "Poetic one-liner"
+  "vibe": "Poetic, magical one-liner"
 }}"""
 
         elif request.drink_type == "lemonade":
-            prompt = f"""Create a **creative lemonade-based drink** using only Starbucks ingredients, optimized for **drive-thru ordering**{flavor_context}.
+            prompt = f"""Create a **sparkling, vibrant lemonade-based drink** using only Starbucks ingredients{flavor_context}.
 
-Requirements:
-* Use **3 to 5 ingredients**, such as: lemonade, fruit inclusions, cold foam, tea base, or flavored syrup
-* Choose **a fresh or playful aesthetic** (no reused names in the steps)
-* Include a **clearly worded order line**
-* End with a **vibe line**
+**Examples of Creative Names & Vibes:**
+- "Lavender Honey Lemonade" - A floral and sweet refreshment with creamy top notes
+- "Vanilla Berry Sparkler" - Bright vanilla and berry sparkle with creamy clouds
+
+**Requirements:**
+* Use **3 to 5 ingredients** like lemonade, fruit inclusions, cold foam, syrups, freeze-dried fruits
+* Choose a **bright, refreshing aesthetic** with colorful elements
+* Include **clear drive-thru ordering instructions**
+* End with a **bright, uplifting vibe description**
+
+**Available Ingredients:** Lemonade, honey blend syrup, vanilla syrup, raspberry syrup, peach syrup, strawberry inclusions, freeze-dried lime, vanilla sweet cream cold foam, various fruit inclusions
 
 Respond with JSON in this exact format:
 {{
-  "drink_name": "Creative unique name",
-  "description": "Vibe description",
-  "base_drink": "Base lemonade drink to order",
+  "drink_name": "Bright creative name",
+  "description": "Refreshing vibe description",
+  "base_drink": "Lemonade",
   "modifications": ["ingredient 1", "ingredient 2", "ingredient 3"],
-  "ordering_script": "Hi, can I get a grande Lemonade with [ingredient 1], [ingredient 2], [ingredient 3]...",
+  "ordering_script": "Hi, can I get a grande lemonade with [ingredient 1], [ingredient 2], and [ingredient 3]?",
   "category": "lemonade",
-  "vibe": "Short description"
+  "vibe": "Bright, refreshing description"
 }}"""
 
         elif request.drink_type == "refresher":
-            prompt = f"""Create a **bold, colorful Starbucks Refresher** made with real ingredients and easily ordered at the **drive-thru**{flavor_context}.
+            prompt = f"""Create a **vibrant, tropical Starbucks Refresher** with stunning colors and flavors{flavor_context}.
 
-Requirements:
+**Examples of Creative Names & Vibes:**
+- "Purple Haze Refresher" - A mystical burst of berry sweetness with creamy cloud
+- "Tropical Dream Refresher" - Island vibes with a creamy tropical twist
+- "Sunset Citrus Refresher" - A bright, tangy burst with creamy sunset hues
+
+**Requirements:**
 * Choose 1 refresher base (Strawberry Açaí, Mango Dragonfruit, Pineapple Passionfruit)
-* Add 2–4 more components (e.g., fruit inclusions, syrups, cold foam, tea layer, milk alternative)
-* Provide a **drive-thru phrasing**
-* Avoid repeating the drink name in instructions
-* Finish with a mood-setting **vibe line**
+* Add **3-4 colorful components** (fruit inclusions, syrups, cold foam, lemonade, milk alternatives)
+* Create **visual appeal** with contrasting colors and textures
+* Provide **clear drive-thru ordering instructions**
+* End with a **tropical, vibrant vibe description**
+
+**Available Ingredients:** Refresher bases, various fruit inclusions, lemonade, coconut milk, oat milk, vanilla sweet cream cold foam, raspberry syrup, vanilla syrup, peach syrup, freeze-dried fruits
 
 Respond with JSON in this exact format:
 {{
-  "drink_name": "Creative unique name",
-  "description": "Vibe description",
-  "base_drink": "Base refresher to order",
-  "modifications": ["ingredient 1", "ingredient 2", "ingredient 3"],
-  "ordering_script": "Hi, can I get a grande [refresher base] with [ingredient 1], [ingredient 2], [ingredient 3]...",
+  "drink_name": "Vibrant creative name",
+  "description": "Tropical vibe description",
+  "base_drink": "Refresher base to order",
+  "modifications": ["ingredient 1", "ingredient 2", "ingredient 3", "ingredient 4"],
+  "ordering_script": "Hi, can I get a grande [refresher base] with [ingredient 1], [ingredient 2], [ingredient 3], and [ingredient 4]?",
   "category": "refresher",
-  "vibe": "Short poetic line"
+  "vibe": "Tropical, colorful description"
 }}"""
 
         elif request.drink_type == "iced_matcha_latte":
