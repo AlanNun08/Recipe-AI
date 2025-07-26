@@ -102,8 +102,8 @@ openai_client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
 # Create the main app without a prefix
 app = FastAPI(title="AI Recipe & Grocery App", version="2.0.0")
 
-# Create a router with the /api prefix
-api_router = APIRouter(prefix="/api")
+# Create a router without prefix (main.py will mount it at /api)
+api_router = APIRouter()
 
 # UUID-based ID utilities for JSON serialization
 def create_unique_id() -> str:
