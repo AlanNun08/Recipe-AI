@@ -82,15 +82,19 @@ SECRET_KEY=your-strong-random-jwt-secret
 2. The application will automatically build and deploy when you push changes
 3. The environment variables set in Step 1 will be automatically injected
 
-### Using gcloud CLI:
+### Using gcloud CLI (Alternative):
 ```bash
-# Deploy the application
+# Deploy to Cloud Run with environment variables
 gcloud run deploy your-app-name \
   --source . \
   --platform managed \
   --region us-central1 \
-  --allow-unauthenticated
+  --allow-unauthenticated \
+  --set-env-vars="MONGO_URL=your-mongodb-connection-string,DB_NAME=buildyoursmartcart_production,OPENAI_API_KEY=your-openai-key" \
+  --memory=2Gi
 ```
+
+**Note**: For security, prefer the Google Cloud Console method over command line for setting sensitive environment variables.
 
 ## Step 4: Update Frontend Configuration
 
