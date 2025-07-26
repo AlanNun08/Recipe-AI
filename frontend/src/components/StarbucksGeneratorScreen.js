@@ -802,4 +802,269 @@ const DrinkCard = ({
   );
 };
 
+// ShareRecipeModal Component
+const ShareRecipeModal = ({ 
+  isOpen, 
+  onClose, 
+  formData, 
+  setFormData, 
+  onImageUpload, 
+  imagePreview, 
+  onShare, 
+  isSharing, 
+  categories 
+}) => {
+  if (!isOpen) return null;
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const addIngredient = () => {
+    setFormData(prev => ({
+      ...prev,
+      ingredients: [...prev.ingredients, '']
+    }));
+  };
+
+  const removeIngredient = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      ingredients: prev.ingredients.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateIngredient = (index, value) => {
+    setFormData(prev => ({
+      ...prev,
+      ingredients: prev.ingredients.map((ing, i) => i === index ? value : ing)
+    }));
+  };
+
+  const addTag = (tag) => {
+    if (tag && !formData.tags.includes(tag)) {
+      setFormData(prev => ({
+        ...prev,
+        tags: [...prev.tags, tag]
+      }));
+    }
+  };
+
+  const removeTag = (tagToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }));
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-8">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              ✨ Share Your Recipe
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+            >
+              ×
+            </button>
+          </div>
+
+          {/* Recipe Name */}
+          <div className="mb-6">
+            <label className="block text-lg font-bold text-gray-700 mb-2">
+              🎯 Recipe Name
+            </label>
+            <input
+              type="text"
+              value={formData.recipe_name}
+              onChange={(e) => handleInputChange('recipe_name', e.target.value)}
+              placeholder="e.g., Magical Unicorn Frappuccino"
+              className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            />
+          </div>
+
+          {/* Description */}
+          <div className="mb-6">
+            <label className="block text-lg font-bold text-gray-700 mb-2">
+              💭 Description
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Describe your amazing drink creation..."
+              rows="3"
+              className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            />
+          </div>
+
+          {/* Category */}
+          <div className="mb-6">
+            <label className="block text-lg font-bold text-gray-700 mb-2">
+              🏷️ Category
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) => handleInputChange('category', e.target.value)}
+              className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            >
+              {categories.map(cat => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.emoji} {cat.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Ingredients */}
+          <div className="mb-6">
+            <label className="block text-lg font-bold text-gray-700 mb-2">
+              🥤 Ingredients
+            </label>
+            {formData.ingredients.map((ingredient, index) => (
+              <div key={index} className="flex items-center mb-2">
+                <input
+                  type="text"
+                  value={ingredient}
+                  onChange={(e) => updateIngredient(index, e.target.value)}
+                  placeholder="e.g., 2 pumps vanilla syrup"
+                  className="flex-1 px-4 py-2 border-2 border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 mr-2"
+                />
+                <button
+                  onClick={() => removeIngredient(index)}
+                  className="text-red-500 hover:text-red-700 font-bold text-lg"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={addIngredient}
+              className="text-purple-600 hover:text-purple-800 font-medium"
+            >
+              + Add Ingredient
+            </button>
+          </div>
+
+          {/* Order Instructions */}
+          <div className="mb-6">
+            <label className="block text-lg font-bold text-gray-700 mb-2">
+              📝 Order Instructions
+            </label>
+            <textarea
+              value={formData.order_instructions}
+              onChange={(e) => handleInputChange('order_instructions', e.target.value)}
+              placeholder="Hi, can I get a grande..."
+              rows="3"
+              className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            />
+          </div>
+
+          {/* Difficulty Level */}
+          <div className="mb-6">
+            <label className="block text-lg font-bold text-gray-700 mb-2">
+              🎯 Difficulty Level
+            </label>
+            <select
+              value={formData.difficulty_level}
+              onChange={(e) => handleInputChange('difficulty_level', e.target.value)}
+              className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            >
+              <option value="easy">😊 Easy</option>
+              <option value="medium">🤔 Medium</option>
+              <option value="hard">😅 Hard</option>
+            </select>
+          </div>
+
+          {/* Image Upload */}
+          <div className="mb-6">
+            <label className="block text-lg font-bold text-gray-700 mb-2">
+              📸 Upload Image (Optional)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={onImageUpload}
+              className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            />
+            {imagePreview && (
+              <div className="mt-4">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full max-w-xs rounded-xl shadow-lg"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Tags */}
+          <div className="mb-6">
+            <label className="block text-lg font-bold text-gray-700 mb-2">
+              🏷️ Tags
+            </label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {formData.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm flex items-center"
+                >
+                  {tag}
+                  <button
+                    onClick={() => removeTag(tag)}
+                    className="ml-2 text-purple-600 hover:text-purple-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Add a tag..."
+                className="flex-1 px-4 py-2 border-2 border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    addTag(e.target.value);
+                    e.target.value = '';
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4 justify-end">
+            <button
+              onClick={onClose}
+              className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-xl font-bold transition-all duration-200"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onShare}
+              disabled={isSharing}
+              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-bold transition-all duration-200 disabled:opacity-50"
+            >
+              {isSharing ? (
+                <span className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Sharing...
+                </span>
+              ) : (
+                '✨ Share Recipe'
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default StarbucksGeneratorScreen;
