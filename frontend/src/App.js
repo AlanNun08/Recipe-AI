@@ -1628,25 +1628,29 @@ function App() {
                 )}
               </div>
 
-              {/* Servings and Difficulty */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Enhanced Servings and Difficulty */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Servings</label>
+                  <label className="block text-xl font-bold text-gray-700 mb-4 text-center">
+                    🍽️ Servings
+                  </label>
                   <input
                     type="number"
                     value={formData.servings}
                     onChange={(e) => setFormData({...formData, servings: parseInt(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border-3 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 text-center text-lg font-medium bg-gradient-to-r from-gray-50 to-blue-50"
                     min="1"
                     max="12"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
+                  <label className="block text-xl font-bold text-gray-700 mb-4 text-center">
+                    🔥 Difficulty
+                  </label>
                   <select
                     value={formData.difficulty}
                     onChange={(e) => setFormData({...formData, difficulty: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border-3 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 text-center text-lg font-medium bg-gradient-to-r from-gray-50 to-blue-50"
                     data-testid="difficulty-select"
                   >
                     {difficultyOptions.map(difficulty => (
@@ -1658,41 +1662,56 @@ function App() {
                 </div>
               </div>
 
-              {/* Optional Fields */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Ingredients on Hand (optional)</label>
-                <input
-                  type="text"
-                  value={formData.ingredients_on_hand}
-                  onChange={(e) => setFormData({...formData, ingredients_on_hand: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="chicken, rice, onions (comma separated)"
-                />
+              {/* Enhanced Optional Fields */}
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-xl font-bold text-gray-700 mb-4 text-center">
+                    🥘 Ingredients on Hand (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.ingredients_on_hand}
+                    onChange={(e) => setFormData({...formData, ingredients_on_hand: e.target.value})}
+                    className="w-full px-4 py-3 border-3 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 text-lg bg-gradient-to-r from-gray-50 to-blue-50"
+                    placeholder="chicken, rice, onions (comma separated)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xl font-bold text-gray-700 mb-4 text-center">
+                    ⏰ Max Prep Time (Optional)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.prep_time_max}
+                    onChange={(e) => setFormData({...formData, prep_time_max: e.target.value})}
+                    className="w-full px-4 py-3 border-3 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 text-center text-lg font-medium bg-gradient-to-r from-gray-50 to-blue-50"
+                    placeholder="30 minutes"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Max Prep Time (optional)</label>
-                <input
-                  type="number"
-                  value={formData.prep_time_max}
-                  onChange={(e) => setFormData({...formData, prep_time_max: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="30 minutes"
-                />
-              </div>
-
+              {/* Enhanced Submit Button */}
               <button
                 type="submit"
                 disabled={isGenerating}
-                className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                className={`w-full py-6 rounded-3xl font-bold text-xl transition-all duration-300 transform hover:scale-105 ${
+                  isGenerating 
+                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:from-purple-600 hover:via-pink-600 hover:to-orange-600 text-white shadow-2xl hover:shadow-3xl'
+                }`}
               >
                 {isGenerating ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>AI is cooking up your recipe...</span>
-                  </div>
+                  <span className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-4 border-white mr-4"></div>
+                    <span className="text-lg">🤖 AI is cooking up your recipe...</span>
+                  </span>
                 ) : (
-                  '🤖 Generate Recipe'
+                  <span className="flex items-center justify-center">
+                    <span className="text-2xl mr-3 animate-bounce">🪄</span>
+                    <span>Generate My Perfect Recipe</span>
+                    <span className="text-2xl ml-3 animate-bounce">✨</span>
+                  </span>
                 )}
               </button>
             </form>
