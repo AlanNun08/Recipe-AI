@@ -8,7 +8,7 @@ import httpx
 import json
 from datetime import datetime
 
-BACKEND_URL = "https://6b4e57e4-7e21-4efb-941c-e036b94930bd.preview.emergentagent.com/api"
+BACKEND_URL = "https://60ce558f-ee26-45d4-ac98-517eaf1dbb5a.preview.emergentagent.com/api"
 
 async def test_frontend_scenario():
     """Test the exact scenario that frontend would experience"""
