@@ -298,26 +298,30 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user, AP
         {/* AI Generator Tab */}
         {currentTab === 'generator' && (
           <>
-            {/* Generator Form */}
-            <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Create Your Secret Drink</h2>
+            {/* Enhanced Generator Form */}
+            <div className="bg-white rounded-3xl shadow-2xl p-10 mb-8 border-4 border-gradient-to-r from-purple-200 to-pink-200">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 text-center">
+                ✨ Create Your Magical Drink ✨
+              </h2>
               
-              {/* Drink Type Selection */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">Choose Your Drink Type</label>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {/* Enhanced Drink Type Selection */}
+              <div className="mb-8">
+                <label className="block text-lg font-bold text-gray-700 mb-4 text-center">
+                  🎯 Choose Your Drink Adventure
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   {drinkTypes.map((type) => (
                     <button
                       key={type.value}
                       onClick={() => setDrinkType(type.value)}
-                      className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                      className={`p-6 rounded-2xl border-3 transition-all duration-300 transform hover:scale-105 hover:shadow-lg ${
                         drinkType === type.value 
-                          ? 'border-green-500 bg-green-50 text-green-700' 
-                          : 'border-gray-200 hover:border-green-300 text-gray-700'
+                          ? 'border-purple-500 bg-gradient-to-br from-purple-100 to-pink-100 text-purple-700 shadow-lg scale-105' 
+                          : 'border-gray-200 hover:border-purple-300 text-gray-700 hover:bg-gradient-to-br hover:from-purple-50 hover:to-pink-50'
                       }`}
                     >
-                      <div className="text-2xl mb-1">{type.emoji}</div>
-                      <div className="font-medium text-sm">{type.label}</div>
+                      <div className="text-4xl mb-2 animate-bounce">{type.emoji}</div>
+                      <div className="font-bold text-sm">{type.label}</div>
                     </button>
                   ))}
                 </div>
