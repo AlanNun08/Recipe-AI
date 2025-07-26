@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Comprehensive Backend Testing Script for AI Recipe + Grocery Delivery App
-Focus: Test Starbucks Generator Functionality and Community Features
+Testing Deployed Cloud Run Service at: https://recipe-ai-149256126208.europe-west1.run.app
 """
 
 import asyncio
@@ -16,14 +16,11 @@ import string
 import time
 import base64
 
-# Add backend to path
-sys.path.append('/app/backend')
-
-# Test configuration
-BACKEND_URL = "https://60ce558f-ee26-45d4-ac98-517eaf1dbb5a.preview.emergentagent.com/api"
-TEST_USER_EMAIL = "starbucks_tester@example.com"
-TEST_USER_PASSWORD = "starbuckstest123"
-TEST_USER_NAME = "Starbucks Tester"
+# Test configuration for deployed service
+BACKEND_URL = "https://recipe-ai-149256126208.europe-west1.run.app/api"
+TEST_USER_EMAIL = "cloudrun_tester@example.com"
+TEST_USER_PASSWORD = "cloudruntest123"
+TEST_USER_NAME = "CloudRun Tester"
 
 class WalmartAPITester:
     def __init__(self):
