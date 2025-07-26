@@ -7,7 +7,7 @@
 
 ## Step 1: Set Up Environment Variables in Google Cloud
 
-### Option 1: Using Google Cloud Console (Recommended)
+### Using Google Cloud Console (Recommended for Cloud Run)
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Navigate to **Cloud Run** → **[Your Service]** → **Edit Container**
 3. Go to **Variables & Secrets** tab
