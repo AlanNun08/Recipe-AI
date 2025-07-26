@@ -1,0 +1,46 @@
+# app.yaml - Google App Engine Configuration
+runtime: python39
+
+# Environment variables for your AI Recipe + Grocery Delivery App
+env_variables:
+  # Database Configuration
+  MONGO_URL: "mongodb://localhost:27017"
+  DB_NAME: "buildyoursmartcart_production"
+  
+  # OpenAI API Configuration
+  OPENAI_API_KEY: "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"
+  
+  # Walmart API Configuration
+  WALMART_CONSUMER_ID: "eb0f49e9-fe3f-4c3b-8709-6c0c704c5d62"
+  WALMART_KEY_VERSION: "1"
+  WALMART_PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQChD5cdZ5YhVzu9\n4eMXMqPaoHndt8lM8cgdFi3zLxc2CfPr4Ga8TBnz8JmT+dnjXYvz47jeNnLRF95b\nudPTwm822W8s+LVIb4mvnD71sSa0eVMoe0r91xtb0viEt0AW2mTkCdK6R8TdQLvz\nkcN2z/iHo7u/dEQI3LJUA6tbza7sENpz1TZC9pGtpokpTaC3nrlqFvsXlmTxcDZX\nBvys6JBeyJe7gY//NgaSiHog37MqXHV99VRCjRBOUmp5NcIPi0narqaZo60KRLEC\nAGlqZIdPWaMlmMkO+sEeFOCzvqUP5N0UR/EYUqtNZoMrMCzCPowC13FjUCn47k5U\n/bea4xjpAgMBAAECggEAAjt9dleAF9Z2EiXSQFkv9vjsM3/ngwDja47KBIHBtjqp\nVjrCJcg+wFg0gr3u8JU0ekUM5AyYZxBIAVi4KEpcwQN+xF5uodJE8+mMIFrsHMqF\nNe2Ojqnne8x27Bz/nwl4JkaCFJmnz4LFECVUMp6DlPq2oJrXkhFgCeTSoFc/nk9A\nXF+DpAgN1ww/sm/s8TXM4+8TAr+fShkv89qp8LYvK4J6KIdqO+ayidklNXS4/zjL\nGt0yV2OUYoHZYXchjeyAxkE3CCzijI8GddV+vuYE6crPVPvMfSJvDNyCeN9LbWpR\nYxmqg5Oh6GIbQxCgxa6489O6QEJ0Lyj1eF1LgGYiwQKBgQDQd2K/qCLjMiz2TeMg\nfeFU1DGJ0JPADEXUzGljNnyNmJc4G8saO8HkW8JYqkmsQxm+O3wCCXCF1WnDuMZe\nGTDDdzeh6coMmbTCI6CG9S6soyZhObTT5Mm0U0kX/cwXR2rHq7puzvwYFl4a9aEd\n7Cy5qRjuQAW5b84bxG8kxgQ9QQKBgQDFyQzBxJZZ3y3585U7Gw78vRRYofdTR+FW\n7R1kp/PG1RaEk3fSScLZdLAP5CnkHS7TZcHwKP/b2/BBxVQVWo9znCY7EwEfzcoE\nrdfiEKqL2dPlb7YHSmlcvxVi75NItnoRoHq8TwD53Tu6auy0NqFfNlwrbKXNC/3i\nXZ0E/DdpqQKBgEa0d1Wx3UNZvU481JAsocR3w+WOTM6SWwz117jCvjP4UTHCm3xm\nUDj3tk8EUsCOcajH3COEuBlsbNbpUL6RpKxnPwM3nEPxzhEarFOZzR7YpyfKvr4v\nlwoGRYBRoGs02c6nPDBhG7e/vmM+dEsF05WU+NO1+zsN5MYeNeQvFTkBAoGAKF1a\ntCTpxles62kR2KkyCtSP1XLgpedyjqn/qK46KycL3Gy4NHuHP5f34pZfEkX+a3hF\n9zx20yj0xIeAHIeJ5T9F8iJzxUjbZM8R0voxxC7ldtqwnJZMIHiC5dkdBubuzLAi\nvFGnUlcbPHVb73+CuYq/jsEyqUE8RDl0tTLAIFkCgYB8qgvZNpCWUL1Fe9hFXz9D\nN/Aor9OBxVySMsceg9ejW7/iUcRsqy4KEQPwMD5dQVbEsjCWFzPZrh53llyi0q6n\nw/n0UuoRcmZ7kLrFIOf6ZStmHnZ1BX/6VKD4m9k6O9LSCGxPWhU+k7uqaFnH720g\n0Sj9Z58+3ELzkinERznDcg==\n-----END PRIVATE KEY-----"
+  
+  # Mailjet Email Service Configuration
+  MAILJET_API_KEY: "5c7ca7fe01cf13886b5ce84fd3a1aff9"
+  MAILJET_SECRET_KEY: "dd922beab20d156a49faff9e140380f9"
+  SENDER_EMAIL: "Alan.nunez0310@icloud.com"
+  
+  # Stripe Configuration
+  STRIPE_API_KEY: "sk_test_emergent"
+  
+  # JWT Secret Key
+  SECRET_KEY: "your-secret-key-for-jwt"
+
+# Route handlers
+handlers:
+  # Direct all traffic to your main.py application
+  - url: /.*
+    script: auto
+
+# Automatic scaling configuration
+automatic_scaling:
+  min_instances: 0  # Allow scaling down to zero to save costs
+  max_instances: 3  # Max instances to handle traffic spikes
+  target_cpu_utilization: 0.6
+  target_throughput_utilization: 0.6
+
+# Resources allocation
+resources:
+  cpu: 1
+  memory_gb: 0.5
+  disk_size_gb: 10
