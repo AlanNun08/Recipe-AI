@@ -447,24 +447,31 @@ Respond with JSON in this exact format:
 }}"""
 
         elif request.drink_type == "iced_matcha_latte":
-            prompt = f"""Design a **unique iced matcha latte** using Starbucks ingredients. Keep it drive-thru friendly{flavor_context}.
+            prompt = f"""Create a **serene, zen-inspired iced matcha latte** with beautiful earthy colors and flavors{flavor_context}.
 
-Requirements:
-* Base of iced matcha + 2 to 4 additional ingredients (oat milk, brown sugar, espresso, cold foam, syrup, etc.)
-* Include one **uncommon pairing or visual effect** (e.g., strawberry purée swirl, espresso float)
-* Give **drive-thru phrasing**
-* Do not use the drink's name in instructions
-* End with a **vibe description**
+**Examples of Creative Names & Vibes:**
+- "Matcha Berry Swirl" - A green and red swirl of sweet delight
+- "Coconut Matcha Breeze" - Refreshing island breeze in a vibrant green cup
+- "Salted Caramel Matcha" - Sweet and salty with earthy green tea depth
+
+**Requirements:**
+* Base of iced matcha + **3-4 additional ingredients** (milk alternatives, syrups, purées, cold foam, inclusions)
+* Include **colorful, aesthetic elements** (purée swirls, contrasting foam, drizzles)
+* Create **visual appeal** with green base and colorful accents
+* Provide **clear drive-thru ordering instructions**
+* End with a **peaceful, zen-inspired vibe description**
+
+**Available Ingredients:** Matcha powder, various milk alternatives (oat, coconut, almond), brown sugar syrup, vanilla syrup, caramel syrup, strawberry purée, vanilla sweet cream cold foam, whipped cream, caramel drizzle, freeze-dried lime
 
 Respond with JSON in this exact format:
 {{
-  "drink_name": "Creative unique name",
-  "description": "Vibe description",
-  "base_drink": "Base iced matcha drink to order",
-  "modifications": ["ingredient 1", "ingredient 2", "ingredient 3"],
-  "ordering_script": "Hi, can I get a grande Iced Matcha Latte with [ingredient 1], [ingredient 2], [ingredient 3]...",
+  "drink_name": "Zen creative name",
+  "description": "Peaceful vibe description",
+  "base_drink": "Iced Matcha Latte",
+  "modifications": ["ingredient 1", "ingredient 2", "ingredient 3", "ingredient 4"],
+  "ordering_script": "Hi, can I get a grande iced matcha latte with [ingredient 1], [ingredient 2], [ingredient 3], and [ingredient 4]?",
   "category": "iced_matcha_latte",
-  "vibe": "Mood line"
+  "vibe": "Zen, peaceful description"
 }}"""
 
         else:  # This handles any other drink type as "random mystery"
