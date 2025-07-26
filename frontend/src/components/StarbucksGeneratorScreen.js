@@ -665,57 +665,91 @@ const DrinkCard = ({
   const categoryEmoji = getCategoryEmoji(category);
   
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="text-center mb-6">
-        <div className="text-6xl mb-4">{categoryEmoji}</div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">{drinkName}</h2>
-        <p className="text-gray-600 text-lg italic">"{description}"</p>
-        <div className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mt-2">
-          {category.charAt(0).toUpperCase() + category.slice(1)}
-        </div>
+    <div className="relative max-w-3xl mx-auto">
+      {/* Celebratory Background Effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-4 -left-4 w-8 h-8 bg-yellow-400 rounded-full animate-bounce"></div>
+        <div className="absolute -top-2 -right-2 w-6 h-6 bg-pink-400 rounded-full animate-pulse"></div>
+        <div className="absolute -bottom-4 -left-2 w-5 h-5 bg-blue-400 rounded-full animate-ping"></div>
+        <div className="absolute -bottom-2 -right-4 w-7 h-7 bg-purple-400 rounded-full animate-bounce"></div>
       </div>
       
-      {/* Ingredients */}
-      {baseDrink && (
-        <div className="mb-6">
-          <h3 className="font-bold text-gray-800 mb-3">🥤 Base Drink</h3>
-          <div className="bg-blue-50 p-3 rounded-lg">
-            <span className="text-blue-800 font-medium">{baseDrink}</span>
+      {/* Main Card */}
+      <div className="bg-white rounded-3xl shadow-2xl p-8 border-4 border-gradient-to-r from-purple-200 to-pink-200 relative overflow-hidden">
+        {/* Magical Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-4 left-4 text-4xl text-purple-400 animate-pulse">✨</div>
+          <div className="absolute top-8 right-8 text-3xl text-pink-400 animate-bounce">🌟</div>
+          <div className="absolute bottom-8 left-8 text-3xl text-blue-400 animate-ping">💫</div>
+          <div className="absolute bottom-4 right-4 text-4xl text-yellow-400 animate-pulse">⭐</div>
+        </div>
+        
+        {/* Celebration Header */}
+        <div className="text-center mb-8 relative z-10">
+          <div className="text-8xl mb-4 animate-bounce">{categoryEmoji}</div>
+          <div className="mb-4">
+            <span className="text-6xl animate-pulse">🎉</span>
+            <span className="text-4xl mx-2 animate-bounce">✨</span>
+            <span className="text-6xl animate-pulse">🎊</span>
+          </div>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent mb-4">
+            {drinkName}
+          </h2>
+          <p className="text-xl text-gray-600 italic font-medium mb-4">"{description}"</p>
+          <div className="inline-block bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-full text-lg font-bold shadow-lg animate-pulse">
+            ✨ {category.charAt(0).toUpperCase() + category.slice(1)} ✨
           </div>
         </div>
-      )}
-      
-      {modifications.length > 0 && (
-        <div className="mb-6">
-          <h3 className="font-bold text-gray-800 mb-3">✨ Modifications</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {modifications.map((mod, index) => (
-              <div key={index} className="bg-purple-50 p-3 rounded-lg">
-                <span className="text-purple-800">{mod}</span>
-              </div>
-            ))}
+        
+        {/* Enhanced Ingredients */}
+        {baseDrink && (
+          <div className="mb-8">
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <span className="text-3xl mr-3 animate-bounce">🥤</span>
+              Base Drink
+            </h3>
+            <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-4 rounded-2xl border-2 border-blue-200">
+              <span className="text-blue-800 font-bold text-lg">{baseDrink}</span>
+            </div>
+          </div>
+        )}
+        
+        {modifications.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <span className="text-3xl mr-3 animate-pulse">✨</span>
+              Magical Modifications
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {modifications.map((mod, index) => (
+                <div key={index} className="bg-gradient-to-r from-purple-100 to-pink-100 p-4 rounded-2xl border-2 border-purple-200 transform hover:scale-105 transition-all duration-300">
+                  <span className="text-purple-800 font-medium">{mod}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Enhanced Order Script */}
+        <div className="mb-8">
+          <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+            <span className="text-3xl mr-3 animate-bounce">📝</span>
+            How to Order This Magic
+          </h3>
+          <div className="bg-gradient-to-r from-yellow-100 to-orange-100 p-6 rounded-2xl border-l-4 border-yellow-500 shadow-inner">
+            <p className="text-gray-700 text-lg leading-relaxed">
+              {showFullScript ? orderScript : `${orderScript.substring(0, 120)}...`}
+            </p>
+            {orderScript.length > 120 && (
+              <button 
+                onClick={() => setShowFullScript(!showFullScript)}
+                className="text-blue-600 hover:text-blue-800 text-sm mt-3 font-medium underline"
+              >
+                {showFullScript ? 'Show less' : 'Show full script'}
+              </button>
+            )}
           </div>
         </div>
-      )}
-      
-      {/* Order Script */}
-      <div className="mb-6">
-        <h3 className="font-bold text-gray-800 mb-3">📝 How to Order</h3>
-        <div className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
-          <p className="text-gray-700">
-            {showFullScript ? orderScript : `${orderScript.substring(0, 120)}...`}
-          </p>
-          {orderScript.length > 120 && (
-            <button 
-              onClick={() => setShowFullScript(!showFullScript)}
-              className="text-blue-600 hover:text-blue-800 text-sm mt-2"
-            >
-              {showFullScript ? 'Show less' : 'Show full script'}
-            </button>
-          )}
-        </div>
-      </div>
       
       {/* Action Buttons */}
       {showActionButtons && (
