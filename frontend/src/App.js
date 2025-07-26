@@ -2146,11 +2146,169 @@ function App() {
             </div>
           </div>
 
+          {/* Enhanced Walmart Shopping Section - Now at Top */}
+          <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-800 rounded-3xl shadow-2xl p-8 text-white mb-8 transform hover:scale-105 transition-all duration-300">
+            <div className="text-center mb-8">
+              <div className="w-24 h-24 bg-gradient-to-br from-white to-gray-100 rounded-full flex items-center justify-center mx-auto mb-6 transform hover:scale-110 transition-all duration-300 shadow-lg">
+                <span className="text-blue-600 text-4xl font-bold">W</span>
+              </div>
+              <h2 className="text-3xl font-bold mb-4">🛒 One-Click Walmart Shopping</h2>
+              <p className="text-xl text-blue-100 font-medium mb-4">Real products • Real prices • Real delivery</p>
+              <div className="flex items-center justify-center">
+                <span className="w-3 h-3 bg-green-400 rounded-full animate-pulse mr-3"></span>
+                <span className="text-lg font-medium">Live inventory check</span>
+              </div>
+            </div>
+
+            {loadingCart ? (
+              <div className="text-center py-16">
+                <div className="w-20 h-20 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-8"></div>
+                <p className="text-2xl font-bold mb-4">🔍 Finding Perfect Products...</p>
+                <p className="text-lg text-blue-100 mb-6">Searching Walmart's inventory for your ingredients</p>
+                <div className="flex justify-center space-x-2">
+                  <div className="w-3 h-3 bg-white rounded-full animate-bounce"></div>
+                  <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {Object.entries(productOptions).map(([ingredientName, ingredientOptions], index) => {
+                  const selectedProductId = selectedProducts[ingredientName];
+                  const selectedProduct = ingredientOptions.find(p => p.product_id === selectedProductId) || ingredientOptions[0];
+                  
+                  return (
+                    <div key={index} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300">
+                      {/* Ingredient Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-bold text-white flex items-center">
+                          <span className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">
+                            {index + 1}
+                          </span>
+                          {ingredientName}
+                        </h4>
+                        <span className="text-xs text-blue-200 bg-white/20 px-3 py-1 rounded-full font-medium">
+                          {ingredientOptions.length} options
+                        </span>
+                      </div>
+                      
+                      {/* Selected Product Display */}
+                      {selectedProduct && (
+                        <div className="bg-white/20 rounded-xl p-4 mb-4 border border-white/30">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h5 className="font-semibold text-white text-sm leading-tight mb-2">
+                                {selectedProduct.name}
+                              </h5>
+                              <p className="text-2xl font-bold text-yellow-300 mb-2">
+                                ${parseFloat(selectedProduct.price).toFixed(2)}
+                              </p>
+                              <div className="flex items-center text-sm text-blue-200">
+                                <span className="w-3 h-3 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+                                <span className="font-medium">In Stock</span>
+                              </div>
+                            </div>
+                            {selectedProduct.image_url && (
+                              <img 
+                                src={selectedProduct.image_url} 
+                                alt={selectedProduct.name}
+                                className="w-16 h-16 object-cover rounded-xl ml-4 border-2 border-white/30 shadow-md hover:scale-105 transition-transform"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Product Selection Dropdown */}
+                      {ingredientOptions.length > 1 && (
+                        <select 
+                          value={selectedProductId || ingredientOptions[0]?.product_id || ''} 
+                          onChange={(e) => handleProductSelection(ingredientName, e.target.value)}
+                          className="w-full p-3 border-0 rounded-xl text-sm bg-white/20 backdrop-blur-sm text-white focus:ring-2 focus:ring-yellow-400 focus:bg-white/30 hover:bg-white/30 transition-all duration-200 font-medium"
+                        >
+                          {ingredientOptions.map((product, productIndex) => (
+                            <option key={productIndex} value={product.product_id} className="text-gray-800">
+                              {product.name} - ${parseFloat(product.price).toFixed(2)}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Enhanced Shopping Cart Summary */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <h4 className="text-2xl font-bold mb-6 flex items-center justify-center">
+                <span className="mr-3 text-3xl">🛍️</span>
+                <span>Your Cart</span>
+              </h4>
+              
+              <div className="space-y-3 mb-6">
+                {cartItems.length > 0 ? (
+                  cartItems.map((item, index) => (
+                    <div key={index} className="flex justify-between items-center py-3 px-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20">
+                      <span className="text-sm font-medium truncate flex-1 mr-3">{item.name}</span>
+                      <span className="text-xl font-bold text-yellow-300">${parseFloat(item.price).toFixed(2)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-white/80">
+                    <div className="text-4xl mb-4">🛍️</div>
+                    <p className="text-lg font-medium">Select ingredients to start shopping</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="border-t border-white/20 pt-6 mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-2xl font-bold">Total:</span>
+                  <span className="text-3xl font-bold text-yellow-300">${calculateTotal().toFixed(2)}</span>
+                </div>
+                <p className="text-sm text-blue-200">{cartItems.length} items • Ready for delivery</p>
+              </div>
+              
+              <button
+                onClick={copyUrlToClipboard}
+                disabled={cartItems.length === 0}
+                className={`w-full py-6 rounded-2xl font-bold text-xl transition-all duration-300 transform ${
+                  cartItems.length > 0
+                    ? 'bg-white text-blue-600 hover:bg-yellow-50 shadow-2xl hover:shadow-3xl hover:scale-105 hover:text-blue-700'
+                    : 'bg-white/20 text-white/50 cursor-not-allowed'
+                }`}
+              >
+                {cartItems.length > 0 ? (
+                  <>
+                    <div className="flex items-center justify-center">
+                      <span className="mr-3 text-2xl">🛒</span>
+                      <span>Shop at Walmart Now</span>
+                      <span className="ml-3 text-2xl">✨</span>
+                    </div>
+                    <div className="text-sm font-normal mt-2 opacity-80">One-click checkout • Same-day delivery</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-center">
+                      <span className="mr-2 text-2xl">🛍️</span>
+                      <span>Select Products First</span>
+                    </div>
+                    <div className="text-sm font-normal mt-1 opacity-60">Choose your ingredients above</div>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             {/* Left Column - Recipe Instructions */}
-            <div className="xl:col-span-2 space-y-8">
+            <div className="space-y-8">
               
               {/* Recipe Quick Stats */}
               <div className="bg-white rounded-3xl shadow-xl p-8 transform hover:shadow-2xl transition-all duration-300 border border-gray-100">
