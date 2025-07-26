@@ -233,68 +233,70 @@ function App() {
             </div>
           </div>
 
-          {/* How It Works */}
-          <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 mb-16">
-            <h2 className="text-3xl font-bold text-gray-800 text-center mb-12">How AI Chef Works</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          {/* Enhanced How It Works */}
+          <div className="bg-white rounded-3xl shadow-2xl p-12 md:p-16 mb-16 border-4 border-gradient-to-r from-purple-200 to-pink-200">
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent text-center mb-16">
+              ✨ How AI Chef Works ✨
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
               
-              {/* Recipe Flow */}
-              <div>
-                <h3 className="text-2xl font-bold text-orange-600 mb-6 flex items-center">
-                  <span className="mr-3">🍳</span>
+              {/* Enhanced Recipe Flow */}
+              <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-8 border-2 border-orange-200">
+                <h3 className="text-3xl font-bold text-orange-600 mb-8 flex items-center">
+                  <span className="mr-4 text-4xl animate-bounce">🍳</span>
                   Recipe Magic
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="flex items-start">
-                    <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-4 mt-1">1</span>
+                    <span className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full flex items-center justify-center text-lg font-bold mr-6 mt-1 animate-pulse">1</span>
                     <div>
-                      <h4 className="font-semibold text-gray-800">Choose Your Style</h4>
-                      <p className="text-gray-600 text-sm">Pick from Cuisine, Snacks, or Beverages</p>
+                      <h4 className="font-bold text-gray-800 text-lg">Choose Your Style</h4>
+                      <p className="text-gray-600">Pick from Cuisine, Snacks, or Beverages</p>
                     </div>
                   </div>
                   <div className="flex items-start">
-                    <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-4 mt-1">2</span>
+                    <span className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full flex items-center justify-center text-lg font-bold mr-6 mt-1 animate-pulse">2</span>
                     <div>
-                      <h4 className="font-semibold text-gray-800">AI Creates Your Recipe</h4>
-                      <p className="text-gray-600 text-sm">Personalized with your preferences and dietary needs</p>
+                      <h4 className="font-bold text-gray-800 text-lg">AI Creates Your Recipe</h4>
+                      <p className="text-gray-600">Personalized with your preferences and dietary needs</p>
                     </div>
                   </div>
                   <div className="flex items-start">
-                    <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-4 mt-1">3</span>
+                    <span className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full flex items-center justify-center text-lg font-bold mr-6 mt-1 animate-pulse">3</span>
                     <div>
-                      <h4 className="font-semibold text-gray-800">Shop with One Click</h4>
-                      <p className="text-gray-600 text-sm">Automatic Walmart cart with all ingredients</p>
+                      <h4 className="font-bold text-gray-800 text-lg">Shop with One Click</h4>
+                      <p className="text-gray-600">Automatic Walmart cart with all ingredients</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Starbucks Flow */}
-              <div>
-                <h3 className="text-2xl font-bold text-green-600 mb-6 flex items-center">
-                  <span className="mr-3">☕</span>
+              {/* Enhanced Starbucks Flow */}
+              <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-8 border-2 border-green-200">
+                <h3 className="text-3xl font-bold text-green-600 mb-8 flex items-center">
+                  <span className="mr-4 text-4xl animate-bounce">☕</span>
                   Starbucks Hacks
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="flex items-start">
-                    <span className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-4 mt-1">1</span>
+                    <span className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-full flex items-center justify-center text-lg font-bold mr-6 mt-1 animate-pulse">1</span>
                     <div>
-                      <h4 className="font-semibold text-gray-800">Pick Your Vibe</h4>
-                      <p className="text-gray-600 text-sm">Frappuccino, Refresher, Lemonade, or Surprise Me!</p>
+                      <h4 className="font-bold text-gray-800 text-lg">Pick Your Vibe</h4>
+                      <p className="text-gray-600">Frappuccino, Refresher, Lemonade, or Surprise Me!</p>
                     </div>
                   </div>
                   <div className="flex items-start">
-                    <span className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-4 mt-1">2</span>
+                    <span className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-full flex items-center justify-center text-lg font-bold mr-6 mt-1 animate-pulse">2</span>
                     <div>
-                      <h4 className="font-semibold text-gray-800">Get Your Secret Drink</h4>
-                      <p className="text-gray-600 text-sm">Unique creations with viral potential</p>
+                      <h4 className="font-bold text-gray-800 text-lg">Get Your Secret Drink</h4>
+                      <p className="text-gray-600">Unique creations with viral potential</p>
                     </div>
                   </div>
                   <div className="flex items-start">
-                    <span className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-4 mt-1">3</span>
+                    <span className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-full flex items-center justify-center text-lg font-bold mr-6 mt-1 animate-pulse">3</span>
                     <div>
-                      <h4 className="font-semibold text-gray-800">Order Like a Pro</h4>
-                      <p className="text-gray-600 text-sm">Perfect drive-thru script ready to use</p>
+                      <h4 className="font-bold text-gray-800 text-lg">Order Like a Pro</h4>
+                      <p className="text-gray-600">Perfect drive-thru script ready to use</p>
                     </div>
                   </div>
                 </div>
@@ -302,15 +304,32 @@ function App() {
             </div>
           </div>
 
-          {/* Social Proof */}
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-800 mb-8">Join the AI Chef Community</h2>
-            <div className="flex flex-wrap justify-center gap-4 text-2xl mb-8">
-              <span>🍕</span><span>🥗</span><span>🍜</span><span>🧋</span><span>☕</span><span>🍰</span><span>🍱</span><span>🥙</span>
+          {/* Enhanced Social Proof */}
+          <div className="text-center bg-gradient-to-r from-purple-100 to-pink-100 rounded-3xl p-16 border-4 border-gradient-to-r from-purple-200 to-pink-200">
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-12">
+              🌟 Join the AI Chef Community 🌟
+            </h2>
+            <div className="flex flex-wrap justify-center gap-6 text-4xl mb-12">
+              <span className="animate-bounce">🍕</span>
+              <span className="animate-pulse">🥗</span>
+              <span className="animate-bounce">🍜</span>
+              <span className="animate-pulse">🧋</span>
+              <span className="animate-bounce">☕</span>
+              <span className="animate-pulse">🍰</span>
+              <span className="animate-bounce">🍱</span>
+              <span className="animate-pulse">🥙</span>
             </div>
-            <p className="text-xl text-gray-600 mb-8">
-              Ready to transform your cooking and coffee game? Let's get started! 🚀
+            <p className="text-2xl text-gray-700 mb-8 font-medium">
+              Ready to transform your cooking and coffee game? Let's get started! 🚀✨
             </p>
+            <div className="flex justify-center gap-4 mt-8">
+              <span className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full font-bold text-lg shadow-lg animate-pulse">
+                🎯 AI-Powered Recipes
+              </span>
+              <span className="px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-full font-bold text-lg shadow-lg animate-pulse">
+                🛒 Smart Shopping
+              </span>
+            </div>
           </div>
         </div>
       </div>
