@@ -1,26 +1,22 @@
-# .gcloudignore - Files to exclude from Google Cloud deployment
+# .gcloudignore - Files to exclude from Google Cloud Run deployment
 
-# Git and version control
-.gcloudignore
-.git
+# Development files
+.git/
 .gitignore
-.github/
+*.md
 README.md
-.gitattributes
+USER_MANUAL.md
 
-# Node.js and frontend development
+# Node.js
 node_modules/
 frontend/node_modules/
 frontend/src/
 frontend/public/
 frontend/package.json
-frontend/package-lock.json
 frontend/yarn.lock
-frontend/tailwind.config.js
-frontend/postcss.config.js
-frontend/craco.config.js
+frontend/package-lock.json
 
-# Python cache and development files
+# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -29,72 +25,49 @@ __pycache__/
 env/
 venv/
 .venv/
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+pip-log.txt
+pip-delete-this-directory.txt
+.coverage
+.pytest_cache/
 
-# IDE and editor files
+# Environment files (secrets will be set in Cloud Run)
+.env
+backend/.env
+frontend/.env
+frontend/.env.local
+frontend/.env.development
+frontend/.env.production
+
+# Development tools
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+
+# OS
 .DS_Store
 Thumbs.db
 
-# Testing and coverage
-.coverage
-.pytest_cache/
-.coverage.*
-htmlcov/
-.tox/
-.nox/
-coverage.xml
-*.cover
-.hypothesis/
-
-# Documentation
-docs/
-*.md
-CHANGELOG*
-LICENSE*
-
-# Development and build tools
-.mypy_cache/
-.dmypy.json
-dmypy.json
-.black
-.isort.cfg
-setup.cfg
-pyproject.toml
-requirements-dev.txt
-
-# Logs and temporary files
+# Logs
 *.log
 logs/
-tmp/
-temp/
-.tmp/
+/var/log/
 
-# Database files (if any local databases)
-*.db
-*.sqlite3
+# Test files
+tests/
+test_*.py
+*_test.py
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Build artifacts (we'll include frontend/build)
+frontend/build/static/js/*.map
+frontend/build/static/css/*.map
 
-# Keep only the built frontend and essential backend files
-# The deployment will include:
-# - main.py (entry point)
-# - app.yaml (config)
-# - backend/ (Python backend code)
-# - frontend/build/ (built React app)
-# - requirements.txt (Python dependencies)
+# Deployment scripts (not needed in production)
+build_for_deployment.sh
+verify_env_vars.py
+deployment-checklist.md
+
+# App Engine files (not needed for Cloud Run)
+app.yaml
+app.production.yaml
