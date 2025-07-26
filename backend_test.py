@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend Testing Script for Cheesecake Recipe Generation & Walmart Pricing
-Focus: Test end-to-end cheesecake recipe generation with real Walmart pricing
+Comprehensive Backend Testing Script for AI Recipe + Grocery Delivery App
+Focus: Test OpenAI API integration, Starbucks generator, Walmart API, User Auth, Recipe Storage, and Cart Options
 """
 
 import asyncio
@@ -11,13 +11,15 @@ import os
 import sys
 from datetime import datetime
 from typing import Dict, List, Any
+import random
+import string
 
 # Add backend to path
 sys.path.append('/app/backend')
 
 # Test configuration
 BACKEND_URL = "https://6b4e57e4-7e21-4efb-941c-e036b94930bd.preview.emergentagent.com/api"
-TEST_USER_EMAIL = "test.walmart@example.com"
+TEST_USER_EMAIL = "aitest.user@example.com"
 TEST_USER_PASSWORD = "testpass123"
 
 class WalmartAPITester:
