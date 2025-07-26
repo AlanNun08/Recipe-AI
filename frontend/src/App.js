@@ -1982,30 +1982,44 @@ function App() {
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-6">
+          <div className="mb-8">
             {showBackButton && (
               <button
                 onClick={() => setCurrentScreen('dashboard')}
-                className="mb-4 flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                className="mb-6 flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium transition-all duration-200 hover:translate-x-1"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 <span>Back to Dashboard</span>
               </button>
             )}
             
-            <div className="bg-white rounded-3xl shadow-xl p-8 text-center">
-              <div className="text-6xl mb-4">🍳</div>
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3">
+            <div className="bg-white rounded-3xl shadow-2xl p-8 text-center transform hover:scale-105 transition-all duration-300 border border-gray-100">
+              <div className="text-6xl mb-4 animate-bounce">🍳</div>
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-4">
                 {recipe.title || 'Delicious Recipe'}
               </h1>
-              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
                 {recipe.description || 'A wonderful recipe created just for you with real Walmart shopping integration!'}
               </p>
+              
+              {/* Recipe Tags */}
+              <div className="flex flex-wrap justify-center gap-2 mt-4">
+                {recipe.category && (
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                    {recipe.category.charAt(0).toUpperCase() + recipe.category.slice(1)}
+                  </span>
+                )}
+                {recipe.dietary_preferences && recipe.dietary_preferences.map((pref, index) => (
+                  <span key={index} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                    {pref}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
