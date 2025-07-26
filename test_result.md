@@ -247,7 +247,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Starbucks Generator & Community Features Testing - COMPLETED"
+    - "Environment Variable Changes Testing - COMPLETED"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
