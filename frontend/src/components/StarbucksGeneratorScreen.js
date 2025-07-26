@@ -801,7 +801,5 @@ const DrinkCard = ({
     </div>
   );
 };
-  );
-};
 
 export default StarbucksGeneratorScreen;
