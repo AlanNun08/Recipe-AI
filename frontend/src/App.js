@@ -884,64 +884,103 @@ function App() {
 
   // Enhanced Dashboard Screen Component
   const DashboardScreen = () => (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-md mx-auto">
-        <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="text-3xl">👨‍🍳</div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-800">Hi, {user?.first_name}!</h2>
-              <p className="text-gray-600 text-sm">Ready to cook something amazing?</p>
-              {user?.is_verified && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-1">
-                  ✅ Verified
-                </span>
-              )}
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 p-4 relative overflow-hidden">
+      {/* Magical Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-10 left-10 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+        <div className="absolute top-20 right-20 w-6 h-6 bg-pink-400 rounded-full animate-bounce"></div>
+        <div className="absolute bottom-20 left-20 w-5 h-5 bg-blue-400 rounded-full animate-ping"></div>
+        <div className="absolute bottom-10 right-10 w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
+        <div className="absolute top-1/2 left-1/4 w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
+      </div>
+      
+      <div className="max-w-md mx-auto relative z-10">
+        {/* Welcome Card */}
+        <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8 border-4 border-gradient-to-r from-purple-200 to-pink-200">
+          <div className="text-center mb-8">
+            <div className="text-6xl mb-4 animate-bounce">👨‍🍳</div>
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Hi, Welcome back, {user?.first_name}!
+            </h2>
+            <p className="text-lg text-gray-600 mt-2">Ready to cook something amazing?</p>
+            {user?.is_verified && (
+              <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-gradient-to-r from-green-500 to-green-600 text-white mt-4 shadow-lg">
+                <span className="mr-2">✅</span>
+                Verified Chef
+              </span>
+            )}
+          </div>
+        </div>
+        
+        {/* Enhanced Action Buttons */}
+        <div className="space-y-4 mb-8">
+          <button
+            onClick={() => setCurrentScreen('generate-recipe')}
+            className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:from-purple-600 hover:via-pink-600 hover:to-orange-600 text-white font-bold py-6 px-8 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-300 text-lg relative overflow-hidden"
+          >
+            <span className="relative z-10 flex items-center justify-center">
+              <span className="text-2xl mr-3 animate-bounce">🍳</span>
+              Generate AI Recipe
+              <span className="text-2xl ml-3 animate-bounce">✨</span>
+            </span>
+          </button>
+          
+          <button
+            onClick={() => setCurrentScreen('starbucks-generator')}
+            className="w-full bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 hover:from-green-600 hover:via-blue-600 hover:to-purple-600 text-white font-bold py-6 px-8 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-300 text-lg"
+          >
+            <span className="flex items-center justify-center">
+              <span className="text-2xl mr-3 animate-bounce">☕</span>
+              Starbucks Secret Menu
+              <span className="text-2xl ml-3 animate-pulse">🌟</span>
+            </span>
+          </button>
+          
+          <button
+            onClick={() => setCurrentScreen('tutorial')}
+            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-6 px-8 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-300 text-lg"
+          >
+            <span className="flex items-center justify-center">
+              <span className="text-2xl mr-3 animate-bounce">📖</span>
+              How to Use AI Chef
+              <span className="text-2xl ml-3 animate-pulse">💡</span>
+            </span>
+          </button>
+          
+          <button
+            onClick={() => setCurrentScreen('all-recipes')}
+            className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-6 px-8 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-300 text-lg"
+          >
+            <span className="flex items-center justify-center">
+              <span className="text-2xl mr-3 animate-bounce">📜</span>
+              Recipe History
+              <span className="text-2xl ml-3 animate-pulse">🏆</span>
+            </span>
+          </button>
+        </div>
+        
+        {/* Enhanced Quick Stats */}
+        <div className="bg-gradient-to-r from-purple-100 via-pink-100 to-blue-100 rounded-3xl p-8 mb-8 border-4 border-gradient-to-r from-purple-200 to-pink-200">
+          <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6 text-center">
+            🌟 Welcome to AI Chef! 🌟
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center p-4 bg-white rounded-2xl shadow-lg">
+              <span className="text-3xl mr-4 animate-bounce">🤖</span>
+              <span className="text-gray-700 font-medium">Generate personalized recipes with AI</span>
+            </div>
+            <div className="flex items-center p-4 bg-white rounded-2xl shadow-lg">
+              <span className="text-3xl mr-4 animate-pulse">🛒</span>
+              <span className="text-gray-700 font-medium">Instant Walmart grocery delivery</span>
+            </div>
+            <div className="flex items-center p-4 bg-white rounded-2xl shadow-lg">
+              <span className="text-3xl mr-4 animate-bounce">💚</span>
+              <span className="text-gray-700 font-medium">Healthy & budget-friendly options</span>
             </div>
           </div>
-          
-          <div className="space-y-3">
-            <button
-              onClick={() => setCurrentScreen('generate-recipe')}
-              className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 active:scale-95"
-            >
-              🎯 Generate AI Recipe
-            </button>
-            
-            <button
-              onClick={() => setCurrentScreen('starbucks-generator')}
-              className="w-full bg-gradient-to-br from-green-500 to-green-600 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 active:scale-95"
-            >
-              ☕ Starbucks Secret Menu
-            </button>
-            
-            <button
-              onClick={() => setCurrentScreen('tutorial')}
-              className="w-full bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 active:scale-95"
-            >
-              📚 How to Use AI Chef
-            </button>
-            
-            <button
-              onClick={() => setCurrentScreen('all-recipes')}
-              className="w-full bg-purple-500 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 active:scale-95"
-            >
-              📚 Recipe History
-            </button>
-          </div>
         </div>
         
-        {/* Quick Stats */}
-        <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-2xl p-4 mb-4">
-          <h3 className="font-semibold text-gray-800 mb-2">🌟 Welcome to AI Chef!</h3>
-          <div className="text-sm text-gray-600 space-y-1">
-            <p>• Generate personalized recipes with AI</p>
-            <p>• Instant Walmart grocery delivery</p>
-            <p>• Healthy & budget-friendly options</p>
-          </div>
-        </div>
-        
-        {/* Logout Button */}
+        {/* Enhanced Logout Button */}
         <button
           onClick={() => {
             setUser(null);
@@ -950,9 +989,12 @@ function App() {
             setCurrentScreen('landing');
             showNotification('👋 Signed out successfully', 'success');
           }}
-          className="w-full text-gray-500 hover:text-gray-700 transition-colors py-2"
+          className="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-bold py-4 px-8 rounded-3xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
         >
-          🚪 Sign Out
+          <span className="flex items-center justify-center">
+            <span className="text-xl mr-2">🚪</span>
+            Sign Out
+          </span>
         </button>
       </div>
     </div>
