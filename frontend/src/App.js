@@ -2106,64 +2106,75 @@ function App() {
 
             {/* Right Column - Walmart Shopping */}
             <div className="xl:col-span-1">
-              <div className="sticky top-6 space-y-6">
+              <div className="sticky top-6 space-y-8">
                 
                 {/* Walmart Shopping Section */}
-                <div className="bg-white rounded-2xl shadow-lg p-6">
-                  <div className="text-center mb-6">
-                    <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-white text-2xl font-bold">W</span>
+                <div className="bg-white rounded-3xl shadow-xl p-8 transform hover:shadow-2xl transition-all duration-300 border border-gray-100">
+                  <div className="text-center mb-8">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-4 transform hover:scale-110 transition-all duration-300 shadow-lg">
+                      <span className="text-white text-3xl font-bold">W</span>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-2">Walmart Shopping</h3>
-                    <p className="text-gray-600">Real products, real prices</p>
+                    <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">Walmart Shopping</h3>
+                    <p className="text-gray-600 font-medium">Real products, real prices</p>
+                    <div className="flex items-center justify-center mt-2">
+                      <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2"></span>
+                      <span className="text-sm text-green-600 font-medium">Live inventory</span>
+                    </div>
                   </div>
 
                   {loadingCart ? (
-                    <div className="text-center py-12">
-                      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                      <p className="text-gray-600 font-medium">Finding products...</p>
-                      <p className="text-sm text-gray-500 mt-1">Searching Walmart's inventory</p>
+                    <div className="text-center py-16">
+                      <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+                      <p className="text-gray-700 font-semibold text-lg mb-2">Finding products...</p>
+                      <p className="text-sm text-gray-500">Searching Walmart's inventory</p>
+                      <div className="mt-4 flex justify-center space-x-1">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      </div>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {Object.entries(productOptions).map(([ingredientName, ingredientOptions], index) => {
                         const selectedProductId = selectedProducts[ingredientName];
                         const selectedProduct = ingredientOptions.find(p => p.product_id === selectedProductId) || ingredientOptions[0];
                         
                         return (
-                          <div key={index} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                          <div key={index} className="border-2 border-gray-100 rounded-2xl p-6 hover:shadow-lg hover:border-blue-200 transition-all duration-300 bg-gradient-to-br from-white to-gray-50">
                             {/* Ingredient Header */}
-                            <div className="flex items-center justify-between mb-3">
-                              <h4 className="font-semibold text-gray-800 flex items-center">
-                                <span className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold mr-2">
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="font-bold text-gray-800 flex items-center">
+                                <span className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">
                                   {index + 1}
                                 </span>
                                 {ingredientName}
                               </h4>
-                              <span className="text-xs text-gray-500">{ingredientOptions.length} options</span>
+                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full font-medium">
+                                {ingredientOptions.length} options
+                              </span>
                             </div>
                             
                             {/* Selected Product Display */}
                             {selectedProduct && (
-                              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-3 mb-3">
+                              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 mb-4 border border-green-200">
                                 <div className="flex items-start justify-between">
                                   <div className="flex-1">
-                                    <h5 className="font-medium text-gray-800 text-sm leading-tight mb-1">
+                                    <h5 className="font-semibold text-gray-800 text-sm leading-tight mb-2">
                                       {selectedProduct.name}
                                     </h5>
-                                    <p className="text-lg font-bold text-green-600 mb-1">
+                                    <p className="text-2xl font-bold text-green-600 mb-2">
                                       ${parseFloat(selectedProduct.price).toFixed(2)}
                                     </p>
-                                    <div className="flex items-center text-xs text-gray-500">
-                                      <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
-                                      Available
+                                    <div className="flex items-center text-sm text-gray-600">
+                                      <span className="w-3 h-3 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+                                      <span className="font-medium">In Stock</span>
                                     </div>
                                   </div>
                                   {selectedProduct.image_url && (
                                     <img 
                                       src={selectedProduct.image_url} 
                                       alt={selectedProduct.name}
-                                      className="w-12 h-12 object-cover rounded-lg ml-3"
+                                      className="w-16 h-16 object-cover rounded-xl ml-4 border-2 border-white shadow-md hover:scale-105 transition-transform"
                                       onError={(e) => {
                                         e.target.style.display = 'none';
                                       }}
@@ -2178,7 +2189,7 @@ function App() {
                               <select 
                                 value={selectedProductId || ingredientOptions[0]?.product_id || ''} 
                                 onChange={(e) => handleProductSelection(ingredientName, e.target.value)}
-                                className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full p-3 border-2 border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 transition-all duration-200 font-medium"
                               >
                                 {ingredientOptions.map((product, productIndex) => (
                                   <option key={productIndex} value={product.product_id}>
@@ -2195,54 +2206,61 @@ function App() {
                 </div>
 
                 {/* Shopping Cart Summary */}
-                <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl shadow-lg p-6 text-white">
-                  <h4 className="text-xl font-bold mb-4 flex items-center">
-                    <span className="mr-2 text-2xl">🛒</span>
-                    Shopping Cart
+                <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-800 rounded-3xl shadow-2xl p-8 text-white transform hover:scale-105 transition-all duration-300">
+                  <h4 className="text-2xl font-bold mb-6 flex items-center">
+                    <span className="mr-3 text-3xl">🛒</span>
+                    <span>Shopping Cart</span>
                   </h4>
                   
-                  <div className="space-y-3 mb-6">
+                  <div className="space-y-4 mb-8">
                     {cartItems.length > 0 ? (
                       cartItems.map((item, index) => (
-                        <div key={index} className="flex justify-between items-center py-2 border-b border-blue-500">
-                          <span className="text-sm font-medium truncate flex-1 mr-2">{item.name}</span>
-                          <span className="text-lg font-bold">${parseFloat(item.price).toFixed(2)}</span>
+                        <div key={index} className="flex justify-between items-center py-3 px-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20">
+                          <span className="text-sm font-medium truncate flex-1 mr-3">{item.name}</span>
+                          <span className="text-xl font-bold text-yellow-300">${parseFloat(item.price).toFixed(2)}</span>
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-6 text-blue-200">
-                        <div className="text-3xl mb-2">🛍️</div>
-                        <p>No items selected</p>
+                      <div className="text-center py-10 text-white/80">
+                        <div className="text-5xl mb-4">🛍️</div>
+                        <p className="text-lg font-medium">No items selected</p>
+                        <p className="text-sm text-white/60 mt-2">Choose ingredients above to start shopping</p>
                       </div>
                     )}
                   </div>
                   
-                  <div className="border-t border-blue-500 pt-4 mb-6">
-                    <div className="flex justify-between items-center">
+                  <div className="border-t border-white/20 pt-6 mb-8">
+                    <div className="flex justify-between items-center mb-2">
                       <span className="text-xl font-bold">Total:</span>
-                      <span className="text-2xl font-bold">${calculateTotal().toFixed(2)}</span>
+                      <span className="text-3xl font-bold text-yellow-300">${calculateTotal().toFixed(2)}</span>
                     </div>
-                    <p className="text-sm text-blue-200 mt-1">{cartItems.length} items selected</p>
+                    <p className="text-sm text-white/80">{cartItems.length} items • Ready to shop</p>
                   </div>
                   
                   <button
                     onClick={copyUrlToClipboard}
                     disabled={cartItems.length === 0}
-                    className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
+                    className={`w-full py-5 rounded-2xl font-bold text-lg transition-all duration-300 transform ${
                       cartItems.length > 0
-                        ? 'bg-white text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl'
-                        : 'bg-blue-800 text-blue-300 cursor-not-allowed'
+                        ? 'bg-white text-blue-600 hover:bg-yellow-50 shadow-2xl hover:shadow-3xl hover:scale-105 hover:text-blue-700'
+                        : 'bg-white/20 text-white/50 cursor-not-allowed'
                     }`}
                   >
                     {cartItems.length > 0 ? (
                       <>
-                        🛍️ Shop at Walmart
-                        <div className="text-sm font-normal mt-1">Get these ingredients now</div>
+                        <div className="flex items-center justify-center">
+                          <span className="mr-2 text-2xl">🛍️</span>
+                          <span>Shop at Walmart</span>
+                        </div>
+                        <div className="text-sm font-normal mt-1 opacity-80">Get these ingredients delivered now</div>
                       </>
                     ) : (
                       <>
-                        🛍️ Select Products First
-                        <div className="text-sm font-normal mt-1">Choose your ingredients above</div>
+                        <div className="flex items-center justify-center">
+                          <span className="mr-2 text-2xl">🛍️</span>
+                          <span>Select Products First</span>
+                        </div>
+                        <div className="text-sm font-normal mt-1 opacity-60">Choose your ingredients above</div>
                       </>
                     )}
                   </button>
