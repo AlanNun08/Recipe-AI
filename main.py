@@ -1,4 +1,4 @@
-# main.py - Unified Application Entry Point for Google Cloud App Engine
+# main.py - Unified Application Entry Point for Google Cloud Run
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -24,11 +24,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount your existing backend API under the /api path
+# Mount your existing backend API under the /api path FIRST
 app.mount("/api", backend_app)
 
 # Serve the React frontend static files
 FRONTEND_BUILD_DIR = "frontend/build"
+
+# Health check endpoint (before catch-all)
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "environment": os.environ.get("GAE_ENV", "development"),
+        "frontend_available": os.path.exists(FRONTEND_BUILD_DIR)
+    }
 
 if os.path.exists(FRONTEND_BUILD_DIR):
     # Mount static files (CSS, JS, images)
@@ -47,12 +56,22 @@ if os.path.exists(FRONTEND_BUILD_DIR):
     async def serve_service_worker():
         return FileResponse(os.path.join(FRONTEND_BUILD_DIR, "sw.js"))
     
+    # Root endpoint handler
+    @app.get("/")
+    async def root():
+        return FileResponse(os.path.join(FRONTEND_BUILD_DIR, "index.html"))
+    
     # This catch-all route serves your React app's index.html for client-side routing
+    # It should be the LAST route defined
     @app.get("/{full_path:path}")
     async def serve_react_app(full_path: str):
-        # Prevent catching API routes already handled by app.mount("/api", ...)
+        # Skip API routes (they're already handled by app.mount("/api", ...))
         if full_path.startswith("api/"):
             raise HTTPException(status_code=404, detail="API endpoint not found")
+        
+        # Skip health endpoint (already handled above)
+        if full_path == "health":
+            raise HTTPException(status_code=404, detail="Use /health directly")
         
         # Try to serve specific files from the build directory
         if full_path:
@@ -63,32 +82,22 @@ if os.path.exists(FRONTEND_BUILD_DIR):
         # For all other paths, serve the main index.html for React routing
         return FileResponse(os.path.join(FRONTEND_BUILD_DIR, "index.html"))
 
-# Root endpoint handler
-@app.get("/")
-async def root():
-    if os.path.exists(os.path.join(FRONTEND_BUILD_DIR, "index.html")):
-        return FileResponse(os.path.join(FRONTEND_BUILD_DIR, "index.html"))
-    return {
-        "message": "AI Recipe + Grocery Delivery App API",
-        "status": "running",
-        "version": "1.0.0",
-        "features": [
-            "AI Recipe Generation",
-            "Starbucks Secret Menu",
-            "Walmart Grocery Integration",
-            "User Authentication",
-            "Recipe History"
-        ]
-    }
-
-# Health check endpoint
-@app.get("/health")
-async def health_check():
-    return {
-        "status": "healthy",
-        "environment": os.environ.get("GAE_ENV", "development"),
-        "frontend_available": os.path.exists(FRONTEND_BUILD_DIR)
-    }
+else:
+    # Fallback if frontend build doesn't exist
+    @app.get("/")
+    async def root():
+        return {
+            "message": "AI Recipe + Grocery Delivery App API",
+            "status": "running",
+            "version": "1.0.0",
+            "features": [
+                "AI Recipe Generation",
+                "Starbucks Secret Menu",
+                "Walmart Grocery Integration",
+                "User Authentication",
+                "Recipe History"
+            ]
+        }
 
 # This block is for local development with `python main.py`
 # Google Cloud Run will use the `app` object directly
