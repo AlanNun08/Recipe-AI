@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Comprehensive Backend Testing Script for AI Recipe + Grocery Delivery App
-Focus: Test Signup and Reset Password Functionality with Email Service
+Focus: Test Starbucks Generator Functionality and Community Features
 """
 
 import asyncio
@@ -14,15 +14,16 @@ from typing import Dict, List, Any
 import random
 import string
 import time
+import base64
 
 # Add backend to path
 sys.path.append('/app/backend')
 
 # Test configuration
 BACKEND_URL = "https://6b4e57e4-7e21-4efb-941c-e036b94930bd.preview.emergentagent.com/api"
-TEST_USER_EMAIL = "testuser@example.com"
-TEST_USER_PASSWORD = "testpassword123"
-TEST_USER_NAME = "Test User"
+TEST_USER_EMAIL = "starbucks_tester@example.com"
+TEST_USER_PASSWORD = "starbuckstest123"
+TEST_USER_NAME = "Starbucks Tester"
 
 class WalmartAPITester:
     def __init__(self):
