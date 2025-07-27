@@ -50,7 +50,12 @@ if os.path.exists(FRONTEND_BUILD_DIR):
     
     @app.get("/favicon.ico")
     async def serve_favicon():
-        return FileResponse(os.path.join(FRONTEND_BUILD_DIR, "favicon.ico"))
+        favicon_path = os.path.join(FRONTEND_BUILD_DIR, "favicon.ico")
+        if os.path.exists(favicon_path):
+            return FileResponse(favicon_path)
+        else:
+            # Return a 404 response or a default favicon
+            raise HTTPException(status_code=404, detail="Favicon not found")
     
     @app.get("/sw.js")
     async def serve_service_worker():
