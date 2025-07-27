@@ -46,7 +46,11 @@ if os.path.exists(FRONTEND_BUILD_DIR):
     # Serve other static assets (manifest.json, favicon.ico, etc.)
     @app.get("/manifest.json")
     async def serve_manifest():
-        return FileResponse(os.path.join(FRONTEND_BUILD_DIR, "manifest.json"))
+        manifest_path = os.path.join(FRONTEND_BUILD_DIR, "manifest.json")
+        if os.path.exists(manifest_path):
+            return FileResponse(manifest_path)
+        else:
+            raise HTTPException(status_code=404, detail="Manifest not found")
     
     @app.get("/favicon.ico")
     async def serve_favicon():
