@@ -63,7 +63,11 @@ if os.path.exists(FRONTEND_BUILD_DIR):
     
     @app.get("/sw.js")
     async def serve_service_worker():
-        return FileResponse(os.path.join(FRONTEND_BUILD_DIR, "sw.js"))
+        sw_path = os.path.join(FRONTEND_BUILD_DIR, "sw.js")
+        if os.path.exists(sw_path):
+            return FileResponse(sw_path)
+        else:
+            raise HTTPException(status_code=404, detail="Service worker not found")
     
     # Root endpoint handler
     @app.get("/")
