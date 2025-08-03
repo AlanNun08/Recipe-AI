@@ -57,6 +57,10 @@ function App() {
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState(null);
   const [pendingResetEmail, setPendingResetEmail] = useState(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  
+  // Subscription states
+  const [showSubscriptionScreen, setShowSubscriptionScreen] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
 
   // Load user session from localStorage on app start - PRODUCTION FIX
   useEffect(() => {
