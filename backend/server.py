@@ -384,7 +384,7 @@ class SubscriptionRequest(BaseModel):
     package_id: str  # "monthly_subscription"
     origin_url: str
 
-class CheckoutSessionRequest(BaseModel):
+class SubscriptionCheckoutRequest(BaseModel):
     user_id: str
     user_email: str
     origin_url: str
