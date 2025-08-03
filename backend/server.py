@@ -2692,7 +2692,7 @@ async def get_subscription_status(user_id: str):
         raise HTTPException(status_code=500, detail="Failed to get subscription status")
 
 @api_router.post("/subscription/create-checkout")
-async def create_subscription_checkout(request: CheckoutSessionRequest):
+async def create_subscription_checkout(request: SubscriptionCheckoutRequest):
     """Create Stripe checkout session for subscription"""
     try:
         if not STRIPE_API_KEY:
