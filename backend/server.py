@@ -2544,8 +2544,11 @@ async def get_cart_options(
     recipe_id: str = Query(..., description="Recipe ID"),
     user_id: str = Query(..., description="User ID")
 ):
-    """NEW SIMPLE Walmart integration - Get cart options for recipe ingredients"""
+    """NEW SIMPLE Walmart integration - Get cart options for recipe ingredients - PREMIUM FEATURE"""
     try:
+        # Check subscription access for premium feature
+        await check_subscription_access(user_id)
+        
         print(f"🛒 NEW CART OPTIONS: recipe_id={recipe_id}, user_id={user_id}")
         
         # Get recipe from database
