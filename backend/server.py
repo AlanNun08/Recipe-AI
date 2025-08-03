@@ -127,6 +127,17 @@ class User(BaseModel):
     is_verified: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
     verified_at: Optional[datetime] = None
+    
+    # Subscription fields
+    subscription_status: str = "trial"  # "trial", "active", "expired", "cancelled"
+    trial_start_date: datetime = Field(default_factory=datetime.utcnow)
+    trial_end_date: datetime = Field(default_factory=lambda: datetime.utcnow() + timedelta(weeks=7))
+    subscription_start_date: Optional[datetime] = None
+    subscription_end_date: Optional[datetime] = None
+    stripe_customer_id: Optional[str] = None
+    stripe_subscription_id: Optional[str] = None
+    last_payment_date: Optional[datetime] = None
+    next_billing_date: Optional[datetime] = None
 
 class UserRegistration(BaseModel):
     first_name: str
