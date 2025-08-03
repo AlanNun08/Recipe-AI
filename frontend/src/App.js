@@ -2892,6 +2892,10 @@ function App() {
           setCurrentScreen={setCurrentScreen}
           showNotification={showNotification}
         />;
+      case 'subscription-success':
+        return <SubscriptionSuccess 
+          onContinue={() => setCurrentScreen('dashboard')}
+        />;
       default:
         return <LandingScreen />;
     }
