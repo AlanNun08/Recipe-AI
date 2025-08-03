@@ -2905,6 +2905,19 @@ function App() {
     <div className="relative">
       {renderScreen()}
       
+      {/* Subscription Screen Modal */}
+      {showSubscriptionScreen && (
+        <SubscriptionScreen 
+          user={user}
+          onClose={() => setShowSubscriptionScreen(false)}
+          onSubscriptionUpdate={(status) => {
+            setSubscriptionStatus(status);
+            setShowSubscriptionScreen(false);
+            showNotification({ message: 'Subscription updated successfully!', type: 'success' });
+          }}
+        />
+      )}
+      
       {/* Global Notification */}
       {notification && (
         <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-2xl shadow-lg text-white font-medium max-w-sm text-center ${
