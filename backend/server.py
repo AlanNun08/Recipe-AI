@@ -74,6 +74,71 @@ db_name = os.environ.get('DB_NAME', 'test_database')
 client = AsyncIOMotorClient(mongo_url)
 db = client[db_name]
 
+# Database collections
+users_collection = db["users"]
+verification_codes_collection = db["verification_codes"]
+recipes_collection = db["recipes"]  
+grocery_carts_collection = db["grocery_carts"]
+shared_recipes_collection = db["shared_recipes"]
+payment_transactions_collection = db["payment_transactions"]  # NEW
+
+# Stripe setup
+STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY')
+if not STRIPE_API_KEY:
+    logger.warning("STRIPE_API_KEY not found in environment variables")
+
+# Subscription packages - SERVER SIDE ONLY (SECURITY)
+SUBSCRIPTION_PACKAGES = {
+    "monthly_subscription": {
+        "name": "Monthly Subscription",
+        "price": 9.99,
+        "currency": "usd",
+        "description": "Access to all premium features for one month"
+    }
+}
+
+# Subscription helper functions
+def is_trial_active(user: dict) -> bool:
+    """Check if user's free trial is still active"""
+    trial_end_date = user.get('trial_end_date')
+    if not trial_end_date:
+        return False
+    if isinstance(trial_end_date, str):
+        trial_end_date = parser.parse(trial_end_date)
+    return datetime.utcnow() < trial_end_date
+
+def is_subscription_active(user: dict) -> bool:
+    """Check if user's paid subscription is active"""
+    subscription_status = user.get('subscription_status', 'trial')
+    if subscription_status == 'active':
+        subscription_end_date = user.get('subscription_end_date')
+        if subscription_end_date:
+            if isinstance(subscription_end_date, str):
+                subscription_end_date = parser.parse(subscription_end_date)
+            return datetime.utcnow() < subscription_end_date
+    return False
+
+def can_access_premium_features(user: dict) -> bool:
+    """Check if user can access premium features (trial or active subscription)"""
+    return is_trial_active(user) or is_subscription_active(user)
+
+def get_user_access_status(user: dict) -> dict:
+    """Get detailed user access status"""
+    trial_active = is_trial_active(user)
+    subscription_active = is_subscription_active(user)
+    
+    access_status = {
+        "has_access": trial_active or subscription_active,
+        "subscription_status": user.get('subscription_status', 'trial'),
+        "trial_active": trial_active,
+        "subscription_active": subscription_active,
+        "trial_end_date": user.get('trial_end_date'),
+        "subscription_end_date": user.get('subscription_end_date'),
+        "next_billing_date": user.get('next_billing_date')
+    }
+    
+    return access_status
+
 # Custom JSON encoder for MongoDB documents
 def mongo_to_dict(obj):
     """Convert MongoDB document to dict, handling _id field"""
