@@ -104,6 +104,18 @@ function App() {
     }
   }, [user]); // Save whenever user changes
 
+  // Check for subscription success URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+    
+    if (sessionId && currentScreen !== 'subscription-success') {
+      setCurrentScreen('subscription-success');
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
   // Clear user session from localStorage
   const clearUserSession = () => {
     try {
