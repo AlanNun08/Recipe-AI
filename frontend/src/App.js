@@ -159,7 +159,12 @@ function App() {
   // Landing Screen Component
   const LandingScreen = () => {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100 p-4 relative overflow-hidden">
+      <SubscriptionGate 
+        user={user} 
+        featureName="AI Recipe Generation"
+        onUpgrade={() => setShowSubscriptionScreen(true)}
+      >
+        <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100 p-4 relative overflow-hidden">
         {/* Magical Background Elements */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-10 left-10 w-6 h-6 bg-yellow-400 rounded-full animate-pulse"></div>
