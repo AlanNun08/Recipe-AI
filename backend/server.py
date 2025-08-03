@@ -2907,8 +2907,8 @@ async def check_subscription_access(user_id: str):
             }
         )
 
-# Include the API router
-app.include_router(api_router)
+# Include the API router with /api prefix
+app.include_router(api_router, prefix="/api")
 
 # ========================================
 # 🧱 WALMART INTEGRATION V2 - CLEAN REBUILD  
