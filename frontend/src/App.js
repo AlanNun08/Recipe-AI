@@ -4,6 +4,9 @@ import './App.css';
 import StarbucksGeneratorScreen from './components/StarbucksGeneratorScreen';
 import WelcomeOnboarding from './components/WelcomeOnboarding';
 import TutorialScreen from './components/TutorialScreen';
+import SubscriptionScreen from './components/SubscriptionScreen';
+import SubscriptionSuccess from './components/SubscriptionSuccess';
+import SubscriptionGate from './components/SubscriptionGate';
 
 function App() {
   // BUILDYOURSMARTCART - PRODUCTION VERSION
