@@ -455,8 +455,11 @@ class GroceryCart(BaseModel):
 # Password hashing utilities
 @api_router.post("/generate-starbucks-drink")
 async def generate_starbucks_drink(request: StarbucksRequest):
-    """Generate a creative Starbucks secret menu drink with drive-thru ordering script"""
+    """Generate a creative Starbucks secret menu drink with drive-thru ordering script - PREMIUM FEATURE"""
     try:
+        # Check subscription access for premium feature
+        await check_subscription_access(request.user_id)
+        
         # Handle random drink type
         if request.drink_type == "random":
             import random
