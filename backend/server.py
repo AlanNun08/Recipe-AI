@@ -296,6 +296,34 @@ class LikeRecipeRequest(BaseModel):
     recipe_id: str
     user_id: str
 
+# Payment and Subscription Models
+class PaymentTransaction(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    email: str
+    session_id: str
+    payment_status: str = "pending"  # pending, paid, failed, expired
+    amount: float
+    currency: str = "usd"
+    metadata: Dict[str, str] = {}
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    stripe_payment_intent_id: Optional[str] = None
+    
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
+
+class SubscriptionRequest(BaseModel):
+    package_id: str  # "monthly_subscription"
+    origin_url: str
+
+class CheckoutSessionRequest(BaseModel):
+    user_id: str
+    user_email: str
+    origin_url: str
+
 class StarbucksRecipe(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     drink_name: str
