@@ -2076,8 +2076,11 @@ async def _get_walmart_product_options(ingredient: str, max_options: int = 3) ->
 
 @api_router.post("/recipes/generate")
 async def generate_recipe(request: RecipeGenRequest):
-    """Generate a recipe using OpenAI"""
+    """Generate a recipe using OpenAI - PREMIUM FEATURE"""
     try:
+        # Check subscription access for premium feature
+        await check_subscription_access(request.user_id)
+        
         # Build the prompt based on recipe category
         prompt_parts = []
         
