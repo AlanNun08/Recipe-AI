@@ -2926,6 +2926,7 @@ function App() {
           {notification.message}
         </div>
       )}
+      </SubscriptionGate>
     </div>
   );
 }
