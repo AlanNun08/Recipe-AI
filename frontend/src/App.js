@@ -2902,7 +2902,6 @@ function App() {
   };
 
   return (
-    <SubscriptionGate>
     <div className="relative">
       {renderScreen()}
       
