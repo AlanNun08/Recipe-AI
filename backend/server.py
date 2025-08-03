@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Query
+from fastapi import FastAPI, APIRouter, HTTPException, Query, Request
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -29,6 +29,10 @@ from cryptography.hazmat.primitives.asymmetric import padding
 import bcrypt
 import sys
 import os
+
+# Stripe integration
+from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from email_service import email_service
 
