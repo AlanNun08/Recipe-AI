@@ -42,7 +42,7 @@ async def expire_user_trial():
     else:
         print(f"❌ User {expired_user_id} not found")
     
-    await client.close()
+    client.close()
 
 if __name__ == "__main__":
     asyncio.run(expire_user_trial())
