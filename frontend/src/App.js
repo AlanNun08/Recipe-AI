@@ -159,7 +159,6 @@ function App() {
   // Landing Screen Component
   const LandingScreen = () => {
     return (
-      <SubscriptionGate>
       <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100 p-4 relative overflow-hidden">
         {/* Magical Background Elements */}
         <div className="absolute inset-0 pointer-events-none">
