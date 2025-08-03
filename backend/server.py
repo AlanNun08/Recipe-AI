@@ -2663,6 +2663,241 @@ async def delete_starbucks_recipe(recipe_id: str):
         print(f"Error deleting Starbucks recipe: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete Starbucks recipe")
 
+# ========================================
+# 💳 STRIPE SUBSCRIPTION & PAYMENT ROUTES
+# ========================================
+
+@api_router.get("/subscription/status/{user_id}")
+async def get_subscription_status(user_id: str):
+    """Get user's subscription status and access details"""
+    try:
+        user = await users_collection.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        access_status = get_user_access_status(user)
+        return access_status
+        
+    except Exception as e:
+        logger.error(f"Error getting subscription status: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get subscription status")
+
+@api_router.post("/subscription/create-checkout")
+async def create_subscription_checkout(request: CheckoutSessionRequest):
+    """Create Stripe checkout session for subscription"""
+    try:
+        if not STRIPE_API_KEY:
+            raise HTTPException(status_code=500, detail="Stripe not configured")
+            
+        # Validate user exists
+        user = await users_collection.find_one({"id": request.user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Check if user already has active subscription
+        if is_subscription_active(user):
+            raise HTTPException(status_code=400, detail="User already has active subscription")
+        
+        # Get subscription package (server-side security)
+        package = SUBSCRIPTION_PACKAGES.get("monthly_subscription")
+        if not package:
+            raise HTTPException(status_code=400, detail="Invalid package")
+        
+        # Initialize Stripe checkout
+        stripe_checkout = StripeCheckout(
+            api_key=STRIPE_API_KEY,
+            webhook_url=f"{request.origin_url}/api/webhook/stripe"
+        )
+        
+        # Build success/cancel URLs
+        success_url = f"{request.origin_url}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{request.origin_url}/subscription/cancel"
+        
+        # Create checkout session
+        checkout_request = CheckoutSessionRequest(
+            amount=package["price"],
+            currency=package["currency"],
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={
+                "user_id": request.user_id,
+                "user_email": request.user_email,
+                "package_id": "monthly_subscription",
+                "subscription_type": "monthly"
+            }
+        )
+        
+        session = await stripe_checkout.create_checkout_session(checkout_request)
+        
+        # Create payment transaction record
+        transaction = PaymentTransaction(
+            user_id=request.user_id,
+            email=request.user_email,
+            session_id=session.session_id,
+            payment_status="pending",
+            amount=package["price"],
+            currency=package["currency"],
+            metadata={
+                "package_id": "monthly_subscription",
+                "subscription_type": "monthly"
+            }
+        )
+        
+        await payment_transactions_collection.insert_one(transaction.dict())
+        
+        return {
+            "url": session.url,
+            "session_id": session.session_id
+        }
+        
+    except Exception as e:
+        logger.error(f"Error creating subscription checkout: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create checkout session")
+
+@api_router.get("/subscription/checkout/status/{session_id}")
+async def get_checkout_status(session_id: str):
+    """Get status of checkout session and update subscription if paid"""
+    try:
+        if not STRIPE_API_KEY:
+            raise HTTPException(status_code=500, detail="Stripe not configured")
+        
+        # Get transaction record
+        transaction = await payment_transactions_collection.find_one({"session_id": session_id})
+        if not transaction:
+            raise HTTPException(status_code=404, detail="Transaction not found")
+        
+        # Initialize Stripe checkout
+        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
+        
+        # Get checkout status from Stripe
+        checkout_status = await stripe_checkout.get_checkout_status(session_id)
+        
+        # Update transaction record
+        await payment_transactions_collection.update_one(
+            {"session_id": session_id},
+            {
+                "$set": {
+                    "payment_status": checkout_status.payment_status,
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        # If payment is successful, activate subscription
+        if checkout_status.payment_status == "paid" and transaction["payment_status"] != "paid":
+            user_id = transaction["user_id"]
+            
+            # Calculate subscription dates
+            subscription_start = datetime.utcnow()
+            subscription_end = subscription_start + timedelta(days=30)  # 30-day subscription
+            next_billing = subscription_end
+            
+            # Update user subscription status
+            await users_collection.update_one(
+                {"id": user_id},
+                {
+                    "$set": {
+                        "subscription_status": "active",
+                        "subscription_start_date": subscription_start,
+                        "subscription_end_date": subscription_end,
+                        "last_payment_date": subscription_start,
+                        "next_billing_date": next_billing,
+                        "stripe_customer_id": checkout_status.metadata.get("customer_id"),
+                        "stripe_subscription_id": session_id
+                    }
+                }
+            )
+            
+            logger.info(f"Activated subscription for user {user_id}")
+        
+        return {
+            "status": checkout_status.status,
+            "payment_status": checkout_status.payment_status,
+            "amount_total": checkout_status.amount_total,
+            "currency": checkout_status.currency,
+            "metadata": checkout_status.metadata
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting checkout status: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get checkout status")
+
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhooks for subscription events"""
+    try:
+        if not STRIPE_API_KEY:
+            raise HTTPException(status_code=500, detail="Stripe not configured")
+        
+        body = await request.body()
+        signature = request.headers.get("stripe-signature")
+        
+        # Initialize Stripe checkout for webhook handling
+        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
+        
+        # Handle webhook
+        webhook_response = await stripe_checkout.handle_webhook(body, signature)
+        
+        # Process different event types
+        if webhook_response.event_type == "checkout.session.completed":
+            # Handle successful payment
+            session_id = webhook_response.session_id
+            metadata = webhook_response.metadata
+            
+            if metadata.get("subscription_type") == "monthly":
+                user_id = metadata.get("user_id")
+                if user_id:
+                    # Activate subscription (similar to above)
+                    subscription_start = datetime.utcnow()
+                    subscription_end = subscription_start + timedelta(days=30)
+                    
+                    await users_collection.update_one(
+                        {"id": user_id},
+                        {
+                            "$set": {
+                                "subscription_status": "active",
+                                "subscription_start_date": subscription_start,
+                                "subscription_end_date": subscription_end,
+                                "last_payment_date": subscription_start,
+                                "next_billing_date": subscription_end
+                            }
+                        }
+                    )
+                    
+                    # Update transaction
+                    await payment_transactions_collection.update_one(
+                        {"session_id": session_id},
+                        {
+                            "$set": {
+                                "payment_status": "paid",
+                                "updated_at": datetime.utcnow()
+                            }
+                        }
+                    )
+        
+        return {"status": "success"}
+        
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return {"status": "error", "message": str(e)}
+
+# Middleware to check subscription access for premium endpoints
+async def check_subscription_access(user_id: str):
+    """Check if user has access to premium features"""
+    user = await users_collection.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if not can_access_premium_features(user):
+        access_status = get_user_access_status(user)
+        raise HTTPException(
+            status_code=402, 
+            detail={
+                "message": "Premium subscription required",
+                "access_status": access_status
+            }
+        )
+
 # Include the API router
 app.include_router(api_router)
 
