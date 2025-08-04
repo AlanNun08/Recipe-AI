@@ -3183,18 +3183,19 @@ async def generate_cart_url_v2(cart_data: Dict[str, Any]):
 # END V2 INTEGRATION
 # ========================================
 
-# CORS Middleware
+# Enhanced CORS configuration for production security
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://buildyoursmartcart.com", 
-        "http://localhost:3000", 
-        "http://localhost:8001",
-        "https://recipe-cart-app-1.emergent.host",  # Production environment
+        "https://your-production-domain.com",  # Replace with your actual domain
+        "https://*.emergentagent.com",  # Development preview URLs
+        "http://localhost:3000",  # Local development only
+        "http://127.0.0.1:3000"   # Local development only
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 if __name__ == "__main__":
