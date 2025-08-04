@@ -117,7 +117,7 @@ function App() {
       localStorage.removeItem('ai_chef_user');
       // Session cleared
     } catch (error) {
-      console.error('Failed to clear user session:', error);
+      // Failed to clear session
     }
   };
 
