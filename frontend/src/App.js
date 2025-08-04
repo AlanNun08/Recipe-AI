@@ -94,7 +94,7 @@ function App() {
         localStorage.setItem('ai_chef_user', JSON.stringify(user));
         // User session saved
       } catch (error) {
-        console.error('❌ Failed to save user session:', error);
+        // Failed to save session
       }
     }
   }, [user]); // Save whenever user changes
