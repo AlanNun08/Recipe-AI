@@ -23,7 +23,7 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
         setSubscriptionStatus(status);
       }
     } catch (error) {
-      console.error('Error fetching subscription status:', error);
+      // Error fetching subscription status
     } finally {
       setLoading(false);
     }
