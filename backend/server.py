@@ -171,7 +171,24 @@ openai_client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
 # WALMART_PRIVATE_KEY = os.environ.get('WALMART_PRIVATE_KEY', 'not_needed')
 
 # Create the main app without a prefix
-app = FastAPI(title="AI Recipe & Grocery App", version="2.0.0")
+app = FastAPI(
+    title="AI Recipe & Grocery App", 
+    version="2.0.0",
+    # Security headers
+    docs_url="/docs",  # Keep docs for development
+    redoc_url="/redoc"  # Keep redoc for development
+)
+
+# Add security middleware
+app.add_middleware(
+    TrustedHostMiddleware, 
+    allowed_hosts=[
+        "localhost",
+        "127.0.0.1", 
+        "*.emergentagent.com",
+        "your-production-domain.com"  # Replace with actual domain
+    ]
+)
 
 # Create a router without prefix (main.py will mount it at /api)
 api_router = APIRouter()
