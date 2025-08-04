@@ -92,6 +92,13 @@ STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY')
 if not STRIPE_API_KEY:
     logger.warning("STRIPE_API_KEY not found in environment variables")
 
+# API Keys for health check
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+WALMART_CONSUMER_ID = os.environ.get('WALMART_CONSUMER_ID')
+WALMART_PRIVATE_KEY = os.environ.get('WALMART_PRIVATE_KEY')
+MAILJET_API_KEY = os.environ.get('MAILJET_API_KEY')
+MAILJET_SECRET_KEY = os.environ.get('MAILJET_SECRET_KEY')
+
 # Subscription packages - SERVER SIDE ONLY (SECURITY)
 SUBSCRIPTION_PACKAGES = {
     "monthly_subscription": {
