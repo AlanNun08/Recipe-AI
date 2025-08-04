@@ -9,21 +9,21 @@ const urlsToCache = [
 
 // Install event - MANUAL SHOPPING MODE SUPPORT
 self.addEventListener('install', (event) => {
-  console.log('🔄 MANUAL SHOPPING MODE SUPPORT - CLEARING ALL CACHES...');
+  // Clear all caches for manual shopping support
   event.waitUntil(
     caches.keys().then(cacheNames => {
-      console.log('🗑️ DELETING OLD CACHES FOR MANUAL SHOPPING SUPPORT:', cacheNames);
+      // Delete old caches for manual shopping support
       return Promise.all(
         cacheNames.map(cacheName => {
-          console.log('💥 DELETING CACHE:', cacheName);
+          // Delete cache
           return caches.delete(cacheName);
         })
       );
     }).then(() => {
-      console.log('✅ CACHES DELETED - CREATING MANUAL SHOPPING CACHE');
+      // Create manual shopping cache
       return caches.open(CACHE_NAME);
     }).then(() => {
-      console.log('🎉 MANUAL SHOPPING CACHE v110 CREATED');
+      // Manual shopping cache created
       return self.skipWaiting();
     })
   );
