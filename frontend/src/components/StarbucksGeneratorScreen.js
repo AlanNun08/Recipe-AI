@@ -218,7 +218,7 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user, AP
 
       showNotification(`Recipe ${response.data.action}! ❤️`, 'success');
     } catch (error) {
-      console.error('Error liking recipe:', error);
+      // Error liking recipe
       showNotification('Failed to like recipe', 'error');
     }
   };
