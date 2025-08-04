@@ -1,121 +1,163 @@
-# main.py - Unified Application Entry Point for Google Cloud Run
+#!/usr/bin/env python3
+"""
+Production-ready FastAPI + React app optimized for Google Cloud Run
+Serves both backend API and frontend static files
+"""
+
 import os
-from fastapi import FastAPI, HTTPException
+import logging
+import signal
+import sys
+from pathlib import Path
+
+import uvicorn
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from starlette.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
-# Import your existing backend app from the 'backend' directory
-from backend.server import app as backend_app
+# Configure logging for Cloud Run
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger(__name__)
 
-# Initialize the main FastAPI application
+# Import the backend app
+try:
+    from backend.server import app as backend_app
+    logger.info("✅ Backend app imported successfully")
+except ImportError as e:
+    logger.error(f"❌ Failed to import backend app: {e}")
+    sys.exit(1)
+
+# Create main FastAPI app
 app = FastAPI(
-    title="AI Recipe + Grocery Delivery App",
-    description="AI-powered recipe generation with Walmart grocery integration",
-    version="1.0.0"
+    title="buildyoursmartcart.com",
+    description="AI Recipe + Grocery Delivery App",
+    version="2.0.0",
+    docs_url="/api/docs" if os.getenv("NODE_ENV") != "production" else None,
+    redoc_url="/api/redoc" if os.getenv("NODE_ENV") != "production" else None
 )
 
-# Configure CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with your actual domain
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Mount your existing backend API under the /api path FIRST
-app.mount("/api", backend_app)
-
-# Serve the React frontend static files
-FRONTEND_BUILD_DIR = "frontend/build"
-
-# Health check endpoint (before catch-all)
+# Health check endpoint for Cloud Run
 @app.get("/health")
 async def health_check():
-    return {
-        "status": "healthy",
-        "environment": os.environ.get("GAE_ENV", "development"),
-        "frontend_available": os.path.exists(FRONTEND_BUILD_DIR)
-    }
+    """Health check endpoint for Google Cloud Run"""
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "healthy",
+            "service": "buildyoursmartcart",
+            "version": "2.0.0"
+        }
+    )
 
-if os.path.exists(FRONTEND_BUILD_DIR):
-    # Mount static files (CSS, JS, images)
-    app.mount("/static", StaticFiles(directory=f"{FRONTEND_BUILD_DIR}/static"), name="static")
+# Mount the backend API with /api prefix
+app.mount("/api", backend_app)
+
+# Static files configuration
+FRONTEND_BUILD_DIR = Path("/app/frontend/build")
+
+if FRONTEND_BUILD_DIR.exists():
+    logger.info("✅ Frontend build directory found")
     
-    # Serve other static assets (manifest.json, favicon.ico, etc.)
+    # Mount static files
+    app.mount("/static", StaticFiles(directory=FRONTEND_BUILD_DIR / "static"), name="static")
+    
+    # Serve manifest.json, favicon.ico, sw.js
     @app.get("/manifest.json")
-    async def serve_manifest():
-        manifest_path = os.path.join(FRONTEND_BUILD_DIR, "manifest.json")
-        if os.path.exists(manifest_path):
-            return FileResponse(manifest_path)
-        else:
-            raise HTTPException(status_code=404, detail="Manifest not found")
+    async def manifest():
+        manifest_path = FRONTEND_BUILD_DIR / "manifest.json"
+        if manifest_path.exists():
+            return FileResponse(manifest_path, media_type="application/json")
+        raise HTTPException(status_code=404, detail="Manifest not found")
     
     @app.get("/favicon.ico")
-    async def serve_favicon():
-        favicon_path = os.path.join(FRONTEND_BUILD_DIR, "favicon.ico")
-        if os.path.exists(favicon_path):
-            return FileResponse(favicon_path)
-        else:
-            # Return a 404 response or a default favicon
-            raise HTTPException(status_code=404, detail="Favicon not found")
+    async def favicon():
+        favicon_path = FRONTEND_BUILD_DIR / "favicon.ico"
+        if favicon_path.exists():
+            return FileResponse(favicon_path, media_type="image/x-icon")
+        raise HTTPException(status_code=404, detail="Favicon not found")
     
     @app.get("/sw.js")
-    async def serve_service_worker():
-        sw_path = os.path.join(FRONTEND_BUILD_DIR, "sw.js")
-        if os.path.exists(sw_path):
-            return FileResponse(sw_path)
-        else:
-            raise HTTPException(status_code=404, detail="Service worker not found")
+    async def service_worker():
+        sw_path = FRONTEND_BUILD_DIR / "sw.js"
+        if sw_path.exists():
+            return FileResponse(sw_path, media_type="application/javascript")
+        raise HTTPException(status_code=404, detail="Service worker not found")
     
-    # Root endpoint handler
+    # Serve React app for all other routes
+    @app.exception_handler(404)
+    async def not_found_handler(request: Request, exc: HTTPException):
+        # Don't serve React app for API routes
+        if request.url.path.startswith("/api/"):
+            return JSONResponse(
+                status_code=404,
+                content={"detail": "API endpoint not found"}
+            )
+        
+        # Serve React app for frontend routes
+        index_path = FRONTEND_BUILD_DIR / "index.html"
+        if index_path.exists():
+            return FileResponse(index_path, media_type="text/html")
+        
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "Page not found"}
+        )
+    
     @app.get("/")
-    async def root():
-        return FileResponse(os.path.join(FRONTEND_BUILD_DIR, "index.html"))
-    
-    # This catch-all route serves your React app's index.html for client-side routing
-    # It should be the LAST route defined
-    @app.get("/{full_path:path}")
-    async def serve_react_app(full_path: str):
-        # Skip API routes (they're already handled by app.mount("/api", ...))
-        if full_path.startswith("api/"):
-            raise HTTPException(status_code=404, detail="API endpoint not found")
-        
-        # Skip health endpoint (already handled above)
-        if full_path == "health":
-            raise HTTPException(status_code=404, detail="Use /health directly")
-        
-        # Try to serve specific files from the build directory
-        if full_path:
-            file_path = os.path.join(FRONTEND_BUILD_DIR, full_path)
-            if os.path.exists(file_path) and os.path.isfile(file_path):
-                return FileResponse(file_path)
-        
-        # For all other paths, serve the main index.html for React routing
-        return FileResponse(os.path.join(FRONTEND_BUILD_DIR, "index.html"))
+    async def serve_react_app():
+        """Serve the React application"""
+        index_path = FRONTEND_BUILD_DIR / "index.html"
+        if index_path.exists():
+            return FileResponse(index_path, media_type="text/html")
+        raise HTTPException(status_code=500, detail="Frontend not available")
 
 else:
-    # Fallback if frontend build doesn't exist
+    logger.warning("⚠️ Frontend build directory not found - serving API only")
+    
     @app.get("/")
-    async def root():
-        return {
-            "message": "AI Recipe + Grocery Delivery App API",
-            "status": "running",
-            "version": "1.0.0",
-            "features": [
-                "AI Recipe Generation",
-                "Starbucks Secret Menu",
-                "Walmart Grocery Integration",
-                "User Authentication",
-                "Recipe History"
-            ]
-        }
+    async def api_only():
+        return JSONResponse({
+            "message": "buildyoursmartcart.com API",
+            "docs": "/api/docs",
+            "status": "running"
+        })
 
-# This block is for local development with `python main.py`
-# Google Cloud Run will use the `app` object directly
+# Graceful shutdown handler
+def signal_handler(signum, frame):
+    logger.info(f"Received signal {signum}, shutting down gracefully...")
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
+
 if __name__ == "__main__":
-    import uvicorn
-    # Google Cloud Run provides the PORT environment variable
+    # Get port from environment (Cloud Run sets this)
     port = int(os.environ.get("PORT", 8080))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    
+    logger.info(f"🚀 Starting buildyoursmartcart.com on port {port}")
+    logger.info(f"📝 Environment: {os.getenv('NODE_ENV', 'development')}")
+    
+    # Production-optimized uvicorn configuration
+    uvicorn_config = {
+        "host": "0.0.0.0",
+        "port": port,
+        "log_level": "info",
+        "access_log": True,
+        "workers": 1,  # Cloud Run handles scaling
+        "loop": "asyncio",
+        "http": "h11",
+    }
+    
+    # Add development features only in non-production
+    if os.getenv("NODE_ENV") != "production":
+        uvicorn_config.update({
+            "reload": False,  # Don't use reload in containers
+            "log_level": "debug"
+        })
+    
+    uvicorn.run(app, **uvicorn_config)
