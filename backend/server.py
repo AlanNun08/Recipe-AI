@@ -2578,7 +2578,7 @@ async def get_cart_options(
         total_products = 0
         
         for ingredient in shopping_list:
-            print(f"🔍 Searching products for: {ingredient}")
+            # Searching products for ingredient
             products = await search_walmart_products(ingredient)
             
             if products:
