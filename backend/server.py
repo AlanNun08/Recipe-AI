@@ -1576,6 +1576,13 @@ async def resend_verification_code(resend_request: ResendCodeRequest):
 async def login_user(login_data: UserLogin):
     """Login user with email and password"""
     try:
+        # Rate limiting check
+        if not check_rate_limit(login_data.email, "login"):
+            raise HTTPException(
+                status_code=429, 
+                detail="Too many login attempts. Please try again in 15 minutes."
+            )
+        
         # Try multiple search strategies to find the user
         email_input = login_data.email.strip()
         email_lower = email_input.lower()
