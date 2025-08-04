@@ -188,7 +188,7 @@ class EmergentIntegrationsVerifier:
                 "origin_url": "https://test.com"
             }
             
-            endpoint = f"{BACKEND_URL}/create-checkout-session"
+            endpoint = f"{BACKEND_URL}/subscription/create-checkout"
             self.log(f"Testing endpoint: {endpoint}")
             self.log(f"Request data: {json.dumps(checkout_data, indent=2)}")
             
