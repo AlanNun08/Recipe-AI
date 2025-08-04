@@ -349,7 +349,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Stripe Subscription Cancel/Resubscribe Endpoints - COMPLETED"
+    - "emergentintegrations Library Fix Verification - COMPLETED"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
