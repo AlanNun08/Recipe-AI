@@ -37,12 +37,15 @@ gcloud services enable \
     containerregistry.googleapis.com \
     --quiet
 
-# Build and deploy using Cloud Build
 echo "🏗️ Building and deploying with Cloud Build..."
 gcloud builds submit \
     --tag "$IMAGE_NAME:latest" \
     --timeout=1800s \
     .
+
+echo "⚙️  Before deployment, make sure environment variables are set!"
+echo "   Run: ./setup-production-env.sh (if not done already)"
+echo ""
 
 # Deploy to Cloud Run with production settings
 echo "🚀 Deploying to Cloud Run..."
@@ -58,7 +61,7 @@ gcloud run deploy "$SERVICE_NAME" \
     --max-instances 100 \
     --min-instances 0 \
     --port 8080 \
-    --set-env-vars "NODE_ENV=production" \
+    --update-env-vars "NODE_ENV=production,PYTHONUNBUFFERED=1" \
     --quiet
 
 # Get the service URL
