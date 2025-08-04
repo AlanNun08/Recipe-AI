@@ -661,7 +661,7 @@ Respond with JSON in this exact format:
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="Failed to parse drink recipe from AI")
     except Exception as e:
-        print(f"Error generating Starbucks drink: {e}")
+        # Error generating Starbucks drink
         raise HTTPException(status_code=500, detail="Failed to generate Starbucks drink")
 
 @api_router.get("/curated-starbucks-recipes")
