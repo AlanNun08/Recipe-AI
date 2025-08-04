@@ -65,8 +65,9 @@
 1. **Update CORS Origins**:
    ```python
    allow_origins=[
-       "https://your-actual-domain.com",  # Replace with real domain
-       # Remove localhost entries for production
+       "https://buildyoursmartcart.com",  # Production domain
+       "https://www.buildyoursmartcart.com",  # WWW variant
+       # Remove localhost entries for production deployment
    ]
    ```
 
