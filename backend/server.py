@@ -2651,7 +2651,7 @@ async def generate_cart_url(cart_data: Dict[str, Any]):
         }
         
     except Exception as e:
-        print(f"❌ Error generating cart URL: {str(e)}")
+        # Error generating cart URL
         raise HTTPException(status_code=500, detail=f"Error generating cart URL: {str(e)}")
 
 # END NEW WALMART INTEGRATION
