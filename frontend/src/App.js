@@ -1834,7 +1834,7 @@ function App() {
               setFinalWalmartUrl(`https://affil.walmart.com/cart/addToCart?items=${walmartItems.join(',')}`);
               // Walmart URL generated
             } else {
-              console.warn('⚠️ No selected items for Walmart URL generation');
+              // No selected items
               setFinalWalmartUrl('');
             };
             
