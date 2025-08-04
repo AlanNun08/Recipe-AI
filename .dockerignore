@@ -1,0 +1,85 @@
+# Node.js dependencies (will be installed in container)
+frontend/node_modules/
+node_modules/
+
+# Python cache and virtual environments  
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+.env/
+.venv/
+venv/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+
+# Development files
+.git/
+.gitignore
+.emergent/
+README.md
+*.md
+docs/
+tests/
+test_*.py
+*_test.py
+
+# Build artifacts that will be created in container
+frontend/build/
+dist/
+build/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+temp_files/
+automation_output/
+*.log
+*.tmp
+*.temp
+
+# Development scripts
+*_test.py
+test_*.py
+verify_*.py
+*_deployment.tar.gz
+
+# Environment files (will be set by Cloud Run)
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Capacitor mobile build files
+frontend/android/
+frontend/ios/
+frontend/capacitor.config.json
+
+# Yarn/npm cache
+.yarn-cache/
+.npm/
