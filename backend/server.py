@@ -2674,7 +2674,7 @@ async def delete_starbucks_recipe(recipe_id: str):
         else:
             raise HTTPException(status_code=404, detail="Starbucks recipe not found")
     except Exception as e:
-        print(f"Error deleting Starbucks recipe: {e}")
+        # Error deleting Starbucks recipe
         raise HTTPException(status_code=500, detail="Failed to delete Starbucks recipe")
 
 # ========================================
