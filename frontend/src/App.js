@@ -92,7 +92,7 @@ function App() {
     if (user) {
       try {
         localStorage.setItem('ai_chef_user', JSON.stringify(user));
-        console.log('💾 User session saved:', user.email);
+        // User session saved
       } catch (error) {
         console.error('❌ Failed to save user session:', error);
       }
