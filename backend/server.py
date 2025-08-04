@@ -2535,7 +2535,7 @@ async def search_walmart_products(ingredient: str) -> List[WalmartProduct]:
             return products
             
         else:
-            print(f"⚠️ Walmart API error {response.status_code} for '{ingredient}': {response.text}")
+            # Walmart API error
             return []
             
     except Exception as e:
