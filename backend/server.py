@@ -2620,7 +2620,7 @@ async def get_cart_options(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error in cart options: {str(e)}")
+        # Error in cart options
         raise HTTPException(status_code=500, detail=f"Error creating cart options: {str(e)}")
 
 @api_router.post("/grocery/generate-cart-url")
