@@ -1838,7 +1838,7 @@ function App() {
               setFinalWalmartUrl('');
             };
             
-            console.log('✅ Product options loaded:', Object.keys(options).length, 'ingredients');
+            // Product options loaded
           } else {
             // No valid API response - check for different formats
             console.log('⚠️ API Response Debug:', response.data);
