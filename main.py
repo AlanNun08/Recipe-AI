@@ -57,6 +57,17 @@ async def health_check():
 # Mount the backend API with /api prefix
 app.mount("/api", backend_app)
 
+# Root endpoint that serves backend API info
+@app.get("/api")
+async def api_root():
+    """API root endpoint"""
+    return JSONResponse({
+        "message": "buildyoursmartcart.com API",
+        "version": "2.0.0",
+        "docs": "/api/docs" if os.getenv("NODE_ENV") != "production" else None,
+        "health": "/api/health"
+    })
+
 # Static files configuration
 FRONTEND_BUILD_DIR = Path("/app/frontend/build")
 
