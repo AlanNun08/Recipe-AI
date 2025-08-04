@@ -1853,7 +1853,7 @@ async def reset_password(request: PasswordResetVerify):
 # Keep all existing routes for backward compatibility
 @api_router.get("/")
 async def root():
-    print("🔍 ROOT ENDPOINT CALLED - Console log test working!")
+    # Root endpoint
     logging.info("Root endpoint accessed")
     return {
         "message": "AI Recipe & Grocery API", 
