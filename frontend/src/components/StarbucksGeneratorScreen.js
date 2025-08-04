@@ -64,7 +64,7 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user, AP
         setCommunityRecipes(response.data.recipes || []);
       }
     } catch (error) {
-      console.error('Error loading recipes:', error);
+      // Error loading recipes
       showNotification('Failed to load recipes', 'error');
     } finally {
       setIsLoadingRecipes(false);
