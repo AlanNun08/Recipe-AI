@@ -2538,7 +2538,7 @@ function App() {
           setRecipes([]);
         }
       } catch (error) {
-        console.error('Error fetching recipes:', error);
+        // Error fetching recipes
         showNotification('❌ Failed to load recipe history', 'error');
         setRecipes([]);
       } finally {
