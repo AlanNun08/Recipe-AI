@@ -1756,7 +1756,7 @@ function App() {
           }
         })
         .then(response => {
-          console.log('✅ Cart options response:', response.data);
+          // Cart options received
           
           // Handle the case where no products are found
           if (response.data && response.data.status === 'no_products_found') {
