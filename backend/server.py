@@ -2587,7 +2587,7 @@ async def get_cart_options(
                     options=products
                 ))
                 total_products += len(products)
-                print(f"✅ Found {len(products)} real Walmart products for {ingredient}")
+                # Found products for ingredient
             else:
                 print(f"⚠️ No products found for {ingredient}")
         
