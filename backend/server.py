@@ -2531,7 +2531,7 @@ async def search_walmart_products(ingredient: str) -> List[WalmartProduct]:
                     )
                     products.append(product)
             
-            print(f"✅ Found {len(products)} real Walmart products for '{ingredient}'")
+            # Found Walmart products
             return products
             
         else:
