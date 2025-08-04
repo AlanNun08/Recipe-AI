@@ -271,7 +271,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Environment Variable Changes Testing - COMPLETED"
+    - "Stripe Payment System - Comprehensive Testing - COMPLETED"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
