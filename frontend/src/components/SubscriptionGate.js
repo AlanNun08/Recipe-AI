@@ -20,7 +20,7 @@ const SubscriptionGate = ({ user, children, featureName = "this premium feature"
         setSubscriptionStatus(status);
       }
     } catch (error) {
-      console.error('Error checking subscription status:', error);
+      // Error checking subscription status
     } finally {
       setLoading(false);
     }
