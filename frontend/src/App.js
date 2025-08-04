@@ -1174,7 +1174,7 @@ function App() {
         showNotification('✅ Password reset successful! Please login with your new password', 'success');
         
       } catch (error) {
-        console.error('Password reset failed:', error);
+        // Password reset failed
         const errorMessage = error.response?.data?.detail || 'Password reset failed. Please try again.';
         showNotification(`❌ ${errorMessage}`, 'error');
       } finally {
