@@ -2411,7 +2411,7 @@ async def get_recipe_history(user_id: str):
         }
         
     except Exception as e:
-        print(f"Error getting recipe history: {e}")
+        # Error getting recipe history
         raise HTTPException(status_code=500, detail="Failed to get recipe history")
 
 async def get_recipe(recipe_id: str):
