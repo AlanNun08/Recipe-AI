@@ -3258,7 +3258,8 @@ async def generate_cart_url_v2(cart_data: Dict[str, Any]):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://your-production-domain.com",  # Replace with your actual domain
+        "https://buildyoursmartcart.com",  # Production domain
+        "https://www.buildyoursmartcart.com",  # WWW variant
         "https://*.emergentagent.com",  # Development preview URLs
         "http://localhost:3000",  # Local development only
         "http://127.0.0.1:3000"   # Local development only
