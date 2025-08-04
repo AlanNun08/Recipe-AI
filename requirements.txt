@@ -18,7 +18,7 @@ pyjwt>=2.10.1
 python-multipart>=0.0.9
 
 # Payment processing
-emergentintegrations
+emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
 
 # AI and external APIs
 openai>=1.12.0
