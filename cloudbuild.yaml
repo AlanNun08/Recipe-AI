@@ -16,7 +16,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/buildyoursmartcart:$BUILD_ID']
 
-  # Deploy to Cloud Run
+  # Deploy to Cloud Run with production environment variables
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args: [
@@ -32,7 +32,8 @@ steps:
       '--max-instances', '100',
       '--min-instances', '0',
       '--port', '8080',
-      '--set-env-vars', 'NODE_ENV=production',
+      '--set-env-vars', 'NODE_ENV=production,PYTHONUNBUFFERED=1',
+      '--update-env-vars', 'REACT_APP_BACKEND_URL=https://buildyoursmartcart.com',
       '--quiet'
     ]
 
