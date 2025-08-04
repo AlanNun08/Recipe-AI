@@ -1845,7 +1845,7 @@ function App() {
             if (response.data && response.data.ingredients) {
               // Found ingredients format
             } else {
-              console.log('⚠️ Invalid API response - only real Walmart products are used');
+              // Invalid API response
             }
           }
         })
