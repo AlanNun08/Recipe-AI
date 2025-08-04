@@ -1,0 +1,49 @@
+# Environment Variables Template for Google Cloud Run
+# Copy this file and update with your actual values
+
+# Production Environment Variables for buildyoursmartcart.com
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: buildyoursmartcart-config
+data:
+  # Application Configuration
+  NODE_ENV: "production"
+  PYTHONUNBUFFERED: "1"
+  PORT: "8080"
+
+  # API Keys (Replace with your actual keys)
+  STRIPE_API_KEY: "sk_live_YOUR_LIVE_STRIPE_KEY"
+  OPENAI_API_KEY: "sk-YOUR_OPENAI_API_KEY"
+  
+  # Walmart API Configuration
+  WALMART_CONSUMER_ID: "YOUR_WALMART_CONSUMER_ID"
+  WALMART_KEY_VERSION: "1"
+  WALMART_PRIVATE_KEY: "YOUR_WALMART_PRIVATE_KEY"
+  
+  # Database Configuration
+  MONGO_URL: "mongodb+srv://username:password@cluster.mongodb.net/buildyoursmartcart_production"
+  DB_NAME: "buildyoursmartcart_production"
+  
+  # Email Configuration
+  MAILJET_API_KEY: "YOUR_MAILJET_API_KEY"
+  MAILJET_SECRET_KEY: "YOUR_MAILJET_SECRET_KEY"
+  SENDER_EMAIL: "noreply@buildyoursmartcart.com"
+  
+  # Security
+  SECRET_KEY: "YOUR_LONG_RANDOM_SECRET_KEY_FOR_JWT"
+
+---
+# Instructions for Cloud Run deployment:
+# 
+# 1. Update all the placeholder values above with your actual API keys
+# 2. Use gcloud CLI to set environment variables:
+#
+# gcloud run services update buildyoursmartcart \
+#   --region=us-central1 \
+#   --set-env-vars="NODE_ENV=production,STRIPE_API_KEY=sk_live_...,OPENAI_API_KEY=sk-..."
+#
+# 3. Or use the Cloud Console:
+#   - Go to Cloud Run → your service → Edit & Deploy New Revision
+#   - Go to Variables & Secrets tab
+#   - Add each environment variable manually
