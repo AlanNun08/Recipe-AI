@@ -204,7 +204,8 @@ app.add_middleware(
         "localhost",
         "127.0.0.1", 
         "*.emergentagent.com",
-        "your-production-domain.com"  # Replace with actual domain
+        "buildyoursmartcart.com",
+        "www.buildyoursmartcart.com"
     ]
 )
 
