@@ -2575,7 +2575,7 @@ function App() {
           showNotification('✅ Recipe deleted successfully', 'success');
           fetchRecipes(); // Refresh the list
         } catch (error) {
-          console.error('Error deleting recipe:', error);
+          // Error deleting recipe
           showNotification('❌ Failed to delete recipe', 'error');
         }
       }
