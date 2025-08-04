@@ -2482,7 +2482,7 @@ async def search_walmart_products(ingredient: str) -> List[WalmartProduct]:
         key_version = os.environ.get('WALMART_KEY_VERSION', '1')
         
         if not all([consumer_id, private_key_pem]):
-            print("❌ Missing Walmart API credentials")
+            # Missing API credentials
             return []
         
         # Load private key
