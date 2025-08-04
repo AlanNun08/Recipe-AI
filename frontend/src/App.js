@@ -1760,7 +1760,7 @@ function App() {
           
           // Handle the case where no products are found
           if (response.data && response.data.status === 'no_products_found') {
-            console.log('⚠️ No Walmart products found for this recipe');
+            // No Walmart products found
             setProductOptions({});
             setSelectedProducts({});
             setCartItems([]);
