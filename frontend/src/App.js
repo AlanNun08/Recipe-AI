@@ -415,7 +415,7 @@ function App() {
         showNotification('✅ Registration successful! Check your email for verification code', 'success');
         
       } catch (error) {
-        console.error('Registration failed:', error);
+        // Registration failed
         const errorMessage = error.response?.data?.detail || 'Registration failed. Please try again.';
         showNotification(`❌ ${errorMessage}`, 'error');
       } finally {
