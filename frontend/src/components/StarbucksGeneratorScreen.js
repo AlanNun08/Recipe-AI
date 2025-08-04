@@ -89,7 +89,7 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user, AP
       setGeneratedDrink(response.data);
       showNotification('🎉 Your secret menu drink is ready!', 'success');
     } catch (error) {
-      console.error('Error generating drink:', error);
+      // Error generating drink
       showNotification('Failed to generate drink. Please try again.', 'error');
     } finally {
       setIsGenerating(false);
