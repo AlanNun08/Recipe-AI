@@ -72,7 +72,7 @@ function App() {
             setCurrentScreen('dashboard');
           }
         } else {
-          console.log('📱 No saved user session found');
+          // No saved session found
         }
       } catch (error) {
         console.error('❌ Failed to restore user session:', error);
