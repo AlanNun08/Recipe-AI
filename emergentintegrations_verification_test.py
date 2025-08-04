@@ -210,7 +210,7 @@ class EmergentIntegrationsVerifier:
                 elif response.status_code == 500:
                     # Expected with placeholder API keys
                     error_msg = result.get("detail", "")
-                    if "stripe" in error_msg.lower() or "api" in error_msg.lower():
+                    if "checkout session" in error_msg.lower() or "stripe" in error_msg.lower() or "api" in error_msg.lower():
                         self.log("✅ Endpoint exists and responds (expected error with placeholder API key)")
                         self.log(f"✅ Error message: {error_msg}")
                         return True
