@@ -1850,7 +1850,7 @@ function App() {
           }
         })
         .catch(error => {
-          console.error('❌ Error fetching cart options:', error);
+          // Error fetching cart options
           console.log('ℹ️ No cart generated - only real Walmart products are used');
         })
         .finally(() => {
