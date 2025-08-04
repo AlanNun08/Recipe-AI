@@ -56,7 +56,7 @@ const SubscriptionSuccess = ({ onContinue }) => {
       // If payment is still processing, continue polling
       setTimeout(() => pollPaymentStatus(sessionId, attempts + 1), pollInterval);
     } catch (error) {
-      console.error('Error checking payment status:', error);
+      // Error checking payment status
       setError('Error verifying payment. Please check your subscription status.');
       setLoading(false);
     }
