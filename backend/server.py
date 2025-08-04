@@ -2562,7 +2562,7 @@ async def get_cart_options(
         recipe_title = recipe.get('title', 'Unknown Recipe')
         shopping_list = recipe.get('shopping_list', [])
         
-        print(f"✅ Found recipe: {recipe_title} with {len(shopping_list)} ingredients")
+        # Found recipe
         
         if not shopping_list:
             return {
