@@ -184,7 +184,7 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user, AP
         loadRecipes();
       }
     } catch (error) {
-      console.error('Error sharing recipe:', error);
+      // Error sharing recipe
       showNotification('Failed to share recipe. Please try again.', 'error');
     } finally {
       setIsSharing(false);
