@@ -1851,7 +1851,7 @@ function App() {
         })
         .catch(error => {
           // Error fetching cart options
-          console.log('ℹ️ No cart generated - only real Walmart products are used');
+          // No cart generated
         })
         .finally(() => {
           setLoadingCart(false);
