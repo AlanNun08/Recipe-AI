@@ -203,6 +203,9 @@ class User(BaseModel):
     stripe_subscription_id: Optional[str] = None
     last_payment_date: Optional[datetime] = None
     next_billing_date: Optional[datetime] = None
+    subscription_cancelled_date: Optional[datetime] = None
+    subscription_cancel_reason: Optional[str] = None
+    subscription_reactivated_date: Optional[datetime] = None
 
 class UserRegistration(BaseModel):
     first_name: str
