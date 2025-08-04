@@ -1914,7 +1914,7 @@ function App() {
         setFinalWalmartUrl('');
       };
 
-      console.log('✅ Product selection updated for', ingredientName, ':', selectedProduct.name);
+      // Product selection updated
     };
 
     // Update quantity and regenerate URL
