@@ -474,6 +474,33 @@ class GroceryCart(BaseModel):
             datetime: lambda v: v.isoformat()
         }
 
+# Rate limiting for authentication endpoints
+auth_rate_limit = {}
+MAX_LOGIN_ATTEMPTS = 5
+RATE_LIMIT_WINDOW = 900  # 15 minutes
+
+def check_rate_limit(email: str, endpoint: str = "login") -> bool:
+    """Check if user has exceeded rate limit for authentication endpoints"""
+    key = f"{endpoint}:{email.lower()}"
+    now = time.time()
+    
+    if key not in auth_rate_limit:
+        auth_rate_limit[key] = []
+    
+    # Clean old attempts (older than RATE_LIMIT_WINDOW)
+    auth_rate_limit[key] = [
+        attempt_time for attempt_time in auth_rate_limit[key] 
+        if now - attempt_time < RATE_LIMIT_WINDOW
+    ]
+    
+    # Check if limit exceeded
+    if len(auth_rate_limit[key]) >= MAX_LOGIN_ATTEMPTS:
+        return False
+    
+    # Add current attempt
+    auth_rate_limit[key].append(now)
+    return True
+
 # Password hashing utilities
 @api_router.post("/generate-starbucks-drink")
 async def generate_starbucks_drink(request: StarbucksRequest):
