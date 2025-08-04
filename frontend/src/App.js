@@ -68,7 +68,7 @@ function App() {
           setUser(userData);
           // Only set to dashboard if we're on landing page or if currentScreen is a protected route
           if (currentScreen === 'landing' || !['landing', 'register', 'verify-email', 'login', 'forgot-password', 'reset-password'].includes(currentScreen)) {
-            console.log('📱 Setting screen to dashboard after session restore');
+            // Set screen to dashboard
             setCurrentScreen('dashboard');
           }
         } else {
