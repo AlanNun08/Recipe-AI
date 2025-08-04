@@ -115,7 +115,7 @@ function App() {
   const clearUserSession = () => {
     try {
       localStorage.removeItem('ai_chef_user');
-      console.log('User session cleared');
+      // Session cleared
     } catch (error) {
       console.error('Failed to clear user session:', error);
     }
