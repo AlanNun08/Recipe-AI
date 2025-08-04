@@ -2809,7 +2809,7 @@ function App() {
     if (!user && protectedScreens.includes(currentScreen)) {
       const savedUser = localStorage.getItem('ai_chef_user');
       if (!savedUser) {
-        console.log('🔄 No saved session found, redirecting to landing from:', currentScreen);
+        // No saved session, redirecting to landing
         setCurrentScreen('landing');
       }
     }
