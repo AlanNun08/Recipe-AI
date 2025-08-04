@@ -1768,7 +1768,7 @@ function App() {
             return; // Exit early
           }
           
-          console.log('🛒 Cart options response:', response.data);
+          // Cart options loaded
           
           // Check for correct backend format: response.data.ingredient_options
           if (response.data && response.data.ingredient_options) {
