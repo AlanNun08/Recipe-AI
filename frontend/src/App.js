@@ -14,12 +14,7 @@ function App() {
   // API Configuration - Debug version
   const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
   
-  // Debug logging for environment variables
-  console.log('🔧 Environment Debug:');
-  console.log('  REACT_APP_BACKEND_URL:', process.env.REACT_APP_BACKEND_URL);
-  console.log('  NODE_ENV:', process.env.NODE_ENV);
-  console.log('  API URL being used:', API);
-  console.log('  All REACT_APP vars:', Object.keys(process.env).filter(key => key.startsWith('REACT_APP_')));
+  // Environment variables configured
 
   // Simple cache clearing (no excessive logging) - ONLY CLEAR CACHES, NOT AUTH DATA
   useEffect(() => {
