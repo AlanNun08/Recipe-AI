@@ -64,7 +64,7 @@ function App() {
         const savedUser = localStorage.getItem('ai_chef_user');
         if (savedUser) {
           const userData = JSON.parse(savedUser);
-          console.log('🔄 Restoring user session:', userData.email);
+          // Restore user session
           setUser(userData);
           // Only set to dashboard if we're on landing page or if currentScreen is a protected route
           if (currentScreen === 'landing' || !['landing', 'register', 'verify-email', 'login', 'forgot-password', 'reset-password'].includes(currentScreen)) {
