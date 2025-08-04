@@ -17,6 +17,9 @@ bcrypt>=4.0.0
 pyjwt>=2.10.1
 python-multipart>=0.0.9
 
+# Payment processing
+emergentintegrations
+
 # AI and external APIs
 openai>=1.12.0
 httpx>=0.28.0
