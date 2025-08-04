@@ -2473,7 +2473,7 @@ async def search_walmart_products(ingredient: str) -> List[WalmartProduct]:
     """
     Real Walmart API product search using ingredient names
     """
-    print(f"🔍 Searching Walmart API for: '{ingredient}'")
+    # Search Walmart API
     
     try:
         # Get credentials from environment
