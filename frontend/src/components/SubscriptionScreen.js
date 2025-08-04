@@ -57,7 +57,7 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
         setError(errorData.detail || 'Failed to create checkout session');
       }
     } catch (error) {
-      console.error('Error creating subscription:', error);
+      // Error creating subscription
       setError('Failed to start subscription process');
     } finally {
       setProcessingPayment(false);
