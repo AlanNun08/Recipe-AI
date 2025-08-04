@@ -799,7 +799,7 @@ function App() {
         }
         
       } catch (error) {
-        console.error('Login failed:', error);
+        // Login failed
         const errorMessage = error.response?.data?.detail || 'Login failed. Please check your credentials.';
         showNotification(`❌ ${errorMessage}`, 'error');
       } finally {
