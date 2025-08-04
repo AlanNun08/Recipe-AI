@@ -1043,7 +1043,7 @@ function App() {
         showNotification('📧 Password reset code sent! Check your email', 'success');
         
       } catch (error) {
-        console.error('Password reset request failed:', error);
+        // Password reset request failed
         // Don't show specific error for security - always show success message
         setPendingResetEmail(email);
         setCurrentScreen('reset-password');
