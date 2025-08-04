@@ -2552,7 +2552,7 @@ async def get_cart_options(
         # Check subscription access for premium feature
         await check_subscription_access(user_id)
         
-        print(f"🛒 NEW CART OPTIONS: recipe_id={recipe_id}, user_id={user_id}")
+        # New cart options request
         
         # Get recipe from database
         recipe = await db.recipes.find_one({"id": recipe_id, "user_id": user_id})
