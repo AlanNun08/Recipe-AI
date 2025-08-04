@@ -2610,7 +2610,7 @@ async def get_cart_options(
         
         if total_products == 0:
             response_data["message"] = "No Walmart products found for this recipe's ingredients."
-            print("⚠️ No Walmart products found for any ingredients")
+            # No Walmart products found
         else:
             print(f"🎉 Cart options created: {total_products} total products for {len(ingredient_options)} ingredients")
         
