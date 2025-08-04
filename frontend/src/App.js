@@ -1841,7 +1841,7 @@ function App() {
             // Product options loaded
           } else {
             // No valid API response - check for different formats
-            console.log('⚠️ API Response Debug:', response.data);
+            // API response debug
             if (response.data && response.data.ingredients) {
               console.log('⚠️ Found ingredients format (old), expected ingredient_options format');
             } else {
