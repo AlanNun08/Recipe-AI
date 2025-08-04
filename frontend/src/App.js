@@ -639,7 +639,7 @@ function App() {
         showNotification('🎉 Email verified successfully! Welcome to AI Chef!', 'success');
         
       } catch (error) {
-        console.error('Verification failed:', error);
+        // Verification failed
         const errorMessage = error.response?.data?.detail || 'Verification failed. Please try again.';
         showNotification(`❌ ${errorMessage}`, 'error');
       } finally {
