@@ -1392,7 +1392,7 @@ function App() {
         showNotification('🎉 Recipe generated successfully!', 'success');
         
       } catch (error) {
-        console.error('Recipe generation failed:', error);
+        // Recipe generation failed
         const errorMessage = error.response?.data?.detail || 'Failed to generate recipe. Please try again.';
         showNotification(`❌ ${errorMessage}`, 'error');
       } finally {
