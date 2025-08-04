@@ -659,7 +659,7 @@ function App() {
         showNotification('📧 New verification code sent!', 'success');
         
       } catch (error) {
-        console.error('Resend failed:', error);
+        // Resend failed
         const errorMessage = error.response?.data?.detail || 'Failed to resend code. Please try again.';
         showNotification(`❌ ${errorMessage}`, 'error');
       } finally {
