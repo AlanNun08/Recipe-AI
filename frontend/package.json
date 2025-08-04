@@ -21,9 +21,11 @@
   },
   "scripts": {
     "start": "craco start",
-    "build": "craco build",
+    "build": "craco build && echo 'Frontend build completed successfully'",
+    "build:production": "NODE_ENV=production craco build --production",
     "test": "craco test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'"
   },
   "browserslist": {
     "production": [
