@@ -2589,7 +2589,8 @@ async def get_cart_options(
                 total_products += len(products)
                 # Found products for ingredient
             else:
-                print(f"⚠️ No products found for {ingredient}")
+                # No products found
+                pass
         
         # Create response - always return structure, even if no products found
         ingredient_options_list = []
