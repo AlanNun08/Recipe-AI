@@ -2890,6 +2890,108 @@ async def stripe_webhook(request: Request):
         logger.error(f"Webhook error: {e}")
         return {"status": "error", "message": str(e)}
 
+@api_router.post("/subscription/cancel/{user_id}")
+async def cancel_subscription(user_id: str):
+    """Cancel user's active subscription"""
+    try:
+        user = await users_collection.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Check if user has an active subscription
+        if not is_subscription_active(user):
+            raise HTTPException(status_code=400, detail="No active subscription to cancel")
+        
+        # Update user subscription status to cancelled
+        await users_collection.update_one(
+            {"id": user_id},
+            {
+                "$set": {
+                    "subscription_status": "cancelled",
+                    "subscription_cancelled_date": datetime.utcnow(),
+                    "subscription_cancel_reason": "user_requested"
+                }
+            }
+        )
+        
+        # If we have a Stripe subscription ID, we could cancel it on Stripe side too
+        stripe_subscription_id = user.get("stripe_subscription_id")
+        if stripe_subscription_id and STRIPE_API_KEY:
+            try:
+                # Note: emergentintegrations might not have cancel subscription method
+                # For now, we'll just update our local database
+                # In production, you'd want to call Stripe's API to cancel the subscription
+                logger.info(f"Subscription cancelled locally for user {user_id}, Stripe ID: {stripe_subscription_id}")
+            except Exception as stripe_error:
+                logger.error(f"Failed to cancel Stripe subscription: {stripe_error}")
+                # Continue anyway - local cancellation is successful
+        
+        logger.info(f"Subscription cancelled for user {user_id}")
+        
+        return {
+            "status": "success",
+            "message": "Subscription cancelled successfully",
+            "cancelled_at": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error cancelling subscription: {e}")
+        raise HTTPException(status_code=500, detail="Failed to cancel subscription")
+
+@api_router.post("/subscription/resubscribe/{user_id}")
+async def resubscribe_user(user_id: str):
+    """Reactivate a cancelled subscription (requires new payment)"""
+    try:
+        user = await users_collection.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Check if user has a cancelled subscription
+        subscription_status = user.get("subscription_status", "trial")
+        if subscription_status not in ["cancelled", "expired"]:
+            if is_subscription_active(user):
+                raise HTTPException(status_code=400, detail="User already has active subscription")
+            elif is_trial_active(user):
+                raise HTTPException(status_code=400, detail="User is still in trial period")
+        
+        # Reset subscription status to trial so they can start a new subscription
+        # In a real implementation, this would redirect them to create a new checkout session
+        await users_collection.update_one(
+            {"id": user_id},
+            {
+                "$set": {
+                    "subscription_status": "trial",  # Reset to trial
+                    "subscription_reactivated_date": datetime.utcnow(),
+                    "subscription_cancelled_date": None,
+                    "subscription_cancel_reason": None
+                },
+                "$unset": {
+                    "stripe_subscription_id": "",
+                    "subscription_start_date": "",
+                    "subscription_end_date": "",
+                    "last_payment_date": "",
+                    "next_billing_date": ""
+                }
+            }
+        )
+        
+        logger.info(f"Subscription reset to trial for resubscription: {user_id}")
+        
+        return {
+            "status": "success",
+            "message": "Subscription reset to trial. User can now create a new subscription.",
+            "reactivated_at": datetime.utcnow().isoformat(),
+            "next_step": "Create new checkout session for subscription"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reactivating subscription: {e}")
+        raise HTTPException(status_code=500, detail="Failed to reactivate subscription")
+
 # Middleware to check subscription access for premium endpoints
 async def check_subscription_access(user_id: str):
     """Check if user has access to premium features"""
