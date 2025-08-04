@@ -1843,7 +1843,7 @@ function App() {
             // No valid API response - check for different formats
             // API response debug
             if (response.data && response.data.ingredients) {
-              console.log('⚠️ Found ingredients format (old), expected ingredient_options format');
+              // Found ingredients format
             } else {
               console.log('⚠️ Invalid API response - only real Walmart products are used');
             }
