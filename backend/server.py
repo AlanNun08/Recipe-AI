@@ -2539,7 +2539,7 @@ async def search_walmart_products(ingredient: str) -> List[WalmartProduct]:
             return []
             
     except Exception as e:
-        print(f"❌ Error searching Walmart for '{ingredient}': {str(e)}")
+        # Error searching Walmart
         return []
 
 @api_router.post("/grocery/cart-options")
