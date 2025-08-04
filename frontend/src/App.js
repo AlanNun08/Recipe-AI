@@ -2835,7 +2835,7 @@ function App() {
     if (!user && protectedScreens.includes(currentScreen)) {
       const savedUser = localStorage.getItem('ai_chef_user');
       if (savedUser) {
-        console.log('⏳ User session exists in localStorage, waiting for restoration...');
+        // User session exists, waiting for restoration
         return (
           <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
             <div className="text-center">
