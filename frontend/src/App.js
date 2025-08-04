@@ -1832,7 +1832,7 @@ function App() {
             
             if (walmartItems.length > 0) {
               setFinalWalmartUrl(`https://affil.walmart.com/cart/addToCart?items=${walmartItems.join(',')}`);
-              console.log('✅ Walmart URL generated with SELECTED items only:', walmartItems.length, 'items');
+              // Walmart URL generated
             } else {
               console.warn('⚠️ No selected items for Walmart URL generation');
               setFinalWalmartUrl('');
