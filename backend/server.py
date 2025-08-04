@@ -1931,6 +1931,47 @@ async def reset_password(request: PasswordResetVerify):
         raise HTTPException(status_code=500, detail="Password reset failed")
 
 # Keep all existing routes for backward compatibility
+@api_router.get("/health")
+async def health_check():
+    """Comprehensive health check for production monitoring"""
+    try:
+        # Check database connection
+        try:
+            await db.command("ping")
+            db_status = "healthy"
+        except Exception as db_error:
+            db_status = f"error: {str(db_error)}"
+        
+        # Check external API availability (basic)
+        external_apis = {
+            "openai": bool(OPENAI_API_KEY),
+            "stripe": bool(STRIPE_API_KEY),
+            "walmart": bool(WALMART_CONSUMER_ID and WALMART_PRIVATE_KEY),
+            "mailjet": bool(MAILJET_API_KEY and MAILJET_SECRET_KEY)
+        }
+        
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "healthy",
+                "timestamp": datetime.utcnow().isoformat(),
+                "version": "2.0.0",
+                "database": db_status,
+                "apis_configured": external_apis,
+                "environment": "production" if os.getenv("NODE_ENV") == "production" else "development"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "unhealthy",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        )
+
 @api_router.get("/")
 async def root():
     # Root endpoint
