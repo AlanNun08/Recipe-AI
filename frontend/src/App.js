@@ -75,7 +75,7 @@ function App() {
           // No saved session found
         }
       } catch (error) {
-        console.error('❌ Failed to restore user session:', error);
+        // Failed to restore session
         localStorage.removeItem('ai_chef_user');
       } finally {
         setIsLoadingAuth(false);
