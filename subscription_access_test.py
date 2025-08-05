@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 load_dotenv(Path('/app/backend/.env'))
 
 # Get backend URL
-BACKEND_URL = "https://1622b782-641f-4d82-b075-7432aa2ce82e.preview.emergentagent.com/api"
+BACKEND_URL = "https://3c486d7f-fd64-4ef3-b6a8-4712a4f45211.preview.emergentagent.com/api"
 
 async def test_subscription_access_control():
     """Test that premium endpoints properly block users without access"""

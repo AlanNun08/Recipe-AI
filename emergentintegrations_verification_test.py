@@ -26,7 +26,7 @@ def get_backend_url():
                     return line.split('=', 1)[1].strip()
     except:
         pass
-    return "https://1622b782-641f-4d82-b075-7432aa2ce82e.preview.emergentagent.com"
+    return "https://3c486d7f-fd64-4ef3-b6a8-4712a4f45211.preview.emergentagent.com"
 
 BACKEND_URL = get_backend_url() + "/api"
 DEMO_EMAIL = "demo@test.com"
