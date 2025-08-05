@@ -8,8 +8,8 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 COPY frontend/yarn.lock ./
 
-# Install dependencies with engine ignore for Capacitor compatibility
-RUN yarn install --production=false --network-timeout 300000 --ignore-engines
+# Install dependencies (now without Capacitor mobile dependencies)
+RUN yarn install --production=false --network-timeout 300000
 
 # Copy frontend source
 COPY frontend/ .
