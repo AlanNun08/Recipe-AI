@@ -1650,6 +1650,7 @@ async def login_user(login_data: UserLogin):
             }
         
         # Return successful login
+        logging.info(f"User logged in successfully: {email_lower}")
         return {
             "status": "success",  # Frontend expects this field
             "message": "Login successful",
