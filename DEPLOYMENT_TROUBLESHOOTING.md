@@ -11,8 +11,8 @@ error @capacitor/cli@7.4.2: The engine "node" is incompatible with this module. 
 
 **Solution Applied**: 
 1. Updated Dockerfile to use Node 20
-2. Created web-only package.json without mobile dependencies
-3. Generated separate yarn.web.lock for cleaner builds
+2. Removed Capacitor mobile dependencies from package.json (not needed for web deployment)
+3. Regenerated yarn.lock without mobile dependencies
 
 ### ❌ Yarn Lockfile Error
 ```
