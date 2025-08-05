@@ -44,7 +44,8 @@ class VerificationIssueTester:
         
     async def cleanup(self):
         await self.client.aclose()
-        await client.close()
+        if client:
+            client.close()
     
     def log(self, message: str, level: str = "INFO"):
         timestamp = datetime.now().strftime("%H:%M:%S")
