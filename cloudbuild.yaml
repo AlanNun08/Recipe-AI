@@ -33,7 +33,7 @@ steps:
       '--min-instances', '0',
       '--port', '8080',
       '--set-env-vars', 'NODE_ENV=production,PYTHONUNBUFFERED=1',
-      '--update-env-vars', 'REACT_APP_BACKEND_URL=https://buildyoursmartcart.com',
+      '--update-env-vars', 'REACT_APP_BACKEND_URL=https://buildyoursmartcart.com/api',
       '--quiet'
     ]
 
