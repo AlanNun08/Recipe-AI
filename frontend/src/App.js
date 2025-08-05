@@ -145,7 +145,29 @@ function App() {
     }
   }, [user, currentScreen]);
 
-  // Notification system
+  // Test backend connectivity
+  const testBackendConnection = async () => {
+    try {
+      const response = await axios.get(`${API}/health`, { timeout: 5000 });
+      return response.status === 200;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  // Check backend connection on app load
+  useEffect(() => {
+    const checkConnection = async () => {
+      const isConnected = await testBackendConnection();
+      if (!isConnected) {
+        showNotification('⚠️ Unable to connect to backend services. Some features may not work properly.', 'error');
+      }
+    };
+    
+    checkConnection();
+  }, []);
+
+  // Enhanced notification function with better error categorization
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 4000);
