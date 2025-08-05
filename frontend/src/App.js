@@ -799,9 +799,17 @@ function App() {
         }
         
       } catch (error) {
-        // Login failed
-        const errorMessage = error.response?.data?.detail || 'Login failed. Please check your credentials.';
-        showNotification(`❌ ${errorMessage}`, 'error');
+        // Enhanced error handling for connectivity issues
+        if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
+          showNotification('❌ Unable to connect to server. Please check your internet connection and try again.', 'error');
+        } else if (error.response?.status === 404) {
+          showNotification('❌ Service temporarily unavailable. Please try again later.', 'error');
+        } else if (error.response?.status === 401) {
+          showNotification('❌ Invalid email or password. Please check your credentials.', 'error');
+        } else {
+          const errorMessage = error.response?.data?.detail || 'Login failed. Please check your credentials and try again.';
+          showNotification(`❌ ${errorMessage}`, 'error');
+        }
       } finally {
         setIsLoggingIn(false);
       }
