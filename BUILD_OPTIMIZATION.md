@@ -8,7 +8,7 @@
 
 ### ✅ **Removed Unnecessary Mobile Dependencies**
 - **Problem**: Mobile dependencies (Capacitor) not needed for web deployment
-- **Solution**: Created `package.web.json` with only web dependencies
+- **Solution**: Removed Capacitor dependencies from main package.json
 
 **Removed Dependencies:**
 - `@capacitor/android`
