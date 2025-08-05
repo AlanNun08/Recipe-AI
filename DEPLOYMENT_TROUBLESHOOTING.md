@@ -2,6 +2,18 @@
 
 ## Common Build Errors and Solutions
 
+### ❌ Node.js Version Incompatibility
+```
+error @capacitor/cli@7.4.2: The engine "node" is incompatible with this module. Expected version ">=20.0.0". Got "18.20.8"
+```
+
+**Cause**: Capacitor mobile dependencies require Node 20+, but we're using Node 18
+
+**Solution Applied**: 
+1. Updated Dockerfile to use Node 20
+2. Created web-only package.json without mobile dependencies
+3. Generated separate yarn.web.lock for cleaner builds
+
 ### ❌ Yarn Lockfile Error
 ```
 error Your lockfile needs to be updated, but yarn was run with `--frozen-lockfile`.
