@@ -1884,10 +1884,23 @@ async def reset_password(request: PasswordResetVerify):
         # Hash new password
         new_password_hash = hash_password(request.new_password)
         
-        # Update user password
+        # Get current user to preserve verification status
+        current_user = await db.users.find_one({"email": email_lower})
+        if not current_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Update user password while preserving verification status
+        update_data = {"password_hash": new_password_hash}
+        
+        # Preserve verification status if user was previously verified
+        if current_user.get("is_verified", False):
+            update_data["is_verified"] = True
+            if current_user.get("verified_at"):
+                update_data["verified_at"] = current_user["verified_at"]
+        
         result = await db.users.update_one(
             {"email": email_lower},
-            {"$set": {"password_hash": new_password_hash}}
+            {"$set": update_data}
         )
         
         if result.matched_count == 0:
