@@ -64,39 +64,18 @@ function App() {
         const savedUser = localStorage.getItem('ai_chef_user');
         if (savedUser) {
           const userData = JSON.parse(savedUser);
-          
-          // Double-check user verification status with backend if user claims to be verified
-          if (userData.is_verified) {
-            // Verify with backend that user is actually verified
-            axios.post(`${API}/api/auth/login`, {
-              email: userData.email,
-              password: 'verification-check' // This will fail but tell us verification status
-            }).then(response => {
-              // Login successful - user is verified
-              if (response.data.status === 'success') {
-                setUser(userData);
-                if (currentScreen === 'landing' || !['landing', 'register', 'verify-email', 'login', 'forgot-password', 'reset-password'].includes(currentScreen)) {
-                  setCurrentScreen('dashboard');
-                }
-              }
-            }).catch(error => {
-              // Check if error indicates unverified status
-              if (error.response?.status === 400 && error.response?.data?.needs_verification) {
-                // User is not actually verified, clear session and send to login
-                localStorage.removeItem('ai_chef_user');
-                setCurrentScreen('login');
-                showNotification('❌ Please verify your email and log in again', 'error');
-              } else {
-                // Other error (likely wrong password) but user session is valid
-                setUser(userData);
-                if (currentScreen === 'landing' || !['landing', 'register', 'verify-email', 'login', 'forgot-password', 'reset-password'].includes(currentScreen)) {
-                  setCurrentScreen('dashboard');
-                }
-              }
-            });
-          } else {
-            // User not verified, just restore session without dashboard redirect
-            setUser(userData);
+          // Restore user session
+          setUser(userData);
+          // Only set to dashboard if we're on landing page or if currentScreen is a protected route
+          if (currentScreen === 'landing' || !['landing', 'register', 'verify-email', 'login', 'forgot-password', 'reset-password'].includes(currentScreen)) {
+            // Set screen to dashboard only if user is verified
+            if (userData.is_verified) {
+              setCurrentScreen('dashboard');
+            } else {
+              // User is not verified, send them to verify email screen
+              setPendingVerificationEmail(userData.email);
+              setCurrentScreen('verify-email');
+            }
           }
         } else {
           // No saved session found
