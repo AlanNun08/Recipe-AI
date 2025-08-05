@@ -34,7 +34,7 @@ load_dotenv(ROOT_DIR / '.env')
 # Get backend URL from frontend env
 frontend_env_path = Path('/app/frontend/.env')
 load_dotenv(frontend_env_path)
-BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
+BACKEND_URL = 'http://localhost:8001'
 
 # Database connection
 MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
