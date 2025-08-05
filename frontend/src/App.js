@@ -665,7 +665,24 @@ function App() {
           code: verificationCode
         });
 
-        setUser(response.data.user);
+        // Set user state with verified status
+        const verifiedUser = {
+          ...response.data.user,
+          is_verified: true  // Ensure verification status is set
+        };
+        
+        setUser(verifiedUser);
+        
+        // Clear verification email state
+        setPendingVerificationEmail(null);
+        
+        // Explicitly save to localStorage to ensure persistence
+        try {
+          localStorage.setItem('ai_chef_user', JSON.stringify(verifiedUser));
+        } catch (storageError) {
+          // Handle localStorage errors gracefully
+        }
+        
         setCurrentScreen('dashboard');
         showNotification('🎉 Email verified successfully! Welcome to AI Chef!', 'success');
         
