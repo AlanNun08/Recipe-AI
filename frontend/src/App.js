@@ -415,9 +415,18 @@ function App() {
         showNotification('✅ Registration successful! Check your email for verification code', 'success');
         
       } catch (error) {
-        // Registration failed
-        const errorMessage = error.response?.data?.detail || 'Registration failed. Please try again.';
-        showNotification(`❌ ${errorMessage}`, 'error');
+        // Enhanced error handling for registration
+        if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
+          showNotification('❌ Unable to connect to server. Please check your internet connection and try again.', 'error');
+        } else if (error.response?.status === 404) {
+          showNotification('❌ Service temporarily unavailable. Please try again later.', 'error');
+        } else if (error.response?.status === 400) {
+          const errorMessage = error.response?.data?.detail || 'Registration failed. Please check your information.';
+          showNotification(`❌ ${errorMessage}`, 'error');
+        } else {
+          const errorMessage = error.response?.data?.detail || 'Registration failed. Please try again.';
+          showNotification(`❌ ${errorMessage}`, 'error');
+        }
       } finally {
         setIsCreating(false);
       }
