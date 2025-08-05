@@ -1663,32 +1663,6 @@ async def login_user(login_data: UserLogin):
             "user_id": user["id"],
             "email": user["email"]
         }
-        if not user.get("is_verified", False):
-            # Instead of error, return special response for unverified user
-            logging.info(f"Login attempt with unverified email: {email_lower}")
-            return {
-                "status": "unverified",
-                "message": "Email not verified. Please verify your email first.",
-                "email": user["email"],
-                "user_id": user["id"],
-                "needs_verification": True
-            }
-        
-        logging.info(f"User logged in successfully: {email_lower}")
-        return {
-            "status": "success",
-            "message": "Login successful",
-            "user": {
-                "id": user["id"],
-                "first_name": user["first_name"],
-                "last_name": user["last_name"],
-                "email": user["email"],
-                "dietary_preferences": user.get("dietary_preferences", []),
-                "allergies": user.get("allergies", []),
-                "favorite_cuisines": user.get("favorite_cuisines", []),
-                "is_verified": user.get("is_verified", False)
-            }
-        }
         
     except HTTPException:
         raise
