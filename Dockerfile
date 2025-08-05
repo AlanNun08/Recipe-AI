@@ -7,8 +7,8 @@ WORKDIR /app/frontend
 # Copy frontend package files
 COPY frontend/package*.json frontend/yarn.lock ./
 
-# Install dependencies with better error handling
-RUN yarn install --production=false --network-timeout 300000
+# Install dependencies (skip optional mobile dependencies)
+RUN yarn install --production=false --network-timeout 300000 --ignore-engines
 
 # Copy frontend source
 COPY frontend/ .
