@@ -22,6 +22,18 @@
         agent: "testing"
         comment: "🚨 CRITICAL DEPLOYMENT ISSUE: Comprehensive testing of the deployed Cloud Run service at https://recipe-ai-149256126208.europe-west1.run.app reveals that the backend API is not accessible. All API endpoints (/api/auth/register, /api/curated-starbucks-recipes, /api/recipes/generate, etc.) return 404 errors. The service only serves the React frontend. FastAPI docs are accessible at /docs but the OpenAPI spec shows no actual API routes. This indicates a deployment configuration problem where the backend API routes are not properly set up in the Cloud Run service. The application is non-functional for API operations."
 
+  - task: "Password Reset Verification Issue Investigation"
+    implemented: true
+    working: true
+    file: "backend/server.py, frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFICATION BUG INVESTIGATION COMPLETED: Comprehensive analysis revealed that the reported 'verification request after password reset' bug was actually caused by backend connectivity issues, not a password reset bug. DETAILED FINDINGS: ✅ Backend Password Reset Flow: All 8/8 tests passed - password reset correctly preserves user verification status (is_verified=true maintained throughout process), ✅ Demo User Status: demo@test.com/password123 exists, is verified, and can login successfully with user ID f99be98f-c1d5-4ccc-a3ad-9b62e01f4731, ✅ Root Cause Identified: Frontend .env was configured to use remote backend URL (https://3c486d7f-fd64-4ef3-b6a8-4712a4f45211.preview.emergentagent.com) that was returning 404 'Not Found' errors, causing login failures that appeared as verification issues, ✅ Frontend Improvements: Enhanced error handling for network errors, backend connectivity issues, and user-friendly error messages, ✅ Subscription System: 7-day free trial working correctly - user has has_access=true, trial_active=true, trial_end_date=2025-09-17, ✅ Authentication Flow: Login returns status='success' for verified users, properly handles unverified users with status='unverified'. CONCLUSION: No password reset verification bug exists - issue was connectivity-related and has been resolved with improved error handling and backend URL configuration."
+
 backend:
   - task: "emergentintegrations Library Fix Verification"
     implemented: true
