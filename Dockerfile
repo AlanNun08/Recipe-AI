@@ -1,5 +1,5 @@
 # Multi-stage build optimized for Google Cloud Run
-FROM node:18-slim as frontend-builder
+FROM node:20-slim as frontend-builder
 
 # Set working directory
 WORKDIR /app/frontend
