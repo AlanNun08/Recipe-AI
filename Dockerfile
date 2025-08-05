@@ -4,11 +4,12 @@ FROM node:20-slim as frontend-builder
 # Set working directory
 WORKDIR /app/frontend
 
-# Copy frontend package files
-COPY frontend/package*.json frontend/yarn.lock ./
+# Copy frontend package files (use web-only version for deployment)
+COPY frontend/package.web.json ./package.json
+COPY frontend/yarn.lock ./
 
-# Install dependencies (skip optional mobile dependencies)
-RUN yarn install --production=false --network-timeout 300000 --ignore-engines
+# Install dependencies (web-only, no mobile dependencies)
+RUN yarn install --production=false --network-timeout 300000
 
 # Copy frontend source
 COPY frontend/ .
