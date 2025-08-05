@@ -6,7 +6,7 @@ WORKDIR /app/frontend
 
 # Copy frontend package files (use web-only version for deployment)
 COPY frontend/package.web.json ./package.json
-COPY frontend/yarn.lock ./
+COPY frontend/yarn.web.lock ./yarn.lock
 
 # Install dependencies (web-only, no mobile dependencies)
 RUN yarn install --production=false --network-timeout 300000
