@@ -410,6 +410,44 @@ class LikeRecipeRequest(BaseModel):
     recipe_id: str
     user_id: str
 
+# Weekly Recipe Models
+class WeeklyRecipeRequest(BaseModel):
+    user_id: str
+    family_size: int = 2
+    dietary_preferences: List[str] = []
+    budget: Optional[float] = None
+    cuisines: List[str] = []
+
+class WeeklyMeal(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    day: str  # "Monday", "Tuesday", etc.
+    name: str
+    description: str
+    ingredients: List[str]
+    instructions: List[str]
+    prep_time: int  # minutes
+    cook_time: int  # minutes
+    servings: int
+    cuisine_type: str
+    dietary_tags: List[str] = []
+    calories_per_serving: Optional[int] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class WeeklyRecipePlan(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    week_of: str  # "2025-W32" format
+    meals: List[WeeklyMeal]
+    total_budget: Optional[float] = None
+    walmart_cart_url: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    is_active: bool = True
+    
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
+
 # Payment and Subscription Models
 class PaymentTransaction(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
