@@ -17,7 +17,7 @@ import uuid
 sys.path.append('/app/backend')
 
 # Test configuration
-BACKEND_URL = "https://3c486d7f-fd64-4ef3-b6a8-4712a4f45211.preview.emergentagent.com/api"
+BACKEND_URL = "https://42644e0e-38cf-4302-bad3-e90207944366.preview.emergentagent.com/api"
 DEMO_USER_EMAIL = "demo@test.com"
 DEMO_USER_PASSWORD = "password123"
 
