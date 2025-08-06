@@ -2962,6 +2962,12 @@ function App() {
           user={user}
           API={API}
         />;
+      case 'weekly-recipes':
+        return <WeeklyRecipesScreen 
+          user={user}
+          onBack={() => setCurrentScreen('dashboard')}
+          showNotification={showNotification}
+        />;
       case 'welcome-onboarding':
         return <WelcomeOnboarding 
           user={user}
