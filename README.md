@@ -233,8 +233,8 @@ Run the production verification script:
 
 ## 🚀 **Deployment Status**
 
-### **Current Version**: 2.0.0
-### **Production URL**: https://recipe-cart-app-1.emergent.host
+### **Current Version**: 2.1.0
+### **Production URL**: https://buildyoursmartcart.com
 ### **Status**: ✅ LIVE & FULLY FUNCTIONAL
 
 #### **Features Available in Production:**
@@ -244,6 +244,8 @@ Run the production verification script:
 - ✅ Community Recipe Sharing with Photos
 - ✅ Walmart Grocery Integration
 - ✅ User Authentication & Email Verification
+- ✅ **Stripe Subscription System (7-week free trial + $9.99/month)**
+- ✅ **Subscription Gating for Premium Features**
 - ✅ Mobile PWA Installation
 - ✅ Recipe History & Personal Collections
 
