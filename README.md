@@ -117,7 +117,7 @@ POST /api/grocery/cart-options       # Walmart product search
 
 ### **Production Settings**
 ```env
-REACT_APP_BACKEND_URL=https://recipe-cart-app-1.emergent.host
+REACT_APP_BACKEND_URL=https://buildyoursmartcart.com
 WDS_SOCKET_PORT=443
 ```
 
@@ -125,6 +125,7 @@ WDS_SOCKET_PORT=443
 - `OPENAI_API_KEY` - OpenAI GPT-3.5 access
 - `WALMART_CONSUMER_ID` + `WALMART_PRIVATE_KEY` - Walmart affiliate API
 - `MAILJET_API_KEY` + `MAILJET_SECRET_KEY` - Email service
+- `STRIPE_PUBLISHABLE_KEY` + `STRIPE_SECRET_KEY` - Payment processing
 
 ---
 
