@@ -145,15 +145,15 @@ WDS_SOCKET_PORT=443
 ### **Quick Production Test**
 ```bash
 # Test API health
-curl -s https://recipe-cart-app-1.emergent.host/api/ | jq .
+curl -s https://buildyoursmartcart.com/api/ | jq .
 
 # Test recipe generation
-curl -X POST https://recipe-cart-app-1.emergent.host/api/recipes/generate \
+curl -X POST https://buildyoursmartcart.com/api/recipes/generate \
   -H "Content-Type: application/json" \
   -d '{"user_id": "test", "ingredients": ["chicken"], "cuisine_type": "any"}'
 
 # Test Starbucks generation  
-curl -X POST https://recipe-cart-app-1.emergent.host/api/generate-starbucks-drink \
+curl -X POST https://buildyoursmartcart.com/api/generate-starbucks-drink \
   -H "Content-Type: application/json" \
   -d '{"user_id": "test", "drink_type": "frappuccino"}'
 ```
