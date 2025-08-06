@@ -175,10 +175,11 @@ Run the production verification script:
 ## 📱 **User Guide**
 
 ### **Getting Started**
-1. Visit: https://recipe-cart-app-1.emergent.host
+1. Visit: https://buildyoursmartcart.com
 2. Click "Start Cooking for Free"
 3. Register with email and verify account
-4. Start generating recipes!
+4. Enjoy 7-week FREE trial, then $9.99/month
+5. Start generating recipes!
 
 ### **Using Recipe Generation**
 1. Go to "Generate Recipes" 
