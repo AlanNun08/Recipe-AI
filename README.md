@@ -251,6 +251,51 @@ Run the production verification script:
 
 ---
 
+## 🛠️ **Troubleshooting**
+
+### **Account Issues**
+
+#### **"Email already registered" but can't login**
+If you encounter this issue, it usually means there's corrupted user data in the database. Here's how to fix it:
+
+**Option 1: MongoDB Atlas Dashboard (Recommended)**
+1. Go to [MongoDB Atlas](https://cloud.mongodb.com/)
+2. Sign in to your account
+3. Navigate to your cluster → "Browse Collections"
+4. Select the `buildyoursmartcart_production` database
+5. Delete records from these collections using filter `{"email": "your-email@example.com"}`:
+   - `users` collection
+   - `verification_codes` collection
+   - `password_reset_codes` collection
+6. Verify cleanup by searching again - should show "No documents found"
+7. You can now register fresh with the same email
+
+**Option 2: Python Script (Alternative)**
+Use the provided `production_account_cleanup.py` script:
+```bash
+# In Google Cloud Shell or local environment with MongoDB access
+python production_account_cleanup.py
+```
+
+### **Common Issues & Solutions**
+
+#### **API Connection Errors**
+- Check if backend service is running: `sudo supervisorctl status`
+- Restart services: `sudo supervisorctl restart all`
+- Check backend logs: `tail -n 100 /var/log/supervisor/backend.*.log`
+
+#### **Payment/Subscription Issues**
+- Verify Stripe keys are set in backend `.env`
+- Check Stripe webhook configuration
+- Test payment in Stripe Dashboard test mode
+
+#### **Email Verification Issues**
+- Check Mailjet API keys in backend `.env`
+- Verify email exists in `verification_codes` collection
+- Resend verification email from login screen
+
+---
+
 ## 📞 **Support & Documentation**
 
 ### **Documentation Files**
