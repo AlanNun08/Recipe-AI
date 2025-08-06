@@ -86,6 +86,7 @@ recipes_collection = db["recipes"]
 grocery_carts_collection = db["grocery_carts"]
 shared_recipes_collection = db["shared_recipes"]
 payment_transactions_collection = db["payment_transactions"]  # NEW
+weekly_recipes_collection = db["weekly_recipes"]  # NEW - for weekly recipe plans
 
 # Stripe setup
 STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY')
