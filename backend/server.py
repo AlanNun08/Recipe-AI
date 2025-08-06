@@ -242,7 +242,7 @@ class User(BaseModel):
     # Subscription fields
     subscription_status: str = "trial"  # "trial", "active", "expired", "cancelled"
     trial_start_date: datetime = Field(default_factory=datetime.utcnow)
-    trial_end_date: datetime = Field(default_factory=lambda: datetime.utcnow() + timedelta(weeks=7))
+    trial_end_date: datetime = Field(default_factory=lambda: datetime.utcnow() + timedelta(days=7))
     subscription_start_date: Optional[datetime] = None
     subscription_end_date: Optional[datetime] = None
     stripe_customer_id: Optional[str] = None
