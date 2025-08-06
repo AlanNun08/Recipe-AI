@@ -3638,6 +3638,9 @@ async def get_weekly_recipe_history(user_id: str):
 # END WEEKLY RECIPE SYSTEM
 # ========================================
 
+# Include the API router after all endpoints are defined
+app.include_router(api_router)
+
 # Enhanced CORS configuration for production security
 app.add_middleware(
     CORSMiddleware,
