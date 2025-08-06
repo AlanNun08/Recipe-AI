@@ -7,6 +7,8 @@ import TutorialScreen from './components/TutorialScreen';
 import SubscriptionScreen from './components/SubscriptionScreen';
 import SubscriptionSuccess from './components/SubscriptionSuccess';
 import SubscriptionGate from './components/SubscriptionGate';
+import WeeklyRecipesScreen from './components/WeeklyRecipesScreen';
+import TrialStatusBanner from './components/TrialStatusBanner';
 
 function App() {
   // BUILDYOURSMARTCART - PRODUCTION VERSION
