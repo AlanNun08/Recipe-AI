@@ -3162,8 +3162,7 @@ async def check_subscription_access(user_id: str):
             }
         )
 
-# Include the API router without prefix (main.py will handle /api mounting)
-app.include_router(api_router)
+# API router will be included after all endpoints are defined
 
 # ========================================
 # 🧱 WALMART INTEGRATION V2 - CLEAN REBUILD  
