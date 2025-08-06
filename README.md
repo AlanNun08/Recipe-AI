@@ -1,13 +1,19 @@
 # 🚀 AI Recipe + Grocery Delivery App
 
 ## Production Application
-**Live URL**: https://recipe-cart-app-1.emergent.host
+**Live URL**: https://buildyoursmartcart.com
 
 ## ⚠️ **DEVELOPMENT POLICY**
 **CRITICAL**: This application uses PRODUCTION-ONLY development
 - **❌ NO preview website code generation**
 - **✅ ONLY production deployment code**
 - **📋 Full Policy**: See `/docs/PRODUCTION_ONLY_POLICY.md`
+
+## 💳 **Subscription Model**
+- **7-week FREE trial** for all new users
+- **$9.99/month** recurring subscription via Stripe
+- **Premium features** gated behind subscription
+- **Secure payment processing** with Stripe integration
 
 ---
 
