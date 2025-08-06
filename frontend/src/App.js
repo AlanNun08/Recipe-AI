@@ -973,6 +973,12 @@ function App() {
       </div>
       
       <div className="max-w-md mx-auto relative z-10">
+        {/* Trial Status Banner */}
+        <TrialStatusBanner 
+          user={user} 
+          onUpgradeClick={() => setShowSubscriptionScreen(true)}
+        />
+        
         {/* Welcome Card */}
         <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8 border-4 border-gradient-to-r from-purple-200 to-pink-200">
           <div className="text-center mb-8">
@@ -992,6 +998,18 @@ function App() {
         
         {/* Enhanced Action Buttons */}
         <div className="space-y-4 mb-8">
+          {/* NEW: Weekly Recipe Planner Button */}
+          <button
+            onClick={() => setCurrentScreen('weekly-recipes')}
+            className="w-full bg-gradient-to-r from-green-500 via-teal-500 to-blue-500 hover:from-green-600 hover:via-teal-600 hover:to-blue-600 text-white font-bold py-6 px-8 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-300 text-lg relative overflow-hidden"
+          >
+            <span className="relative z-10 flex items-center justify-center">
+              <span className="text-2xl mr-3 animate-bounce">📅</span>
+              Weekly Meal Planner
+              <span className="text-2xl ml-3 animate-pulse">🛒</span>
+            </span>
+          </button>
+          
           <button
             onClick={() => setCurrentScreen('generate-recipe')}
             className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:from-purple-600 hover:via-pink-600 hover:to-orange-600 text-white font-bold py-6 px-8 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-300 text-lg relative overflow-hidden"
@@ -1043,6 +1061,10 @@ function App() {
             🌟 Welcome to AI Chef! 🌟
           </h3>
           <div className="space-y-4">
+            <div className="flex items-center p-4 bg-white rounded-2xl shadow-lg">
+              <span className="text-3xl mr-4 animate-bounce">📅</span>
+              <span className="text-gray-700 font-medium">Weekly meal plans with shopping lists</span>
+            </div>
             <div className="flex items-center p-4 bg-white rounded-2xl shadow-lg">
               <span className="text-3xl mr-4 animate-bounce">🤖</span>
               <span className="text-gray-700 font-medium">Generate personalized recipes with AI</span>
