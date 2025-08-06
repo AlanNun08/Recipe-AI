@@ -311,4 +311,26 @@ python production_account_cleanup.py
 
 ---
 
-**🎯 Ready to cook? Visit https://recipe-cart-app-1.emergent.host and start creating amazing recipes!**
+**🎯 Ready to cook? Visit https://buildyoursmartcart.com and start creating amazing recipes!**
+
+---
+
+## 📋 **Recent Updates & Fixes**
+
+### **Version 2.1.0 - Production Optimization**
+- ✅ **Fixed:** Double `/api/api/` routing issue by updating frontend `.env`
+- ✅ **Fixed:** Corrupted account verification loops
+- ✅ **Added:** Comprehensive MongoDB cleanup solutions
+- ✅ **Improved:** Stripe subscription system stability
+- ✅ **Removed:** All console.log and print statements for production
+- ✅ **Enhanced:** Error handling and user feedback
+- ✅ **Updated:** Node.js to v20 for compatibility
+- ✅ **Fixed:** Supervisor configuration for proper API mounting
+- ✅ **Secured:** Production environment variables and CORS
+
+### **Developer Notes**
+- Backend runs on `0.0.0.0:8001` via supervisor
+- Frontend accesses backend via `REACT_APP_BACKEND_URL`
+- All API routes must be prefixed with `/api` for correct Kubernetes ingress routing
+- MongoDB connection uses `MONGO_URL` from environment variables only
+- Stripe webhooks configured for subscription management
