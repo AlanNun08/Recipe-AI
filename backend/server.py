@@ -3331,6 +3331,314 @@ async def generate_cart_url_v2(cart_data: Dict[str, Any]):
 # END V2 INTEGRATION
 # ========================================
 
+# ========================================
+# WEEKLY RECIPE SYSTEM - NEW FEATURE
+# ========================================
+
+def get_current_week() -> str:
+    """Get current week in YYYY-WXX format"""
+    import datetime
+    now = datetime.datetime.now()
+    year, week, _ = now.isocalendar()
+    return f"{year}-W{week:02d}"
+
+def get_week_days() -> List[str]:
+    """Get days of the week for meal planning"""
+    return ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+async def generate_weekly_meals(family_size: int = 2, dietary_preferences: List[str] = [], cuisines: List[str] = []) -> List[WeeklyMeal]:
+    """Generate 7 dinner meals for the week using OpenAI"""
+    try:
+        # Build dietary preferences string
+        dietary_info = ""
+        if dietary_preferences:
+            dietary_info = f"Dietary restrictions: {', '.join(dietary_preferences)}. "
+        
+        # Build cuisine preferences
+        cuisine_info = ""
+        if cuisines:
+            cuisine_info = f"Focus on these cuisines: {', '.join(cuisines)}. "
+        
+        # Create AI prompt for weekly meal generation
+        prompt = f"""Generate a weekly meal plan with 7 unique dinner recipes for {family_size} adults.
+
+{dietary_info}{cuisine_info}
+
+Requirements:
+- Balanced nutrition across the week
+- Easy-to-cook ingredients
+- Budget-friendly options
+- Variety in cooking methods and flavors
+- Each recipe should serve {family_size} people
+
+For each day, provide:
+1. Day of the week
+2. Recipe name 
+3. Brief description
+4. Complete ingredients list
+5. Step-by-step cooking instructions
+6. Prep time and cook time in minutes
+7. Cuisine type
+8. Estimated calories per serving
+
+Format as JSON array with 7 meal objects, each containing:
+{{
+  "day": "Monday",
+  "name": "Recipe Name",
+  "description": "Brief description",
+  "ingredients": ["ingredient 1", "ingredient 2", ...],
+  "instructions": ["step 1", "step 2", ...],
+  "prep_time": 15,
+  "cook_time": 30,
+  "servings": {family_size},
+  "cuisine_type": "Italian",
+  "dietary_tags": ["vegetarian"],
+  "calories_per_serving": 450
+}}"""
+
+        # Generate meal plan using OpenAI
+        response = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a professional meal planning chef. Create balanced, delicious weekly meal plans. Always respond with valid JSON only."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=2000,
+            temperature=0.7
+        )
+        
+        # Parse the response
+        meals_json = response.choices[0].message.content.strip()
+        
+        # Clean up the JSON (remove markdown formatting if present)
+        if meals_json.startswith("```json"):
+            meals_json = meals_json[7:]
+        if meals_json.endswith("```"):
+            meals_json = meals_json[:-3]
+        
+        meals_data = json.loads(meals_json)
+        
+        # Convert to WeeklyMeal objects
+        weekly_meals = []
+        days = get_week_days()
+        
+        for i, meal_data in enumerate(meals_data[:7]):  # Ensure we only get 7 meals
+            day = days[i] if i < len(days) else meal_data.get('day', f'Day {i+1}')
+            
+            meal = WeeklyMeal(
+                day=day,
+                name=meal_data.get('name', f'Meal for {day}'),
+                description=meal_data.get('description', ''),
+                ingredients=meal_data.get('ingredients', []),
+                instructions=meal_data.get('instructions', []),
+                prep_time=meal_data.get('prep_time', 15),
+                cook_time=meal_data.get('cook_time', 30),
+                servings=meal_data.get('servings', family_size),
+                cuisine_type=meal_data.get('cuisine_type', 'International'),
+                dietary_tags=meal_data.get('dietary_tags', []),
+                calories_per_serving=meal_data.get('calories_per_serving', 400)
+            )
+            weekly_meals.append(meal)
+        
+        return weekly_meals
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decode error in weekly meal generation: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to parse meal plan from AI")
+    except Exception as e:
+        logger.error(f"Error generating weekly meals: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to generate weekly meal plan")
+
+async def generate_weekly_walmart_cart(meals: List[WeeklyMeal]) -> str:
+    """Generate a single Walmart cart URL for all weekly ingredients"""
+    try:
+        # Collect all ingredients from all meals
+        all_ingredients = []
+        for meal in meals:
+            all_ingredients.extend(meal.ingredients)
+        
+        # Remove duplicates while preserving order
+        unique_ingredients = []
+        seen = set()
+        for ingredient in all_ingredients:
+            # Clean ingredient name (remove quantities and common prefixes)
+            clean_ingredient = ingredient.lower()
+            for prefix in ['fresh', 'organic', 'large', 'medium', 'small', '1', '2', '3', '4', '5']:
+                clean_ingredient = clean_ingredient.replace(prefix, '').strip()
+            
+            if clean_ingredient not in seen and len(clean_ingredient) > 2:
+                seen.add(clean_ingredient)
+                unique_ingredients.append(ingredient)
+        
+        # Limit to first 15 ingredients to avoid overwhelming the cart
+        cart_ingredients = unique_ingredients[:15]
+        
+        # Generate simplified cart URL with ingredients
+        ingredient_list = ','.join(cart_ingredients)
+        cart_url = f"https://walmart.com/search?q={'+'.join(cart_ingredients[:5])}"  # Use first 5 for search
+        
+        return cart_url
+        
+    except Exception as e:
+        logger.error(f"Error generating weekly Walmart cart: {str(e)}")
+        return "https://walmart.com/cp/food/976759"  # Fallback to grocery section
+
+@api_router.post("/weekly-recipes/generate")
+async def generate_weekly_recipe_plan(request: WeeklyRecipeRequest):
+    """Generate weekly meal plan with Walmart cart - PREMIUM FEATURE"""
+    try:
+        # Check subscription access for premium feature
+        await check_subscription_access(request.user_id)
+        
+        # Get current week
+        current_week = get_current_week()
+        
+        # Check if user already has a plan for this week
+        existing_plan = await weekly_recipes_collection.find_one({
+            "user_id": request.user_id,
+            "week_of": current_week,
+            "is_active": True
+        })
+        
+        if existing_plan:
+            # Return existing plan
+            return mongo_to_dict(existing_plan)
+        
+        # Generate new weekly meals
+        meals = await generate_weekly_meals(
+            family_size=request.family_size,
+            dietary_preferences=request.dietary_preferences,
+            cuisines=request.cuisines
+        )
+        
+        # Generate weekly Walmart cart
+        cart_url = await generate_weekly_walmart_cart(meals)
+        
+        # Calculate total budget estimate
+        estimated_budget = len(meals) * 15.0  # Rough estimate: $15 per meal
+        if request.budget:
+            estimated_budget = min(estimated_budget, request.budget)
+        
+        # Create weekly recipe plan
+        weekly_plan = WeeklyRecipePlan(
+            user_id=request.user_id,
+            week_of=current_week,
+            meals=[meal.dict() for meal in meals],
+            total_budget=estimated_budget,
+            walmart_cart_url=cart_url,
+            is_active=True
+        )
+        
+        # Save to database
+        plan_dict = weekly_plan.dict()
+        result = await weekly_recipes_collection.insert_one(plan_dict)
+        
+        if result.inserted_id:
+            # Return the created plan
+            inserted_plan = await weekly_recipes_collection.find_one({"_id": result.inserted_id})
+            return mongo_to_dict(inserted_plan)
+        else:
+            raise HTTPException(status_code=500, detail="Failed to save weekly plan")
+            
+    except Exception as e:
+        logger.error(f"Error generating weekly recipe plan: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to generate weekly meal plan")
+
+@api_router.get("/weekly-recipes/current/{user_id}")
+async def get_current_weekly_plan(user_id: str):
+    """Get current week's meal plan for user - PREMIUM FEATURE"""
+    try:
+        # Check subscription access for premium feature
+        await check_subscription_access(user_id)
+        
+        current_week = get_current_week()
+        
+        # Get current week's plan
+        plan = await weekly_recipes_collection.find_one({
+            "user_id": user_id,
+            "week_of": current_week,
+            "is_active": True
+        })
+        
+        if not plan:
+            return {
+                "has_plan": False,
+                "message": "No meal plan found for current week. Generate one to get started!",
+                "current_week": current_week
+            }
+        
+        return {
+            "has_plan": True,
+            "plan": mongo_to_dict(plan),
+            "current_week": current_week
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting current weekly plan: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get weekly meal plan")
+
+@api_router.get("/user/trial-status/{user_id}")
+async def get_user_trial_status(user_id: str):
+    """Get detailed trial and subscription status for user"""
+    try:
+        # Get user from database
+        user = await users_collection.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Get detailed access status
+        access_status = get_user_access_status(user)
+        
+        # Calculate days remaining in trial
+        trial_days_left = 0
+        if access_status["trial_active"]:
+            trial_end = user.get('trial_end_date')
+            if trial_end:
+                if isinstance(trial_end, str):
+                    trial_end = parser.parse(trial_end)
+                days_diff = (trial_end - datetime.utcnow()).days
+                trial_days_left = max(0, days_diff)
+        
+        return {
+            **access_status,
+            "trial_days_left": trial_days_left,
+            "user_id": user_id,
+            "current_week": get_current_week()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting trial status: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get trial status")
+
+@api_router.get("/weekly-recipes/history/{user_id}")
+async def get_weekly_recipe_history(user_id: str):
+    """Get all previous weekly meal plans for user - PREMIUM FEATURE"""
+    try:
+        # Check subscription access for premium feature
+        await check_subscription_access(user_id)
+        
+        # Get all plans for user, sorted by most recent
+        plans = await weekly_recipes_collection.find(
+            {"user_id": user_id}
+        ).sort("created_at", -1).to_list(20)  # Limit to last 20 weeks
+        
+        # Convert to clean dictionaries
+        plan_history = [mongo_to_dict(plan) for plan in plans]
+        
+        return {
+            "plans": plan_history,
+            "total_plans": len(plan_history),
+            "current_week": get_current_week()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting weekly recipe history: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get recipe history")
+
+# ========================================
+# END WEEKLY RECIPE SYSTEM
+# ========================================
+
 # Enhanced CORS configuration for production security
 app.add_middleware(
     CORSMiddleware,
