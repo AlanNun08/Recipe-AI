@@ -58,6 +58,9 @@ function App() {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
   // Subscription states
+  const [showSubscriptionScreen, setShowSubscriptionScreen] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+  
   // Debug: Log current screen changes
   useEffect(() => {
     console.log('Current screen changed to:', currentScreen);
