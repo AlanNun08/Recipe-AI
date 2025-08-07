@@ -88,34 +88,36 @@ function App() {
   };
 
   const loadUserSession = () => {
-      try {
-        const savedUser = localStorage.getItem('ai_chef_user');
-        if (savedUser) {
-          const userData = JSON.parse(savedUser);
-          // Restore user session
-          setUser(userData);
-          // Only set to dashboard if we're on landing page or if currentScreen is a protected route
-          if (currentScreen === 'landing' || !['landing', 'register', 'verify-email', 'login', 'forgot-password', 'reset-password'].includes(currentScreen)) {
-            // Set screen to dashboard only if user is verified
-            if (userData.is_verified) {
-              setCurrentScreen('dashboard');
-            } else {
-              // User is not verified, send them to verify email screen
-              setPendingVerificationEmail(userData.email);
-              setCurrentScreen('verify-email');
-            }
+    try {
+      const savedUser = localStorage.getItem('ai_chef_user');
+      if (savedUser) {
+        const userData = JSON.parse(savedUser);
+        // Restore user session
+        setUser(userData);
+        // Only set to dashboard if we're on landing page or if currentScreen is a protected route
+        if (currentScreen === 'landing' || !['landing', 'register', 'verify-email', 'login', 'forgot-password', 'reset-password'].includes(currentScreen)) {
+          // Set screen to dashboard only if user is verified
+          if (userData.is_verified) {
+            setCurrentScreen('dashboard');
+          } else {
+            // User is not verified, send them to verify email screen
+            setPendingVerificationEmail(userData.email);
+            setCurrentScreen('verify-email');
           }
-        } else {
-          // No saved session found
         }
-      } catch (error) {
-        // Failed to restore session
-        localStorage.removeItem('ai_chef_user');
-      } finally {
-        setIsLoadingAuth(false);
+      } else {
+        // No saved session found
       }
-    };
-    
+    } catch (error) {
+      // Failed to restore session
+      localStorage.removeItem('ai_chef_user');
+    } finally {
+      setIsLoadingAuth(false);
+    }
+  };
+
+  // Load user session from localStorage on app start - PRODUCTION FIX
+  useEffect(() => {
     // Load user session after a short delay to ensure cache clearing is done
     const timer = setTimeout(loadUserSession, 100);
     return () => clearTimeout(timer);
