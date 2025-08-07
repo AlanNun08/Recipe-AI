@@ -3858,7 +3858,10 @@ async def get_weekly_recipe_detail(recipe_id: str):
         
     except Exception as e:
         logger.error(f"Error getting recipe detail: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to get recipe details")
+        if "not found" in str(e).lower():
+            raise HTTPException(status_code=404, detail="Recipe not found")
+        else:
+            raise HTTPException(status_code=500, detail="Failed to get recipe details")
 
 @api_router.get("/weekly-recipes/history/{user_id}")
 async def get_weekly_recipe_history(user_id: str):
