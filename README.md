@@ -108,6 +108,15 @@ GET  /api/recipes/history/{user_id}  # User recipe history
 POST /api/generate-starbucks-drink   # Starbucks secret menu
 ```
 
+### **Weekly Meal Planning (NEW)**
+```bash
+POST /api/weekly-recipes/generate              # Generate 7-day meal plan
+GET  /api/weekly-recipes/current/{user_id}     # Get current week's plan  
+GET  /api/weekly-recipes/recipe/{recipe_id}    # Get detailed recipe with shopping links
+GET  /api/weekly-recipes/history/{user_id}     # Weekly recipe history
+GET  /api/user/trial-status/{user_id}          # Enhanced trial status (7-day implementation)
+```
+
 ### **Community Features**
 ```bash
 GET  /api/curated-starbucks-recipes  # 30 hand-picked recipes
