@@ -16,15 +16,12 @@ const RecipeDetailScreen = ({ recipeId, onBack, showNotification }) => {
   }, [recipeId]);
 
   const loadRecipeDetail = async () => {
-    console.log('loadRecipeDetail called with recipeId:', recipeId);
     setIsLoading(true);
     try {
       const response = await axios.get(`${API}/api/weekly-recipes/recipe/${recipeId}`);
-      console.log('Recipe API response:', response.data);
       setRecipe(response.data);
     } catch (error) {
       console.error('Failed to load recipe detail:', error);
-      console.error('Error details:', error.response?.data || error.message);
       showNotification('❌ Failed to load recipe details', 'error');
     } finally {
       setIsLoading(false);
