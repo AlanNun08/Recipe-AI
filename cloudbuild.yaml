@@ -1,22 +1,30 @@
 # Google Cloud Build configuration for buildyoursmartcart.com
+# Version 2.2.0 - Weekly Meal Planning & Walmart Integration with Cache Busting
 # Optimized for Google Cloud Run deployment
 
 steps:
-  # Build the Docker image
+  # Build the Docker image with version tags
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build', 
       '-t', 'gcr.io/$PROJECT_ID/buildyoursmartcart:$BUILD_ID',
       '-t', 'gcr.io/$PROJECT_ID/buildyoursmartcart:latest',
+      '-t', 'gcr.io/$PROJECT_ID/buildyoursmartcart:v2.2.0',
       '--cache-from', 'gcr.io/$PROJECT_ID/buildyoursmartcart:latest',
+      '--label', 'version=2.2.0',
+      '--label', 'features=walmart-integration,weekly-recipes,cache-busting',
       '.'
     ]
 
-  # Push the image to Container Registry
+  # Push the versioned image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/buildyoursmartcart:$BUILD_ID']
 
-  # Deploy to Cloud Run with production environment variables
+  # Push the latest tag
+  - name: 'gcr.io/cloud-builders/docker' 
+    args: ['push', 'gcr.io/$PROJECT_ID/buildyoursmartcart:latest']
+
+  # Deploy to Cloud Run with cache busting configuration
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args: [
@@ -34,6 +42,8 @@ steps:
       '--port', '8080',
       '--set-env-vars', 'NODE_ENV=production,PYTHONUNBUFFERED=1',
       '--update-env-vars', 'REACT_APP_BACKEND_URL=https://buildyoursmartcart.com',
+      '--tag', 'v2-2-0-walmart',
+      '--revision-suffix', 'walmart-integration-${BUILD_ID}',
       '--quiet'
     ]
 
