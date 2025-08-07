@@ -9,6 +9,7 @@ import SubscriptionSuccess from './components/SubscriptionSuccess';
 import SubscriptionGate from './components/SubscriptionGate';
 import WeeklyRecipesScreen from './components/WeeklyRecipesScreen';
 import TrialStatusBanner from './components/TrialStatusBanner';
+import RecipeDetailScreen from './components/RecipeDetailScreen';
 
 function App() {
   // BUILDYOURSMARTCART - PRODUCTION VERSION
