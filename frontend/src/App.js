@@ -66,12 +66,14 @@ function App() {
     localStorage.removeItem('user');
     localStorage.removeItem('userSession');
     localStorage.removeItem('authToken');
+    localStorage.removeItem('ai_chef_user'); // Keep compatibility with existing code
   };
 
   const setUserWithSession = (userData) => {
     if (userData) {
-      // Save to localStorage for session persistence
+      // Save to both new and legacy localStorage keys for compatibility
       localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('ai_chef_user', JSON.stringify(userData)); // Legacy compatibility
       localStorage.setItem('userSession', JSON.stringify({
         userId: userData.id,
         email: userData.email,
@@ -80,6 +82,11 @@ function App() {
         loginTime: Date.now()
       }));
       setUser(userData);
+      
+      // Auto-redirect to dashboard for verified users
+      if (userData.is_verified && (currentScreen === 'landing' || currentScreen === 'login' || currentScreen === 'register')) {
+        setCurrentScreen('dashboard');
+      }
     } else {
       // Clear session
       clearUserSession();
