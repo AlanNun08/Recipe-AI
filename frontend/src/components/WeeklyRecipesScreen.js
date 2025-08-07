@@ -174,18 +174,6 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
                   </button>
                 </div>
               </div>
-              
-              {currentPlan.total_budget && (
-                <div className="bg-green-100 rounded-xl p-4">
-                  <div className="flex items-center">
-                    <span className="text-2xl mr-3">💰</span>
-                    <div>
-                      <div className="font-bold text-green-800">Estimated Budget</div>
-                      <div className="text-green-600">${currentPlan.total_budget.toFixed(2)} for the week</div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Weekly Meals Grid */}
@@ -239,13 +227,25 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
                     </div>
                     
                     {/* Instructions Preview */}
-                    <div>
+                    <div className="mb-4">
                       <div className="font-semibold text-gray-700 mb-2">Instructions:</div>
                       <div className="text-sm text-gray-600">
                         {meal.instructions?.[0] || 'Cooking instructions included'}
                         {meal.instructions?.length > 1 && ` (+${meal.instructions.length - 1} more steps)`}
                       </div>
                     </div>
+                    
+                    {/* View Recipe Button */}
+                    <button
+                      onClick={() => onViewRecipe(meal.id)}
+                      className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white font-bold py-3 px-4 rounded-xl hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                    >
+                      <span className="flex items-center justify-center">
+                        <span className="mr-2">📖</span>
+                        View Full Recipe
+                        <span className="ml-2">🛒</span>
+                      </span>
+                    </button>
                   </div>
                 </div>
               ))}
