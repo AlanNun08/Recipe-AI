@@ -268,12 +268,14 @@ Run the production verification script:
 
 #### **Features Available in Production:**
 - ✅ AI Recipe Generation (all categories)
+- ✅ **Weekly Meal Planning System (NEW)** - 7-day AI meal plans with dietary preferences
+- ✅ **Individual Recipe Viewing (NEW)** - Complete cooking instructions and ingredient shopping
 - ✅ Starbucks Secret Menu Generator (5 drink types)
 - ✅ 30 Curated Starbucks Recipes
 - ✅ Community Recipe Sharing with Photos
-- ✅ Walmart Grocery Integration
+- ✅ **Individual Walmart Shopping (NEW)** - Per-ingredient shopping links
 - ✅ User Authentication & Email Verification
-- ✅ **Stripe Subscription System (7-week free trial + $9.99/month)**
+- ✅ **Stripe Subscription System (7-day free trial + $9.99/month)**
 - ✅ **Subscription Gating for Premium Features**
 - ✅ Mobile PWA Installation
 - ✅ Recipe History & Personal Collections
