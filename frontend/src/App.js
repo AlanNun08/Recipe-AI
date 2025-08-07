@@ -63,7 +63,33 @@ function App() {
 
   // Load user session from localStorage on app start - PRODUCTION FIX
   useEffect(() => {
-    const loadUserSession = () => {
+    // Enhanced user session management
+  const setUserWithSession = (userData) => {
+    if (userData) {
+      // Save to localStorage for session persistence
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('userSession', JSON.stringify({
+        userId: userData.id,
+        email: userData.email,
+        first_name: userData.first_name,
+        is_verified: userData.is_verified,
+        loginTime: Date.now()
+      }));
+      setUser(userData);
+    } else {
+      // Clear session
+      clearUserSession();
+      setUser(null);
+    }
+  };
+
+  const clearUserSession = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('userSession');
+    localStorage.removeItem('authToken');
+  };
+
+  const loadUserSession = () => {
       try {
         const savedUser = localStorage.getItem('ai_chef_user');
         if (savedUser) {
