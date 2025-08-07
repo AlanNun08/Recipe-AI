@@ -3799,6 +3799,67 @@ async def get_user_trial_status(user_id: str):
         logger.error(f"Error getting trial status: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to get trial status")
 
+@api_router.get("/weekly-recipes/recipe/{recipe_id}")
+async def get_weekly_recipe_detail(recipe_id: str):
+    """Get detailed recipe information for a specific meal from weekly plan"""
+    try:
+        # Find the weekly plan that contains this recipe
+        weekly_plan = await weekly_recipes_collection.find_one({
+            "meals.id": recipe_id,
+            "is_active": True
+        })
+        
+        if not weekly_plan:
+            raise HTTPException(status_code=404, detail="Recipe not found")
+        
+        # Find the specific meal in the plan
+        target_meal = None
+        for meal in weekly_plan.get('meals', []):
+            if meal.get('id') == recipe_id:
+                target_meal = meal
+                break
+        
+        if not target_meal:
+            raise HTTPException(status_code=404, detail="Recipe not found")
+        
+        # Generate individual Walmart item links for each ingredient
+        walmart_items = []
+        for ingredient in target_meal.get('ingredients', []):
+            # Create individual Walmart search URL for each ingredient
+            clean_ingredient = ingredient.lower().replace(' ', '+')
+            walmart_url = f"https://www.walmart.com/search/?query={clean_ingredient}"
+            
+            walmart_items.append({
+                "name": ingredient,
+                "search_url": walmart_url,
+                "image_url": "https://via.placeholder.com/100x100?text=🛒",  # Placeholder image
+                "estimated_price": "Est. $2-5"  # Placeholder pricing
+            })
+        
+        # Return detailed recipe information
+        recipe_detail = {
+            "id": target_meal.get('id'),
+            "name": target_meal.get('name'),
+            "description": target_meal.get('description'),
+            "day": target_meal.get('day'),
+            "ingredients": target_meal.get('ingredients', []),
+            "instructions": target_meal.get('instructions', []),
+            "prep_time": target_meal.get('prep_time'),
+            "cook_time": target_meal.get('cook_time'),
+            "servings": target_meal.get('servings'),
+            "cuisine_type": target_meal.get('cuisine_type'),
+            "dietary_tags": target_meal.get('dietary_tags', []),
+            "calories_per_serving": target_meal.get('calories_per_serving'),
+            "walmart_items": walmart_items,
+            "week_of": weekly_plan.get('week_of')
+        }
+        
+        return recipe_detail
+        
+    except Exception as e:
+        logger.error(f"Error getting recipe detail: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get recipe details")
+
 @api_router.get("/weekly-recipes/history/{user_id}")
 async def get_weekly_recipe_history(user_id: str):
     """Get all previous weekly meal plans for user - PREMIUM FEATURE"""
