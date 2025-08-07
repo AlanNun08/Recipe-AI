@@ -199,8 +199,17 @@ Run the production verification script:
 1. Visit: https://buildyoursmartcart.com
 2. Click "Start Cooking for Free"
 3. Register with email and verify account
-4. Enjoy 7-week FREE trial, then $9.99/month
-5. Start generating recipes!
+4. Enjoy 7-day FREE trial, then $9.99/month
+5. Start generating recipes and meal plans!
+
+### **Using Weekly Meal Planner (NEW)**
+1. Click "Weekly Meal Planner" from dashboard
+2. Set family size, dietary preferences, and cuisines
+3. Click "Generate 7-Day Meal Plan" 
+4. Browse 7 diverse meals (Monday-Sunday)
+5. Click "View Full Recipe" on any meal
+6. See complete cooking instructions and ingredients
+7. Shop individual ingredients with "Buy on Walmart" buttons
 
 ### **Using Recipe Generation**
 1. Go to "Generate Recipes" 
