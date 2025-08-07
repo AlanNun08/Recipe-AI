@@ -2991,11 +2991,14 @@ function App() {
           onBack={() => setCurrentScreen('dashboard')}
           showNotification={showNotification}
           onViewRecipe={(recipeId) => {
+            console.log('onViewRecipe called with recipeId:', recipeId);
             if (!recipeId) {
               showNotification('❌ Recipe ID is missing', 'error');
               return;
             }
+            console.log('Setting currentRecipeId to:', recipeId);
             setCurrentRecipeId(recipeId);
+            console.log('Setting currentScreen to recipe-detail');
             setCurrentScreen('recipe-detail');
           }}
         />;
