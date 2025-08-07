@@ -42,8 +42,8 @@ steps:
       '--port', '8080',
       '--set-env-vars', 'NODE_ENV=production,PYTHONUNBUFFERED=1',
       '--update-env-vars', 'REACT_APP_BACKEND_URL=https://buildyoursmartcart.com',
-      '--tag', 'v2-2-0-walmart',
-      '--revision-suffix', 'walmart-integration-${BUILD_ID}',
+      '--tag', 'v2-2-1-navigation-fix',
+      '--revision-suffix', 'navigation-fix-${BUILD_ID}',
       '--quiet'
     ]
 
