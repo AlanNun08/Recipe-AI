@@ -10,7 +10,7 @@
 - **📋 Full Policy**: See `/docs/PRODUCTION_ONLY_POLICY.md`
 
 ## 💳 **Subscription Model**
-- **7-week FREE trial** for all new users
+- **7-day FREE trial** for all new users (updated from 7-week)
 - **$9.99/month** recurring subscription via Stripe
 - **Premium features** gated behind subscription
 - **Secure payment processing** with Stripe integration
