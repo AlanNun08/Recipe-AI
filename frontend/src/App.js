@@ -60,16 +60,6 @@ function App() {
   // Subscription states
   const [showSubscriptionScreen, setShowSubscriptionScreen] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
-  
-  // Debug: Log current screen changes
-  useEffect(() => {
-    console.log('Current screen changed to:', currentScreen);
-  }, [currentScreen]);
-  
-  // Debug: Log current recipe ID changes
-  useEffect(() => {
-    console.log('Current recipe ID changed to:', currentRecipeId);
-  }, [currentRecipeId]);
 
   // Enhanced user session management functions
   const clearUserSession = () => {
