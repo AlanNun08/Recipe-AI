@@ -69,8 +69,10 @@ async def health_check():
         status_code=200,
         content={
             "status": "healthy",
-            "service": "buildyoursmartcart",
-            "version": "2.0.0"
+            "service": "buildyoursmartcart", 
+            "version": "2.2.0",
+            "features": "walmart-integration-active",
+            "last_updated": "2025-08-07T18:50:00Z"
         }
     )
 
@@ -82,8 +84,15 @@ app.mount("/api", backend_app)
 async def api_root():
     """API root endpoint"""
     return JSONResponse({
-        "message": "buildyoursmartcart.com API",
-        "version": "2.0.0",
+        "message": "buildyoursmartcart.com API - Weekly Meal Planning & Walmart Integration", 
+        "version": "2.2.0",
+        "features": [
+            "ai-recipe-generation",
+            "weekly-meal-planning",
+            "individual-walmart-shopping",
+            "starbucks-secret-menu",
+            "community-sharing"
+        ],
         "docs": "/api/docs" if os.getenv("NODE_ENV") != "production" else None,
         "health": "/api/health"
     })
