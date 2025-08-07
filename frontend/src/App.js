@@ -962,7 +962,7 @@ function App() {
     );
   };
 
-  // Enhanced Dashboard Screen Component
+  // Enhanced Dashboard Screen Component with improved navigation
   const DashboardScreen = () => (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 p-4 relative overflow-hidden">
       {/* Magical Background Elements */}
@@ -1000,7 +1000,7 @@ function App() {
         
         {/* Enhanced Action Buttons */}
         <div className="space-y-4 mb-8">
-          {/* NEW: Weekly Recipe Planner Button */}
+          {/* FEATURED: Weekly Recipe Planner Button */}
           <button
             onClick={() => setCurrentScreen('weekly-recipes')}
             className="w-full bg-gradient-to-r from-green-500 via-teal-500 to-blue-500 hover:from-green-600 hover:via-teal-600 hover:to-blue-600 text-white font-bold py-6 px-8 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-300 text-lg relative overflow-hidden"
@@ -1010,6 +1010,7 @@ function App() {
               Weekly Meal Planner
               <span className="text-2xl ml-3 animate-pulse">🛒</span>
             </span>
+            <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-blue-400 opacity-20 animate-pulse"></div>
           </button>
           
           <button
@@ -1073,7 +1074,7 @@ function App() {
             </div>
             <div className="flex items-center p-4 bg-white rounded-2xl shadow-lg">
               <span className="text-3xl mr-4 animate-pulse">🛒</span>
-              <span className="text-gray-700 font-medium">Instant Walmart grocery delivery</span>
+              <span className="text-gray-700 font-medium">Individual ingredient Walmart shopping</span>
             </div>
             <div className="flex items-center p-4 bg-white rounded-2xl shadow-lg">
               <span className="text-3xl mr-4 animate-bounce">💚</span>
