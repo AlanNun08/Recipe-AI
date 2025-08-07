@@ -9,7 +9,7 @@ import httpx
 import json
 from datetime import datetime
 
-BACKEND_URL = "https://42644e0e-38cf-4302-bad3-e90207944366.preview.emergentagent.com/api"
+BACKEND_URL = "https://684e9661-9649-4c07-94f4-ea83f5f36a96.preview.emergentagent.com/api"
 TEST_USER_ID = "f99be98f-c1d5-4ccc-a3ad-9b62e01f4731"
 TEST_USER_EMAIL = "demo@test.com"
 
@@ -34,7 +34,7 @@ async def test_subscription_system():
         checkout_data = {
             "user_id": TEST_USER_ID,
             "user_email": TEST_USER_EMAIL,
-            "origin_url": "https://42644e0e-38cf-4302-bad3-e90207944366.preview.emergentagent.com"
+            "origin_url": "https://684e9661-9649-4c07-94f4-ea83f5f36a96.preview.emergentagent.com"
         }
         response = await client.post(f"{BACKEND_URL}/subscription/create-checkout", json=checkout_data)
         print(f"Status: {response.status_code}")
