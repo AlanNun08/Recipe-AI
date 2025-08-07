@@ -41,31 +41,7 @@ from emergentintegrations.payments.stripe.checkout import StripeCheckout, Checko
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from email_service import email_service
 
-# Standard imports
-import gc
-from pathlib import Path
-from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional, Dict, Any
-import uuid
-from datetime import datetime, timedelta
-from dateutil import parser
-import openai
-from openai import OpenAI
-import json
-import httpx
-import asyncio
-import time
-import base64
-import re
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding
-import bcrypt
-import sys
-import os
-
-# Add backend to path for email service
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from email_service import email_service
+# Note: Removed duplicate imports that were causing conflicts
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
