@@ -1,5 +1,5 @@
 # Google Cloud Build configuration for buildyoursmartcart.com
-# Version 2.2.0 - Weekly Meal Planning & Walmart Integration with Cache Busting
+# Version 2.2.1 - Navigation Bug Fix for Weekly Meal Planning & Walmart Integration
 # Optimized for Google Cloud Run deployment
 
 steps:
