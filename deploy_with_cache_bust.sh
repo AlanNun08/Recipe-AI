@@ -43,8 +43,8 @@ if [ $? -eq 0 ]; then
     echo "🎉 DEPLOYMENT SUCCESSFUL!"
     echo "=" * 60
     echo "✅ Cache busting headers added to prevent browser caching"
-    echo "✅ Version 2.2.0 with Walmart integration deployed"
-    echo "✅ Weekly recipe system with individual shopping active"
+    echo "✅ Version 2.2.1 with navigation bug fix deployed"
+    echo "✅ Weekly recipe system with working 'View Recipe' navigation"
     echo ""
     echo "🌐 Service URL: https://buildyoursmartcart.com"
     echo "🔍 Health Check: https://buildyoursmartcart.com/health"
