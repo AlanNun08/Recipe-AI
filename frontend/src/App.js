@@ -3005,6 +3005,7 @@ function App() {
       case 'recipe-detail':
         console.log('Rendering RecipeDetailScreen with currentRecipeId:', currentRecipeId);
         return <RecipeDetailScreen 
+          key={currentRecipeId} // Force re-render when recipe ID changes
           recipeId={currentRecipeId}
           onBack={() => setCurrentScreen('weekly-recipes')}
           showNotification={showNotification}
