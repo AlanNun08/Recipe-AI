@@ -348,6 +348,23 @@ python production_account_cleanup.py
 
 ## 📋 **Recent Updates & Fixes**
 
+### **Version 2.2.0 - Weekly Meal Planning & Recipe Detail System**
+- ✅ **NEW FEATURE:** Complete Weekly Meal Planning System
+  - 🗓️ AI-generated 7-day meal plans with diverse cuisines
+  - 👨‍👩‍👧‍👦 Family size scaling (1-6+ people)
+  - 🥗 Dietary preferences (vegetarian, vegan, keto, gluten-free)
+  - 🍝 Cuisine selection (Italian, Mexican, Asian, Mediterranean, etc.)
+- ✅ **NEW FEATURE:** "View Recipe" Detail System
+  - 📖 Complete cooking instructions for each meal
+  - 🛒 Individual "Buy on Walmart" links for each ingredient
+  - 📱 Mobile-responsive recipe detail pages
+  - 🧭 Seamless navigation between weekly plan and recipe details
+- ✅ **UPDATED:** Trial system changed from 7-week to 7-day implementation
+- ✅ **REPLACED:** Bulk "Shop All Ingredients" with individual ingredient shopping
+- ✅ **ADDED:** 5 new API endpoints for weekly recipe management
+- ✅ **ENHANCED:** Mock data fallback system for development/demo use
+- ✅ **IMPROVED:** Database schema with `weekly_recipes_collection`
+
 ### **Version 2.1.0 - Production Optimization**
 - ✅ **Fixed:** Double `/api/api/` routing issue by updating frontend `.env`
 - ✅ **Fixed:** Corrupted account verification loops
