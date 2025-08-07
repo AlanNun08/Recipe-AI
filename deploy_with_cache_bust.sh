@@ -11,7 +11,7 @@ PROJECT_ID=$(gcloud config get-value project)
 SERVICE_NAME="buildyoursmartcart"
 REGION="us-central1"
 BUILD_ID=$(date +%Y%m%d-%H%M%S)
-VERSION="2.2.0-walmart-integration"
+VERSION="2.2.1-navigation-fix"
 
 echo "📋 Deployment Configuration:"
 echo "   Project ID: $PROJECT_ID"
