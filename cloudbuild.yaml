@@ -11,8 +11,8 @@ steps:
       '-t', 'gcr.io/$PROJECT_ID/buildyoursmartcart:latest',
       '-t', 'gcr.io/$PROJECT_ID/buildyoursmartcart:v2.2.1',
       '--cache-from', 'gcr.io/$PROJECT_ID/buildyoursmartcart:latest',
-      '--label', 'version=2.2.0',
-      '--label', 'features=walmart-integration,weekly-recipes,cache-busting',
+      '--label', 'version=2.2.1',
+      '--label', 'features=walmart-integration,weekly-recipes,navigation-fix',
       '.'
     ]
 
