@@ -53,6 +53,7 @@ function App() {
   const [generatingRecipe, setGeneratingRecipe] = useState(false);
   const [notification, setNotification] = useState(null);
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState(null);
+  const [currentRecipeId, setCurrentRecipeId] = useState(null); // NEW: For recipe detail view
   const [pendingResetEmail, setPendingResetEmail] = useState(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
