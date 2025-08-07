@@ -52,6 +52,8 @@ const RecipeDetailScreen = ({ recipeId, onBack, showNotification }) => {
           <div className="text-6xl mb-4">😞</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Recipe Not Found</h2>
           <p className="text-gray-600 mb-6">This recipe is no longer available or may have been removed.</p>
+          <p className="text-sm text-gray-500 mb-4">Debug: Received recipeId = "{recipeId}"</p>
+          <p className="text-sm text-gray-500 mb-4">Debug: isLoading = {isLoading.toString()}</p>
           <button
             onClick={onBack}
             className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all"
