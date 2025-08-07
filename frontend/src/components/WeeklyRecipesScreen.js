@@ -172,18 +172,6 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
                   >
                     🔄 Generate New Plan
                   </button>
-                  
-                  {currentPlan.walmart_cart_url && (
-                    <a
-                      href={currentPlan.walmart_cart_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-2 rounded-xl hover:shadow-lg transition-all flex items-center"
-                    >
-                      <span className="mr-2">🛒</span>
-                      Shop All Ingredients
-                    </a>
-                  )}
                 </div>
               </div>
               
