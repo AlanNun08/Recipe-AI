@@ -1109,8 +1109,7 @@ function App() {
         {/* Enhanced Logout Button */}
         <button
           onClick={() => {
-            setUser(null);
-            clearUserSession(); // Clear localStorage
+            setUserWithSession(null); // Use enhanced session clearing
             setPendingVerificationEmail(null);
             setCurrentScreen('landing');
             showNotification('👋 Signed out successfully', 'success');
