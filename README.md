@@ -22,8 +22,9 @@
 A complete AI-powered recipe generation and community sharing platform that combines:
 
 - **🤖 AI Recipe Generation** - Create personalized recipes using OpenAI GPT-3.5
+- **📅 Weekly Meal Planning** - AI-generated 7-day meal plans with smart shopping
 - **☕ Starbucks Secret Menu** - Generate viral TikTok-worthy drink hacks
-- **🛒 Walmart Grocery Integration** - Real product search with affiliate links
+- **🛒 Individual Walmart Shopping** - Per-ingredient shopping with affiliate links
 - **👥 Community Sharing** - Upload, share, and discover recipes with photos
 - **📱 Mobile PWA** - Install as native app on any device
 
