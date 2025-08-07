@@ -32,6 +32,16 @@ A complete AI-powered recipe generation and community sharing platform that comb
 
 ## ✨ **Key Features**
 
+### **Weekly Meal Planning System (NEW)**
+- **🗓️ 7-Day AI Meal Plans**: Complete weekly dinner plans with diverse cuisines
+- **👨‍👩‍👧‍👦 Family Size Scaling**: Ingredient quantities adjust for 1-6+ people
+- **🥗 Dietary Preferences**: Vegetarian, vegan, keto, gluten-free, and more
+- **🍝 Cuisine Selection**: Italian, Mexican, Asian, Mediterranean, Indian, French, American
+- **📖 View Recipe Feature**: Click any meal for complete cooking instructions
+- **🛒 Individual Walmart Shopping**: Each ingredient has its own "Buy on Walmart" link
+- **💰 Budget Control**: Set weekly meal budget with cost estimation
+- **📱 Mobile Responsive**: Touch-friendly meal cards and recipe details
+
 ### **AI Recipe Generation**
 - **4 Categories**: Cuisine-based, Beverages, Snacks, Starbucks drinks
 - **Smart Ingredients**: AI generates recipes from your available ingredients
@@ -50,11 +60,11 @@ A complete AI-powered recipe generation and community sharing platform that comb
 - **Category Filtering**: Browse by drink type and tags
 - **User Attribution**: See who created each recipe
 
-### **Walmart Grocery Integration**
-- **Real Product Search**: Find actual Walmart products for your recipes
-- **Affiliate Links**: Monetized shopping with real product IDs
-- **Shopping Lists**: Auto-generated grocery lists with prices
-- **One-Click Shopping**: Direct links to add items to Walmart cart
+### **Individual Ingredient Shopping**
+- **🛒 Per-Ingredient Links**: Each ingredient gets its own Walmart shopping link
+- **🔍 Smart Search**: Walmart URLs optimized for ingredient searches
+- **📱 Mobile Shopping**: Touch-friendly shopping buttons on all devices
+- **💡 Shopping Tips**: Helpful guidance for ingredient purchasing
 
 ---
 
