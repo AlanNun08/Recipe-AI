@@ -8,9 +8,7 @@ const RecipeDetailScreen = ({ recipeId, onBack, showNotification }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log('RecipeDetailScreen received recipeId:', recipeId);
     if (!recipeId) {
-      console.log('No recipeId provided, showing error');
       setIsLoading(false);
       return;
     }
