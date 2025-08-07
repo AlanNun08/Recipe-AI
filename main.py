@@ -70,9 +70,9 @@ async def health_check():
         content={
             "status": "healthy",
             "service": "buildyoursmartcart", 
-            "version": "2.2.0",
-            "features": "walmart-integration-active",
-            "last_updated": "2025-08-07T18:50:00Z"
+            "version": "2.2.1",
+            "features": "navigation-fix-active",
+            "last_updated": "2025-08-07T20:15:00Z"
         }
     )
 
