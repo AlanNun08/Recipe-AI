@@ -2969,6 +2969,16 @@ function App() {
           user={user}
           onBack={() => setCurrentScreen('dashboard')}
           showNotification={showNotification}
+          onViewRecipe={(recipeId) => {
+            setCurrentRecipeId(recipeId);
+            setCurrentScreen('recipe-detail');
+          }}
+        />;
+      case 'recipe-detail':
+        return <RecipeDetailScreen 
+          recipeId={currentRecipeId}
+          onBack={() => setCurrentScreen('weekly-recipes')}
+          showNotification={showNotification}
         />;
       case 'welcome-onboarding':
         return <WelcomeOnboarding 
