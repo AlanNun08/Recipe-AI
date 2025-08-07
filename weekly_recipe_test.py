@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """
-Weekly Recipe System Testing Script
-Testing the newly implemented Weekly Recipe System endpoints:
-1. POST /api/user/trial-status/{user_id} - Get trial status with 7-day trial implementation
-2. POST /api/weekly-recipes/generate - Generate weekly meal plan (7 dinners) with Walmart cart
-3. GET /api/weekly-recipes/current/{user_id} - Get current week's meal plan
-4. GET /api/weekly-recipes/history/{user_id} - Get weekly recipe history
+Weekly Recipe System Testing Script - FOCUSED ON REVIEW REQUEST
+Testing specific endpoints as requested:
+1. /api/weekly-recipes/generate endpoint with demo user (demo@test.com, password123)
+2. /api/user/trial-status/{user_id} 
+3. /api/weekly-recipes/current/{user_id}
+4. /api/weekly-recipes/recipe/{recipe_id}
+
+Focus: Identify why weekly recipe generation is returning 500 errors
 """
 
 import asyncio
