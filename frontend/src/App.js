@@ -61,9 +61,13 @@ function App() {
   const [showSubscriptionScreen, setShowSubscriptionScreen] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
 
-  // Load user session from localStorage on app start - PRODUCTION FIX
-  useEffect(() => {
-    // Enhanced user session management
+  // Enhanced user session management functions
+  const clearUserSession = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('userSession');
+    localStorage.removeItem('authToken');
+  };
+
   const setUserWithSession = (userData) => {
     if (userData) {
       // Save to localStorage for session persistence
@@ -81,12 +85,6 @@ function App() {
       clearUserSession();
       setUser(null);
     }
-  };
-
-  const clearUserSession = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('userSession');
-    localStorage.removeItem('authToken');
   };
 
   const loadUserSession = () => {
