@@ -262,7 +262,7 @@ Run the production verification script:
 
 ## 🚀 **Deployment Status**
 
-### **Current Version**: 2.1.0
+### **Current Version**: 2.2.0
 ### **Production URL**: https://buildyoursmartcart.com
 ### **Status**: ✅ LIVE & FULLY FUNCTIONAL
 
