@@ -873,7 +873,7 @@ function App() {
         
         // Successful login
         if (response.data.status === 'success') {
-          setUser(response.data.user);
+          setUserWithSession(response.data.user);  // Use enhanced session management
           setCurrentScreen('dashboard');
           
           // Mark user as onboarded to skip tutorial for returning users
