@@ -237,11 +237,7 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
                     
                     {/* View Recipe Button */}
                     <button
-                      onClick={() => {
-                        console.log('View Recipe clicked for meal:', meal);
-                        console.log('Meal ID:', meal.id);
-                        onViewRecipe(meal.id);
-                      }}
+                      onClick={() => onViewRecipe(meal.id)}
                       className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white font-bold py-3 px-4 rounded-xl hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
                     >
                       <span className="flex items-center justify-center">
