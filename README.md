@@ -382,3 +382,6 @@ python production_account_cleanup.py
 - All API routes must be prefixed with `/api` for correct Kubernetes ingress routing
 - MongoDB connection uses `MONGO_URL` from environment variables only
 - Stripe webhooks configured for subscription management
+- Weekly recipes stored in `weekly_recipes_collection` with 7-day meal structure
+- Recipe detail endpoint provides individual Walmart shopping URLs for each ingredient
+- Mock data fallback system activates when OpenAI API key is not configured
