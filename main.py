@@ -13,7 +13,7 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 # Configure logging for Cloud Run
@@ -35,11 +35,31 @@ except ImportError as e:
 # Create main FastAPI app
 app = FastAPI(
     title="buildyoursmartcart.com",
-    description="AI Recipe + Grocery Delivery App",
-    version="2.0.0",
+    description="AI Recipe + Grocery Delivery App - Weekly Meal Planning & Walmart Integration",
+    version="2.2.0",
     docs_url="/api/docs" if os.getenv("NODE_ENV") != "production" else None,
     redoc_url="/api/redoc" if os.getenv("NODE_ENV") != "production" else None
 )
+
+# 🚀 CACHE BUSTING MIDDLEWARE FOR GOOGLE CLOUD RUN
+@app.middleware("http")
+async def disable_cache(request: Request, call_next):
+    """
+    Cache busting middleware for Google Cloud Run deployment.
+    Ensures users always get the latest version after deployment.
+    """
+    response: Response = await call_next(request)
+    
+    # Add cache-control headers to prevent browser caching
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"  
+    response.headers["Expires"] = "0"
+    
+    # Add headers to detect fresh deployments
+    response.headers["X-Build-Version"] = "2.2.0-walmart-integration"
+    response.headers["X-Last-Modified"] = "2025-08-07T18:50:00Z"
+    
+    return response
 
 # Health check endpoint for Cloud Run
 @app.get("/health")
