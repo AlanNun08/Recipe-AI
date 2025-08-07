@@ -147,16 +147,6 @@ function App() {
     }
   }, []);
 
-  // Clear user session from localStorage
-  const clearUserSession = () => {
-    try {
-      localStorage.removeItem('ai_chef_user');
-      // Session cleared
-    } catch (error) {
-      // Failed to clear session
-    }
-  };
-
   // Check if user has completed onboarding
   const checkOnboardingStatus = () => {
     if (user?.id) {
