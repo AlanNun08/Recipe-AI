@@ -3003,6 +3003,7 @@ function App() {
           }}
         />;
       case 'recipe-detail':
+        console.log('Rendering RecipeDetailScreen with currentRecipeId:', currentRecipeId);
         return <RecipeDetailScreen 
           recipeId={currentRecipeId}
           onBack={() => setCurrentScreen('weekly-recipes')}
