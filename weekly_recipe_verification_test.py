@@ -153,15 +153,15 @@ class WeeklyRecipeVerificationTester:
             if response.status_code == 200:
                 result = response.json()
                 
-                # Verify response structure
-                required_fields = ["plan_id", "week_of", "meals", "total_budget", "walmart_cart_url"]
+                # Verify response structure (the endpoint returns the full plan object)
+                required_fields = ["id", "week_of", "meals", "total_budget", "walmart_cart_url"]
                 missing_fields = [field for field in required_fields if field not in result]
                 
                 if missing_fields:
                     self.log(f"❌ Missing required fields in generation response: {missing_fields}")
                     return False
                 
-                self.current_plan_id = result.get("plan_id")
+                self.current_plan_id = result.get("id")
                 meals = result.get("meals", [])
                 
                 self.log("✅ Weekly recipe generation successful")
