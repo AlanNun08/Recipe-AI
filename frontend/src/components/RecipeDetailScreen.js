@@ -167,11 +167,10 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-100 via-blue-100 to-purple-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-bounce">🍳</div>
-          <div className="text-xl text-gray-600">Loading recipe details...</div>
-          <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mt-4"></div>
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading recipe details...</p>
         </div>
       </div>
     );
