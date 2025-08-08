@@ -3214,8 +3214,13 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
         
         # Load the RSA private key and create RSA signature
         try:
+            # Handle PEM key that might have escaped newlines from .env file
+            pem_key = WALMART_PRIVATE_KEY.replace('\\n', '\n')
+            if not pem_key.endswith('\n'):
+                pem_key += '\n'
+            
             private_key = serialization.load_pem_private_key(
-                WALMART_PRIVATE_KEY.encode('utf-8'),
+                pem_key.encode('utf-8'),
                 password=None,
             )
             
@@ -3228,6 +3233,7 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
             signature = base64.b64encode(signature_bytes).decode('utf-8')
         except Exception as e:
             logger.error(f"Failed to create RSA signature: {str(e)}")
+            logger.error(f"Key preview: {WALMART_PRIVATE_KEY[:50]}...")
             raise
         
         headers = {
