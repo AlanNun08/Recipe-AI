@@ -3577,8 +3577,8 @@ async def get_grocery_cart_options(
         raise HTTPException(status_code=500, detail=f"Failed to get cart options: {str(e)}")
 
 
-@api_router.post("/grocery/generate-cart-url")
-async def generate_grocery_cart_url(request: Request):
+@api_router.post("/grocery/generate-cart-url-v2")
+async def generate_grocery_cart_url_v2(request: Request):
     """
     Generate Walmart cart URL with selected products.
     Called when user clicks 'Add to Walmart Cart' after making selections.
