@@ -3222,8 +3222,8 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
             'Content-Type': 'application/json'
         }
         
-        # Make API request
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        # Make API request with increased timeout for production reliability
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(f"{base_url}?{query_string}", headers=headers)
             
             if response.status_code == 200:
