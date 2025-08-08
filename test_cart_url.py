@@ -33,6 +33,9 @@ async def test_cart_url():
         ]
     }
     
+    print(f'Backend URL: {backend_url}')
+    print(f'Request data: {json.dumps(test_data, indent=2)}')
+    
     print('Testing cart URL generation with real product IDs...')
     response = await client.post(f'{backend_url}/grocery/generate-cart-url', json=test_data)
     
