@@ -20,7 +20,7 @@ from typing import Dict, List, Any
 import time
 
 # Use the backend URL from frontend environment
-BACKEND_URL = "https://684e9661-9649-4c07-94f4-ea83f5f36a96.preview.emergentagent.com/api"
+BACKEND_URL = "https://fd9864fb-c204-41f3-8f4c-e2111c0751fc.preview.emergentagent.com/api"
 
 # Demo user credentials (from previous tests)
 DEMO_USER_EMAIL = "demo@test.com"

@@ -20,7 +20,7 @@ import base64
 sys.path.append('/app/backend')
 
 # Test configuration
-BACKEND_URL = "https://684e9661-9649-4c07-94f4-ea83f5f36a96.preview.emergentagent.com/api"
+BACKEND_URL = "https://fd9864fb-c204-41f3-8f4c-e2111c0751fc.preview.emergentagent.com/api"
 TEST_USER_EMAIL = "starbucks_tester@example.com"
 TEST_USER_PASSWORD = "starbuckstest123"
 TEST_USER_NAME = "Starbucks Tester"

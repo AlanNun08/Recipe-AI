@@ -19,7 +19,7 @@ def get_backend_url():
                         return line.split('=', 1)[1].strip()
     except Exception as e:
         print(f"Error reading frontend .env: {e}")
-    return "https://684e9661-9649-4c07-94f4-ea83f5f36a96.preview.emergentagent.com"
+    return "https://fd9864fb-c204-41f3-8f4c-e2111c0751fc.preview.emergentagent.com"
 
 BACKEND_URL = get_backend_url()
 API_BASE = f"{BACKEND_URL}/api"

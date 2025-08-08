@@ -13,7 +13,7 @@ from typing import Dict, List, Any
 import sys
 
 # Get backend URL from environment
-BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://684e9661-9649-4c07-94f4-ea83f5f36a96.preview.emergentagent.com') + '/api'
+BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://fd9864fb-c204-41f3-8f4c-e2111c0751fc.preview.emergentagent.com') + '/api'
 
 # Demo user credentials
 DEMO_EMAIL = "demo@test.com"
