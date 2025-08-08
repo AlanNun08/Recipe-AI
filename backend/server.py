@@ -3876,47 +3876,66 @@ async def get_weekly_recipe_detail(recipe_id: str):
         if not target_meal:
             raise HTTPException(status_code=404, detail="Recipe not found")
         
-        # Generate shopping cart options for each ingredient (similar to regular recipes)
+        # Simplified Walmart integration - one product per ingredient
         cart_ingredients = []
+        
         for ingredient in target_meal.get('ingredients', []):
             try:
-                # Get multiple product options for each ingredient
-                walmart_products = await search_walmart_products_v2(ingredient, max_results=3)
+                # Get the best product match for this ingredient
+                walmart_products = await search_walmart_products_v2(ingredient, max_results=1)
                 
                 if walmart_products and len(walmart_products) > 0:
-                    # Convert to cart format with multiple options per ingredient
-                    product_options = []
-                    for product in walmart_products:
-                        product_options.append({
+                    product = walmart_products[0]  # Use the first (best) match
+                    cart_ingredient = {
+                        "ingredient": ingredient,
+                        "products": [{
                             "id": product.id,
                             "name": product.name,
                             "price": product.price,
                             "image_url": product.image_url,
                             "brand": product.brand,
                             "rating": product.rating,
-                            "url": f"https://goto.walmart.com/c/1804968/{product.id}"
-                        })
-                    
-                    cart_ingredients.append({
+                            "url": product.product_url if product.product_url else f"https://www.walmart.com/ip/{product.id}"
+                        }],
+                        "selected_product_id": product.id
+                    }
+                    cart_ingredients.append(cart_ingredient)
+                else:
+                    # Fallback for ingredients that can't be found
+                    fallback_id = f"search_{abs(hash(ingredient)) % 10000}"
+                    cart_ingredient = {
                         "ingredient": ingredient,
-                        "products": product_options,
-                        "selected_product_id": product_options[0]["id"]  # Default to first option
-                    })
+                        "products": [{
+                            "id": fallback_id,
+                            "name": f"Search: {ingredient}",
+                            "price": 0.00,
+                            "image_url": "https://via.placeholder.com/100x100?text=🔍",
+                            "brand": "Walmart",
+                            "rating": 0.0,
+                            "url": f"https://www.walmart.com/search/?query={ingredient.replace(' ', '+')}"
+                        }],
+                        "selected_product_id": fallback_id
+                    }
+                    cart_ingredients.append(cart_ingredient)
+                    
             except Exception as e:
-                # Fallback for this ingredient
-                cart_ingredients.append({
+                logger.error(f"Error processing ingredient '{ingredient}': {str(e)}")
+                # Create fallback item for this ingredient
+                fallback_id = f"error_{abs(hash(ingredient)) % 10000}"
+                cart_ingredient = {
                     "ingredient": ingredient,
                     "products": [{
-                        "id": f"fallback_{abs(hash(ingredient)) % 10000}",
-                        "name": f"Generic {ingredient}",
-                        "price": 2.99,
-                        "image_url": "https://via.placeholder.com/100x100?text=🛒",
-                        "brand": "Great Value",
-                        "rating": 4.0,
+                        "id": fallback_id,
+                        "name": f"Search: {ingredient}",
+                        "price": 0.00,
+                        "image_url": "https://via.placeholder.com/100x100?text=❌",
+                        "brand": "Walmart",
+                        "rating": 0.0,
                         "url": f"https://www.walmart.com/search/?query={ingredient.replace(' ', '+')}"
                     }],
-                    "selected_product_id": f"fallback_{abs(hash(ingredient)) % 10000}"
-                })
+                    "selected_product_id": fallback_id
+                }
+                cart_ingredients.append(cart_ingredient)
         
         # Return detailed recipe information with cart system
         recipe_detail = {
