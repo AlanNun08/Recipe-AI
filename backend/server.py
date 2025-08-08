@@ -3937,7 +3937,21 @@ async def get_weekly_recipe_detail(recipe_id: str):
                 }
                 cart_ingredients.append(cart_ingredient)
         
-        # Return detailed recipe information with cart system
+        # Create Walmart cart URL with all valid product IDs
+        valid_product_ids = []
+        for cart_ingredient in cart_ingredients:
+            product = cart_ingredient["products"][0]
+            # Only include products that have real IDs (not fallback search items)
+            if not product["id"].startswith("search_") and not product["id"].startswith("error_"):
+                valid_product_ids.append(product["id"])
+        
+        # Generate Walmart cart URL if we have valid products
+        walmart_cart_url = ""
+        if valid_product_ids:
+            # Use Walmart's add multiple items to cart URL format
+            walmart_cart_url = f"https://www.walmart.com/cart/add-multiple?items={','.join(valid_product_ids)}"
+        
+        # Return detailed recipe information with simplified Walmart integration
         recipe_detail = {
             "id": target_meal.get('id'),
             "name": target_meal.get('name'),
@@ -3950,7 +3964,8 @@ async def get_weekly_recipe_detail(recipe_id: str):
             "servings": target_meal.get('servings', 2),
             "cuisine": target_meal.get('cuisine', 'International'),
             "calories": target_meal.get('calories', 400),
-            "cart_ingredients": cart_ingredients,  # Shopping cart data
+            "cart_ingredients": cart_ingredients,  # Simplified shopping data with one product per ingredient
+            "walmart_cart_url": walmart_cart_url,  # URL to add all ingredients to Walmart cart
             "week_of": source_plan.get('week_of') if source_plan else current_week
         }
         
