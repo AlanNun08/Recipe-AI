@@ -26,7 +26,7 @@ from typing import Dict, List, Any
 import time
 
 # Use the backend URL from frontend/.env
-BACKEND_URL = "https://fd9864fb-c204-41f3-8f4c-e2111c0751fc.preview.emergentagent.com/api"
+BACKEND_URL = "https://d14c8dce-243d-4ebb-a34c-aee1807fadfa.preview.emergentagent.com/api"
 
 # Demo user credentials (from test_result.md)
 DEMO_USER_EMAIL = "demo@test.com"

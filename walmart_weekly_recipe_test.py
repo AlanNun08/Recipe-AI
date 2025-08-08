@@ -15,7 +15,7 @@ from datetime import datetime
 from typing import Dict, List, Any
 
 # Get backend URL from environment
-BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://fd9864fb-c204-41f3-8f4c-e2111c0751fc.preview.emergentagent.com') + '/api'
+BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://d14c8dce-243d-4ebb-a34c-aee1807fadfa.preview.emergentagent.com') + '/api'
 
 class WalmartWeeklyRecipeTester:
     def __init__(self):

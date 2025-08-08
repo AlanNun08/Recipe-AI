@@ -35,7 +35,7 @@ def get_backend_url():
         print(f"Error reading frontend .env: {e}")
     
     # Fallback URL
-    return "https://fd9864fb-c204-41f3-8f4c-e2111c0751fc.preview.emergentagent.com"
+    return "https://d14c8dce-243d-4ebb-a34c-aee1807fadfa.preview.emergentagent.com"
 
 BACKEND_URL = get_backend_url()
 API_BASE = f"{BACKEND_URL}/api"

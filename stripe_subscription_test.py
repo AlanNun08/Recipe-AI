@@ -14,7 +14,7 @@ from typing import Dict, List, Any
 import uuid
 
 # Test configuration
-BACKEND_URL = "https://fd9864fb-c204-41f3-8f4c-e2111c0751fc.preview.emergentagent.com/api"
+BACKEND_URL = "https://d14c8dce-243d-4ebb-a34c-aee1807fadfa.preview.emergentagent.com/api"
 TEST_USER_EMAIL = "demo@test.com"
 TEST_USER_PASSWORD = "password123"
 
@@ -116,7 +116,7 @@ class StripeSubscriptionTester:
             checkout_data = {
                 "user_id": self.user_id,
                 "user_email": self.user_email,
-                "origin_url": "https://fd9864fb-c204-41f3-8f4c-e2111c0751fc.preview.emergentagent.com"
+                "origin_url": "https://d14c8dce-243d-4ebb-a34c-aee1807fadfa.preview.emergentagent.com"
             }
             
             response = await self.client.post(f"{BACKEND_URL}/subscription/create-checkout", json=checkout_data)
@@ -406,7 +406,7 @@ class StripeSubscriptionTester:
             checkout_data = {
                 "user_id": self.user_id,
                 "user_email": self.user_email,
-                "origin_url": "https://fd9864fb-c204-41f3-8f4c-e2111c0751fc.preview.emergentagent.com"
+                "origin_url": "https://d14c8dce-243d-4ebb-a34c-aee1807fadfa.preview.emergentagent.com"
             }
             
             response = await self.client.post(f"{BACKEND_URL}/subscription/create-checkout", json=checkout_data)
