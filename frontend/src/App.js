@@ -181,7 +181,7 @@ function App() {
   // Test backend connectivity
   const testBackendConnection = async () => {
     try {
-      const response = await axios.get(`${API}/health`, { timeout: 5000 });
+      const response = await axios.get(`${API}/api/health`, { timeout: 5000 });
       return response.status === 200;
     } catch (error) {
       return false;
