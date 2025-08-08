@@ -42,7 +42,11 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
       // Get current user ID from session storage or use demo user
       const userId = sessionStorage.getItem('user_id') || 'f99be98f-c1d5-4ccc-a3ad-9b62e01f4731';
       
+      console.log('🔍 Loading cart options for recipe:', recipeId, 'user:', userId);
+      
       const response = await axios.post(`${API}/api/grocery/cart-options-test?recipe_id=${recipeId}&user_id=${userId}`);
+      console.log('✅ Cart options loaded:', response.data);
+      
       setCartOptions(response.data);
       
       // Initialize selected products with first option for each ingredient
@@ -54,10 +58,13 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
       });
       setSelectedProducts(initialSelections);
       
+      console.log('✅ Selected products initialized:', initialSelections);
       showNotification('✅ Found real Walmart products!', 'success');
     } catch (error) {
-      console.error('Failed to load cart options:', error);
-      showNotification('⚠️ Using recipe ingredients without Walmart integration', 'warning');
+      console.error('❌ Failed to load cart options:', error);
+      console.log('⚠️ Will show basic ingredients instead of Walmart products');
+      // Don't show error notification - just continue without cart options
+      // showNotification('⚠️ Using recipe ingredients without Walmart integration', 'warning');
     } finally {
       setIsLoadingCart(false);
     }
