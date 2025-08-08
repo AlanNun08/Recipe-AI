@@ -195,21 +195,36 @@ class WalmartWeeklyRecipeTester:
                     
                     # Verify simplified structure (one product per ingredient)
                     for i, cart_item in enumerate(cart_ingredients[:3]):  # Show first 3
-                        ingredient_name = cart_item.get("ingredient_name")
-                        product = cart_item.get("product", {})
+                        ingredient_name = cart_item.get("ingredient")
+                        products = cart_item.get("products", [])
+                        selected_product_id = cart_item.get("selected_product_id")
                         
                         self.log(f"  Cart Item {i+1}: {ingredient_name}")
-                        self.log(f"    Product ID: {product.get('product_id')}")
-                        self.log(f"    Product Name: {product.get('name')}")
-                        self.log(f"    Price: ${product.get('price')}")
-                        self.log(f"    Walmart URL: {product.get('walmart_url', 'N/A')}")
+                        self.log(f"    Products available: {len(products)}")
+                        self.log(f"    Selected product ID: {selected_product_id}")
                         
-                        # Verify this is a real Walmart URL
-                        walmart_url = product.get('walmart_url', '')
-                        if 'walmart.com' in walmart_url:
-                            self.log(f"    ✅ Valid Walmart URL detected")
+                        if products:
+                            # Check the first (and should be only) product
+                            product = products[0]
+                            self.log(f"    Product ID: {product.get('id')}")
+                            self.log(f"    Product Name: {product.get('name')}")
+                            self.log(f"    Price: ${product.get('price')}")
+                            self.log(f"    Walmart URL: {product.get('url', 'N/A')}")
+                            
+                            # Verify this is a real Walmart URL
+                            walmart_url = product.get('url', '')
+                            if 'walmart.com' in walmart_url:
+                                self.log(f"    ✅ Valid Walmart URL detected")
+                            else:
+                                self.log(f"    ⚠️ URL may not be a real Walmart URL")
+                            
+                            # Check if this is simplified (one product per ingredient)
+                            if len(products) == 1:
+                                self.log(f"    ✅ Simplified structure: exactly 1 product per ingredient")
+                            else:
+                                self.log(f"    ⚠️ Multiple products found: {len(products)} options")
                         else:
-                            self.log(f"    ⚠️ URL may not be a real Walmart URL")
+                            self.log(f"    ❌ No products found for this ingredient")
                 
                 elif walmart_items:
                     self.log(f"✅ Found walmart_items field (alternative structure)")
