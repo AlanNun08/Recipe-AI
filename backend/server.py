@@ -3945,31 +3945,18 @@ async def get_weekly_cart_options_v2(
         # Find the weekly meal plan that contains this recipe
         current_week = get_current_week()
         
-        # Query the database for weekly plans - search by user from the current week plan
-        try:
-            # First get the current active plan to find the user
-            current_plan = await weekly_recipes_collection.find_one({
-                "plan.is_active": True
-            })
-            
-            if current_plan and current_plan.get('plan', {}).get('user_id'):
-                user_id = current_plan['plan']['user_id']
-                # Search for plans by this user
-                plans = await weekly_recipes_collection.find({
-                    "plan.user_id": user_id
-                }).sort("created_at", -1).to_list(10)
-            else:
-                # Fallback: search all plans
-                plans = await weekly_recipes_collection.find({}).sort("created_at", -1).to_list(10)
-                
-        except Exception as e:
-            print(f"Database query error: {e}")  # Debug
-            plans = []
+        # Query the database using the same structure as the working /current endpoint
+        plans = await weekly_recipes_collection.find({
+            "is_active": True
+        }).sort("created_at", -1).to_list(10)
         
         target_meal = None
         
+        # Find the specific meal with this recipe ID
         for plan in plans:
-            for meal in plan.get('plan', {}).get('meals', []):
+            print(f"Checking plan with {len(plan.get('meals', []))} meals")  # Debug
+            for meal in plan.get('meals', []):
+                print(f"Checking meal ID: {meal.get('id')} vs target: {recipe_id}")  # Debug
                 if meal.get('id') == recipe_id:
                     target_meal = meal
                     break
