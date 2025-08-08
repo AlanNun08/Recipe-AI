@@ -3179,7 +3179,9 @@ def get_cache_headers():
 
 # V2 Clean API Client
 async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[WalmartProductV2]:
-    """Real Walmart API integration with proper error handling"""
+    """
+    Search Walmart API with proper authentication headers
+    """
     try:
         # Check if real credentials are available (not placeholder values)
         if (not WALMART_CONSUMER_ID or not WALMART_PRIVATE_KEY or 
@@ -3189,106 +3191,68 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
             logger.info(f"Using mock data for query '{query}' - credentials not configured")
             return await generate_mock_walmart_products(query, max_results)
         
-        # Prepare Walmart API request
-        import hmac
-        import hashlib
-        import time
-        from urllib.parse import urlencode
+        # 1. Get environment credentials
+        consumer_id = WALMART_CONSUMER_ID
+        private_key_pem = WALMART_PRIVATE_KEY
+        key_version = WALMART_KEY_VERSION
         
-        base_url = "https://developer.api.walmart.com/api-proxy/service/affil/product/v2/search"
-        timestamp = str(int(time.time() * 1000))
-        
-        # Create RSA signature for Walmart API authentication
-        # Walmart API requires RSA-SHA256 signature, not HMAC
-        from cryptography.hazmat.primitives import hashes, serialization
+        # 2. Load RSA private key
+        from cryptography.hazmat.primitives import serialization, hashes
         from cryptography.hazmat.primitives.asymmetric import padding
-        import textwrap
+        import time
         
-        params = {
-            'query': query,
-            'format': 'json',
-            'limit': min(max_results, 10)
+        private_key = serialization.load_pem_private_key(
+            private_key_pem.encode(), 
+            password=None
+        )
+        
+        # 3. Generate timestamp and signature
+        timestamp = str(int(time.time() * 1000))
+        message = f"{consumer_id}\n{timestamp}\n{key_version}\n".encode("utf-8")
+        signature = private_key.sign(message, padding.PKCS1v15(), hashes.SHA256())
+        signature_b64 = base64.b64encode(signature).decode("utf-8")
+        
+        # 4. Create authentication headers
+        headers = {
+            "WM_CONSUMER.ID": consumer_id,
+            "WM_CONSUMER.INTIMESTAMP": timestamp,
+            "WM_SEC.KEY_VERSION": key_version,
+            "WM_SEC.AUTH_SIGNATURE": signature_b64,
+            "Content-Type": "application/json"
         }
         
-        query_string = urlencode(params)
-        string_to_sign = f"{WALMART_CONSUMER_ID}\n{base_url}?{query_string}\n{WALMART_KEY_VERSION}\n{timestamp}\n"
-        
-        # Load the RSA private key and create RSA signature
-        try:
-            # Take the key as-is and just ensure proper PEM formatting
-            raw_key = WALMART_PRIVATE_KEY.strip()
-            
-            # If it's all on one line, format it properly
-            if raw_key.count('\n') < 5:  # Less than expected for a multi-line PEM
-                # Extract just the base64 content
-                if '-----BEGIN PRIVATE KEY-----' in raw_key and '-----END PRIVATE KEY-----' in raw_key:
-                    content = raw_key.replace('-----BEGIN PRIVATE KEY-----', '').replace('-----END PRIVATE KEY-----', '').replace(' ', '').replace('\n', '')
-                    # Format with 64 chars per line
-                    lines = textwrap.wrap(content, 64)
-                    formatted_key = '-----BEGIN PRIVATE KEY-----\n' + '\n'.join(lines) + '\n-----END PRIVATE KEY-----\n'
-                else:
-                    formatted_key = raw_key
-            else:
-                formatted_key = raw_key
-                
-            logger.info(f"Processing key with {len(formatted_key)} characters")
-            
-            private_key = serialization.load_pem_private_key(
-                formatted_key.encode('utf-8'),
-                password=None,
-            )
-            
-            signature_bytes = private_key.sign(
-                string_to_sign.encode('utf-8'),
-                padding.PKCS1v15(),
-                hashes.SHA256()
-            )
-            
-            signature = base64.b64encode(signature_bytes).decode('utf-8')
-            logger.info("✅ RSA signature generated successfully!")
-            
-        except Exception as e:
-            logger.error(f"❌ RSA signature failed: {str(e)}")
-            # For now, let's continue with mock data but log the exact issue
-            logger.info("Proceeding with mock data while key issue is resolved")
-            raise
-        
-        headers = {
-            'WM_CONSUMER.ID': WALMART_CONSUMER_ID,
-            'WM_CONSUMER.INTIMESTAMP': timestamp,
-            'WM_CONSUMER.KEY.VERSION': WALMART_KEY_VERSION,
-            'WM_SEC.AUTH_SIGNATURE': signature,
-            'WM_QOS.CORRELATION_ID': str(uuid.uuid4()),
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+        # 5. Make API request
+        url = "https://developer.api.walmart.com/api-proxy/service/affil/product/v2/search"
+        params = {
+            "query": query.replace(' ', '+'),
+            "numItems": min(max_results, 10)
         }
         
         # Make API request with increased timeout for production reliability
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(f"{base_url}?{query_string}", headers=headers)
+            response = await client.get(url, headers=headers, params=params)
             
+            # 6. Process response
             if response.status_code == 200:
                 data = response.json()
+                items = data.get("items", [])
                 products = []
                 
-                for item in data.get('items', []):
-                    # Parse real Walmart product data
-                    walmart_product = WalmartProductV2(
-                        id=str(item.get('itemId', '')),
-                        name=item.get('name', f'Walmart {query.title()}')[:100],
-                        price=float(item.get('salePrice', item.get('msrp', 0))),
-                        image_url=item.get('thumbnailImage', ''),
-                        product_url=item.get('productUrl', ''),
-                        brand=item.get('brandName', 'Great Value'),
-                        rating=item.get('customerRating', 4.0),
-                        available=True
-                    )
-                    products.append(walmart_product)
-                    
-                    if len(products) >= max_results:
-                        break
+                for item in items[:max_results]:  # Take requested number of results
+                    if "itemId" in item:
+                        walmart_product = WalmartProductV2(
+                            id=str(item.get('itemId')),
+                            name=item.get('name', f'Walmart {query.title()}')[:100],
+                            price=float(item.get('salePrice', item.get('msrp', 2.99))),
+                            image_url=item.get('thumbnailImage', ''),
+                            product_url=item.get('productUrl', ''),
+                            brand=item.get('brandName', 'Great Value'),
+                            rating=float(item.get('customerRating', 4.0)),
+                            available=True
+                        )
+                        products.append(walmart_product)
                 
-                # Return real products even if empty - don't fallback to mock
+                logger.info(f"✅ Walmart API returned {len(products)} real products for '{query}'")
                 return products
             
             else:
@@ -3302,14 +3266,8 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
                     # For other errors, return empty list to let the system handle gracefully
                     return []
                 
-    except httpx.TimeoutException as e:
-        logger.error(f"Walmart API timeout for query '{query}': {str(e)}")
-        return []  # Don't fallback to mock for timeouts
-    except httpx.RequestError as e:
-        logger.error(f"Walmart API request error for query '{query}': {str(e)}")
-        return []  # Don't fallback to mock for network issues  
     except Exception as e:
-        logger.error(f"Unexpected Walmart API error for query '{query}': {str(e)}")
+        logger.error(f"Walmart API error for query '{query}': {str(e)}")
         # Only use mock data if credentials are definitely invalid
         if "credentials" in str(e).lower() or "auth" in str(e).lower():
             return await generate_mock_walmart_products(query, max_results)
