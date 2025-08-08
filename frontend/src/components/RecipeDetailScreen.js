@@ -394,6 +394,6 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
       </div>
     </div>
   );
-};
+}
 
 export default RecipeDetailScreen;
