@@ -3274,15 +3274,44 @@ async def generate_mock_walmart_products(query: str, max_results: int = 3) -> Li
         ))
     return products
 
-@api_router.get("/v2/walmart/health")
-async def walmart_health_v2():
-    """V2 Health check endpoint"""
-    return {
-        "status": "healthy",
-        "version": "v2.1.0",
-        "integration": "walmart-v2-clean",
-        "timestamp": datetime.utcnow().isoformat()
-    }
+@api_router.get("/debug/walmart-integration")
+async def debug_walmart_integration():
+    """Debug endpoint to verify Walmart API integration with credentials"""
+    try:
+        # Check if credentials are available
+        credentials_status = {
+            "WALMART_CONSUMER_ID": "SET" if WALMART_CONSUMER_ID and WALMART_CONSUMER_ID != "your-walmart-consumer-id-here" else "PLACEHOLDER",
+            "WALMART_PRIVATE_KEY": "SET" if WALMART_PRIVATE_KEY and WALMART_PRIVATE_KEY != "your-walmart-private-key-here" else "PLACEHOLDER",
+            "WALMART_KEY_VERSION": WALMART_KEY_VERSION or "NOT_SET"
+        }
+        
+        # Test with a simple ingredient
+        test_ingredient = "pasta"
+        products = await search_walmart_products_v2(test_ingredient, max_results=1)
+        
+        result = {
+            "credentials_status": credentials_status,
+            "test_ingredient": test_ingredient,
+            "products_found": len(products),
+            "using_mock_data": products[0].id.startswith("WM") if products else True,
+            "sample_product": {
+                "id": products[0].id,
+                "name": products[0].name,
+                "price": products[0].price,
+                "url": products[0].product_url
+            } if products else None
+        }
+        
+        return result
+        
+    except Exception as e:
+        return {
+            "error": str(e),
+            "credentials_status": {
+                "WALMART_CONSUMER_ID": "SET" if WALMART_CONSUMER_ID and WALMART_CONSUMER_ID != "your-walmart-consumer-id-here" else "PLACEHOLDER",
+                "WALMART_PRIVATE_KEY": "SET" if WALMART_PRIVATE_KEY and WALMART_PRIVATE_KEY != "your-walmart-private-key-here" else "PLACEHOLDER"
+            }
+        }
 
 @api_router.post("/v2/walmart/cart-options")
 async def get_cart_options_v2(
