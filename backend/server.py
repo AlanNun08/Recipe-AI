@@ -3851,10 +3851,7 @@ async def get_weekly_recipe_detail(recipe_id: str):
         # Find the weekly meal plan that contains this recipe
         current_week = get_current_week()
         
-        # Search in current and recent weekly plans
-        current_week = get_current_week()
-        
-        # Query the database for weekly plans around the current week
+        # Search in current and recent weekly plans - simplified query
         plans = await weekly_recipes_collection.find({}).sort("created_at", -1).to_list(10)
         
         target_meal = None
@@ -3873,9 +3870,50 @@ async def get_weekly_recipe_detail(recipe_id: str):
         if not target_meal:
             raise HTTPException(status_code=404, detail="Recipe not found")
         
-        # Use V2 cart system instead of individual buttons
-        # This will provide the advanced shopping cart experience
-        return {
+        # Generate shopping cart options for each ingredient (similar to regular recipes)
+        cart_ingredients = []
+        for ingredient in target_meal.get('ingredients', []):
+            try:
+                # Get multiple product options for each ingredient
+                walmart_products = await search_walmart_products_v2(ingredient, max_results=3)
+                
+                if walmart_products and len(walmart_products) > 0:
+                    # Convert to cart format with multiple options per ingredient
+                    product_options = []
+                    for product in walmart_products:
+                        product_options.append({
+                            "id": product.id,
+                            "name": product.name,
+                            "price": product.price,
+                            "image_url": product.image_url,
+                            "brand": product.brand,
+                            "rating": product.rating,
+                            "url": f"https://goto.walmart.com/c/1804968/{product.id}"
+                        })
+                    
+                    cart_ingredients.append({
+                        "ingredient": ingredient,
+                        "products": product_options,
+                        "selected_product_id": product_options[0]["id"]  # Default to first option
+                    })
+            except Exception as e:
+                # Fallback for this ingredient
+                cart_ingredients.append({
+                    "ingredient": ingredient,
+                    "products": [{
+                        "id": f"fallback_{abs(hash(ingredient)) % 10000}",
+                        "name": f"Generic {ingredient}",
+                        "price": 2.99,
+                        "image_url": "https://via.placeholder.com/100x100?text=🛒",
+                        "brand": "Great Value",
+                        "rating": 4.0,
+                        "url": f"https://www.walmart.com/search/?query={ingredient.replace(' ', '+')}"
+                    }],
+                    "selected_product_id": f"fallback_{abs(hash(ingredient)) % 10000}"
+                })
+        
+        # Return detailed recipe information with cart system
+        recipe_detail = {
             "id": target_meal.get('id'),
             "name": target_meal.get('name'),
             "description": target_meal.get('description'),
@@ -3887,11 +3925,11 @@ async def get_weekly_recipe_detail(recipe_id: str):
             "servings": target_meal.get('servings', 2),
             "cuisine": target_meal.get('cuisine', 'International'),
             "calories": target_meal.get('calories', 400),
-            "week_of": source_plan.get('week_of') if source_plan else current_week,
-            # Signal frontend to use V2 cart system
-            "use_v2_cart": True,
-            "v2_cart_endpoint": f"/api/v2/walmart/weekly-cart-options?recipe_id={recipe_id}"
+            "cart_ingredients": cart_ingredients,  # Shopping cart data
+            "week_of": source_plan.get('week_of') if source_plan else current_week
         }
+        
+        return recipe_detail
         
     except Exception as e:
         logger.error(f"Error getting weekly recipe detail: {str(e)}")
