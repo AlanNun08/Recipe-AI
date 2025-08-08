@@ -3990,15 +3990,18 @@ async def get_weekly_recipe_detail(recipe_id: str):
         valid_product_ids = []
         for cart_ingredient in cart_ingredients:
             product = cart_ingredient["products"][0]
-            # Only include products that have real IDs (not fallback search items)
-            if not product["id"].startswith("search_") and not product["id"].startswith("error_"):
+            # Include all products except fallback search/error items
+            # Real Walmart product IDs will be numeric or alphanumeric (not prefixed)
+            if (not product["id"].startswith("search_") and 
+                not product["id"].startswith("error_") and 
+                not product["id"].startswith("WM")):  # Exclude mock data
                 valid_product_ids.append(product["id"])
         
         # Generate Walmart cart URL if we have valid products
         walmart_cart_url = ""
         if valid_product_ids:
-            # Use Walmart's affiliate cart URL format with real product IDs
-            # This will work with actual itemIds from Walmart API response
+            # Use Walmart's cart URL format with real product IDs
+            # Real itemIds from Walmart API will be numeric like "5647109021"
             walmart_cart_url = f"https://www.walmart.com/cart?items={','.join(valid_product_ids)}"
         
         # Return detailed recipe information with simplified Walmart integration
