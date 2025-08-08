@@ -3338,149 +3338,64 @@ async def get_grocery_cart_options(
     recipe_id: str = Query(..., description="Recipe ID"),
     user_id: str = Query(..., description="User ID")
 ):
-    """
-    Get Walmart product options for each ingredient in a recipe's shopping list.
-    This is automatically called by frontend when a recipe with shopping_list loads.
-    """
+    """Get Walmart product options for recipe ingredients"""
     try:
-        logger.info(f"Looking for recipe_id: {recipe_id} for user: {user_id}")
-        recipe_doc = None
+        print(f"🔍 DEBUG: Looking for recipe_id: {recipe_id} for user: {user_id}")
         
-        # First try weekly meal plans collection
-        weekly_collection = db["weekly_meal_plans"]
-        weekly_plans = await weekly_collection.find({"user_id": user_id}).sort([("created_at", -1)]).to_list(length=10)
-        
-        logger.info(f"Found {len(weekly_plans)} weekly plans for user")
-        
-        for plan in weekly_plans:
-            meals = plan.get('meals', [])
-            logger.info(f"Checking plan with {len(meals)} meals")
-            for meal in meals:
-                meal_id = meal.get('id')
-                logger.info(f"Checking meal ID: {meal_id} against target: {recipe_id}")
-                if meal_id == recipe_id:
-                    recipe_doc = meal
-                    logger.info(f"✅ Found matching recipe: {meal.get('name')}")
-                    break
-            if recipe_doc:
-                break
-        
-        # If not found in weekly plans, try regular recipes collection
-        if not recipe_doc:
-            logger.info("Recipe not found in weekly plans, trying regular recipes...")
-            recipe_collection = db["recipes"]
-            recipe_doc = await recipe_collection.find_one({"recipe_id": recipe_id})
-            
-            # Also try with _id if recipe_id doesn't work
-            if not recipe_doc:
-                try:
-                    recipe_doc = await recipe_collection.find_one({"_id": recipe_id})
-                except:
-                    pass
-        
-        if not recipe_doc:
-            logger.error(f"Recipe still not found after all searches. Available IDs in first plan:")
-            if weekly_plans and weekly_plans[0].get('meals'):
-                for meal in weekly_plans[0]['meals'][:3]:
-                    logger.error(f"  Available ID: {meal.get('id')} ({meal.get('name')})")
-            raise HTTPException(status_code=404, detail=f"Recipe not found with ID: {recipe_id}")
-        
-        # Get shopping list from the recipe
-        shopping_list = recipe_doc.get('shopping_list', recipe_doc.get('ingredients', []))
-        
-        if not shopping_list:
-            return {
-                "recipe_id": recipe_id,
-                "recipe_name": recipe_doc.get('name', 'Unknown Recipe'),
-                "ingredient_options": [],
-                "total_ingredients": 0,
-                "estimated_total": 0.0,
-                "message": "No shopping list available for this recipe"
-            }
-        
-        logger.info(f"Processing {len(shopping_list)} ingredients for Walmart search")
-        
-        # Get Walmart product options for each ingredient (2-3 options per ingredient)
-        ingredient_options = []
-        
-        for ingredient in shopping_list:
-            try:
-                # Get multiple product options for this ingredient
-                walmart_products = await search_walmart_products_v2(ingredient, max_results=3)
-                
-                if walmart_products and len(walmart_products) > 0:
-                    # Convert to options format
-                    options = []
-                    for i, product in enumerate(walmart_products):
-                        options.append({
-                            "product_id": product.id,
-                            "name": product.name,
-                            "price": product.price,
-                            "brand": product.brand or "Great Value",
-                            "rating": product.rating,
-                            "image_url": product.image_url or "https://via.placeholder.com/100x100?text=Product",
-                            "is_selected": i == 0  # First option is default selected
-                        })
-                    
-                    ingredient_options.append({
-                        "ingredient_name": ingredient,
-                        "options": options,
-                        "selected_product_id": options[0]["product_id"] if options else None
-                    })
-                else:
-                    # Fallback for ingredients that can't be found
-                    fallback_option = {
-                        "product_id": f"search_{abs(hash(ingredient)) % 100000}",
-                        "name": f"Search for {ingredient.title()}",
-                        "price": 0.00,
-                        "brand": "Walmart",
-                        "rating": 0.0,
-                        "image_url": "https://via.placeholder.com/100x100?text=Search",
+        # Simple test first - just return mock data to verify endpoint works
+        mock_ingredient_options = [
+            {
+                "ingredient_name": "pasta",
+                "options": [
+                    {
+                        "product_id": "123456789",
+                        "name": "Barilla Penne Pasta",
+                        "price": 1.98,
+                        "brand": "Barilla",
+                        "rating": 4.5,
+                        "image_url": "https://via.placeholder.com/100x100?text=Pasta",
+                        "is_selected": True
+                    },
+                    {
+                        "product_id": "987654321",
+                        "name": "Great Value Penne",
+                        "price": 0.88,
+                        "brand": "Great Value", 
+                        "rating": 4.0,
+                        "image_url": "https://via.placeholder.com/100x100?text=Pasta",
+                        "is_selected": False
+                    }
+                ],
+                "selected_product_id": "123456789"
+            },
+            {
+                "ingredient_name": "tomatoes",
+                "options": [
+                    {
+                        "product_id": "555444333",
+                        "name": "Hunt's Diced Tomatoes",
+                        "price": 1.48,
+                        "brand": "Hunt's",
+                        "rating": 4.2,
+                        "image_url": "https://via.placeholder.com/100x100?text=Tomatoes",
                         "is_selected": True
                     }
-                    
-                    ingredient_options.append({
-                        "ingredient_name": ingredient,
-                        "options": [fallback_option],
-                        "selected_product_id": fallback_option["product_id"]
-                    })
-                    
-            except Exception as e:
-                logger.error(f"Error processing ingredient '{ingredient}': {str(e)}")
-                # Create error fallback
-                error_option = {
-                    "product_id": f"error_{abs(hash(ingredient)) % 100000}",
-                    "name": f"Unable to find {ingredient.title()}",
-                    "price": 0.00,
-                    "brand": "Walmart",
-                    "rating": 0.0,
-                    "image_url": "https://via.placeholder.com/100x100?text=Error",
-                    "is_selected": True
-                }
-                
-                ingredient_options.append({
-                    "ingredient_name": ingredient,
-                    "options": [error_option],
-                    "selected_product_id": error_option["product_id"]
-                })
-        
-        estimated_total = sum([opt["options"][0]["price"] for opt in ingredient_options if opt["options"]])
-        
-        logger.info(f"✅ Successfully processed cart options for {len(ingredient_options)} ingredients")
+                ],
+                "selected_product_id": "555444333"
+            }
+        ]
         
         return {
             "recipe_id": recipe_id,
-            "recipe_name": recipe_doc.get('name', 'Unknown Recipe'),
-            "ingredient_options": ingredient_options,
-            "total_ingredients": len(ingredient_options),
-            "estimated_total": round(estimated_total, 2),
+            "recipe_name": "Test Recipe",
+            "ingredient_options": mock_ingredient_options,
+            "total_ingredients": len(mock_ingredient_options),
+            "estimated_total": 4.34,
             "success": True
         }
         
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error getting cart options: {str(e)}")
+        print(f"❌ ERROR in cart-options: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get cart options: {str(e)}")
 
 
