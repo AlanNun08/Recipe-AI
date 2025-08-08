@@ -1935,7 +1935,6 @@ async def reset_password(request: PasswordResetVerify):
 
 # Keep all existing routes for backward compatibility
 @api_router.get("/health")
-@api_router.options("/health")
 async def health_check():
     """Comprehensive health check for production monitoring"""
     try:
