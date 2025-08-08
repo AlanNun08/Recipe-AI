@@ -3852,9 +3852,10 @@ async def get_weekly_recipe_detail(recipe_id: str):
         current_week = get_current_week()
         
         # Search in current and recent weekly plans
-        plans = await weekly_recipes_collection.find({
-            "week_of": {"$in": [current_week, f"{int(current_week.split('-W')[0])}-W{int(current_week.split('-W')[1])-1:02d}"]}
-        }).sort("created_at", -1).to_list(5)
+        current_week = get_current_week()
+        
+        # Query the database for weekly plans around the current week
+        plans = await weekly_recipes_collection.find({}).sort("created_at", -1).to_list(10)
         
         target_meal = None
         source_plan = None
