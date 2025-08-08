@@ -215,34 +215,34 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
                 )}
               </h2>
               
-              {cartOptions?.ingredient_options ? (
+              {cartOptions?.ingredient_matches ? (
                 <div className="space-y-6">
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                     <div className="flex items-center">
                       <span className="text-green-600 text-xl mr-2">✅</span>
                       <span className="text-green-800 font-medium">
-                        Found {cartOptions.total_ingredients} ingredients with real Walmart products!
+                        Found {cartOptions.ingredient_matches.length} ingredients with real Walmart products!
                       </span>
                     </div>
                   </div>
 
-                  {cartOptions.ingredient_options.map((ingredient, index) => (
+                  {cartOptions.ingredient_matches.map((ingredientMatch, index) => (
                     <div key={index} className="border border-gray-200 rounded-xl p-5 bg-gray-50">
                       <div className="flex items-center mb-4">
                         <div className="text-2xl mr-3">🥕</div>
-                        <h3 className="text-lg font-bold text-gray-800">{ingredient.ingredient_name}</h3>
+                        <h3 className="text-lg font-bold text-gray-800">{ingredientMatch.ingredient}</h3>
                         <span className="ml-auto text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
-                          {ingredient.options.length} options available
+                          {ingredientMatch.products.length} options available
                         </span>
                       </div>
                       
                       <div className="grid gap-3">
-                        {ingredient.options.map((product, productIndex) => {
-                          const isSelected = selectedProducts[ingredient.ingredient_name]?.product_id === product.product_id;
+                        {ingredientMatch.products.map((product, productIndex) => {
+                          const isSelected = selectedProducts[ingredientMatch.ingredient]?.id === product.id;
                           return (
                             <div
                               key={productIndex}
-                              onClick={() => handleProductSelection(ingredient.ingredient_name, product)}
+                              onClick={() => handleProductSelection(ingredientMatch.ingredient, product)}
                               className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                                 isSelected 
                                   ? 'border-blue-500 bg-blue-50 shadow-md' 
@@ -255,14 +255,14 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
                                   <div className="flex items-center space-x-4 text-sm text-gray-600">
                                     <span className="font-medium">${product.price.toFixed(2)}</span>
                                     <span>{product.brand}</span>
-                                    {product.rating > 0 && (
+                                    {product.rating && product.rating > 0 && (
                                       <div className="flex items-center">
                                         <span className="text-yellow-500">⭐</span>
                                         <span className="ml-1">{product.rating}</span>
                                       </div>
                                     )}
                                     <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">
-                                      ID: {product.product_id}
+                                      ID: {product.id}
                                     </span>
                                   </div>
                                 </div>
