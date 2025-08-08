@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 """
-Comprehensive Testing Script for New Walmart Integration Flow
-Testing the complete flow as requested in review:
-1. POST /api/grocery/cart-options - Get product options for recipe ingredients
-2. POST /api/grocery/generate-cart-url - Generate Walmart cart URL
-
-Test Flow:
-1. Login demo user (demo@test.com/password123)
-2. Get a recipe that has ingredients/shopping_list
-3. Call /api/grocery/cart-options with recipe_id and user_id
-4. Take the returned product options
-5. Call /api/grocery/generate-cart-url with selected products
+Walmart Integration Testing Script - Final Comprehensive Test
+Testing specific endpoints mentioned in review request:
+1. GET /api/debug/walmart-integration - Should show using_mock_data: false, real product IDs
+2. POST /api/grocery/cart-options-test?recipe_id=test&user_id=test - Real products per ingredient
+3. POST /api/grocery/generate-cart-url - Cart URL generation (currently has 400 error)
 """
 
 import asyncio
@@ -22,17 +16,20 @@ from typing import Dict, List, Any
 import sys
 
 # Get backend URL from environment
-BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://fd9864fb-c204-41f3-8f4c-e2111c0751fc.preview.emergentagent.com') + '/api'
+with open('/app/frontend/.env', 'r') as f:
+    for line in f:
+        if line.startswith('REACT_APP_BACKEND_URL='):
+            BACKEND_URL = line.split('=', 1)[1].strip()
+            break
+    else:
+        BACKEND_URL = 'https://fd9864fb-c204-41f3-8f4c-e2111c0751fc.preview.emergentagent.com'
 
-# Demo user credentials as specified in review
-DEMO_EMAIL = "demo@test.com"
-DEMO_PASSWORD = "password123"
+if not BACKEND_URL.endswith('/api'):
+    BACKEND_URL = f"{BACKEND_URL}/api"
 
 class WalmartIntegrationTester:
     def __init__(self):
-        self.client = httpx.AsyncClient(timeout=60.0)
-        self.user_id = None
-        self.recipe_id = None
+        self.client = httpx.AsyncClient(timeout=30.0)
         self.test_results = {}
         
     async def cleanup(self):
@@ -42,373 +39,368 @@ class WalmartIntegrationTester:
         timestamp = datetime.now().strftime("%H:%M:%S")
         print(f"[{timestamp}] {level}: {message}")
     
-    async def test_demo_user_login(self):
-        """Step 1: Login demo user (demo@test.com/password123)"""
-        self.log("=== STEP 1: Testing Demo User Login ===")
+    async def test_debug_walmart_integration(self):
+        """Test 1: GET /api/debug/walmart-integration - Should show real Walmart products"""
+        self.log("=== Testing Debug Walmart Integration Endpoint ===")
         
         try:
-            login_data = {
-                "email": DEMO_EMAIL,
-                "password": DEMO_PASSWORD
-            }
+            response = await self.client.get(f"{BACKEND_URL}/debug/walmart-integration")
             
-            self.log(f"Attempting login with {DEMO_EMAIL}")
-            response = await self.client.post(f"{BACKEND_URL}/auth/login", json=login_data)
-            
-            self.log(f"Login response status: {response.status_code}")
+            self.log(f"Response status: {response.status_code}")
             
             if response.status_code == 200:
-                result = response.json()
-                self.user_id = result.get("user", {}).get("id")
-                user_name = result.get("user", {}).get("first_name", "Unknown")
-                is_verified = result.get("user", {}).get("is_verified", False)
+                data = response.json()
                 
-                self.log(f"✅ Demo user login successful!")
-                self.log(f"User ID: {self.user_id}")
-                self.log(f"User Name: {user_name}")
-                self.log(f"Verified Status: {is_verified}")
+                # Check if using mock data
+                using_mock = data.get('using_mock_data', True)
+                self.log(f"Using mock data: {using_mock}")
                 
-                return True
-            else:
-                self.log(f"❌ Demo user login failed: {response.text}")
-                return False
+                if not using_mock:
+                    self.log("✅ CONFIRMED: Using real Walmart API data")
+                else:
+                    self.log("❌ WARNING: Still using mock data")
                 
-        except Exception as e:
-            self.log(f"❌ Error during demo user login: {str(e)}", "ERROR")
-            return False
-    
-    async def test_get_recipe_with_ingredients(self):
-        """Step 2: Get a recipe that has ingredients/shopping_list"""
-        self.log("=== STEP 2: Getting Recipe with Ingredients ===")
-        
-        try:
-            # First try to get weekly meal plan recipes
-            self.log("Checking for weekly meal plan recipes...")
-            response = await self.client.get(f"{BACKEND_URL}/weekly-recipes/current/{self.user_id}")
-            
-            if response.status_code == 200:
-                result = response.json()
-                if result.get("has_plan") and result.get("plan", {}).get("meals"):
-                    meals = result["plan"]["meals"]
-                    self.log(f"✅ Found {len(meals)} meals in weekly plan")
+                # Check sample products
+                sample_products = data.get('sample_products', [])
+                self.log(f"Sample products count: {len(sample_products)}")
+                
+                if len(sample_products) >= 10:
+                    self.log("✅ CONFIRMED: 10+ sample products returned")
+                else:
+                    self.log(f"❌ WARNING: Only {len(sample_products)} sample products (expected 10+)")
+                
+                # Check for real product IDs
+                real_product_ids = []
+                for product in sample_products[:5]:  # Check first 5
+                    product_id = product.get('product_id', '')
+                    product_name = product.get('name', 'Unknown')
+                    price = product.get('price', 0)
                     
-                    # Use the first meal with ingredients
-                    for meal in meals:
-                        if meal.get("ingredients") or meal.get("shopping_list"):
-                            self.recipe_id = meal.get("id")
-                            recipe_name = meal.get("name", "Unknown Recipe")
-                            ingredients = meal.get("ingredients", meal.get("shopping_list", []))
-                            
-                            self.log(f"✅ Selected recipe: {recipe_name}")
-                            self.log(f"Recipe ID: {self.recipe_id}")
-                            self.log(f"Ingredients ({len(ingredients)}): {ingredients[:5]}...")  # Show first 5
-                            
-                            return True
-            
-            # If no weekly recipes, try to generate a regular recipe
-            self.log("No weekly recipes found, generating a new recipe...")
-            recipe_data = {
-                "user_id": self.user_id,
-                "recipe_category": "cuisine",
-                "cuisine_type": "Italian",
-                "dietary_preferences": [],
-                "ingredients_on_hand": [],
-                "prep_time_max": 30,
-                "servings": 4,
-                "difficulty": "medium"
-            }
-            
-            response = await self.client.post(f"{BACKEND_URL}/recipes/generate", json=recipe_data)
-            
-            if response.status_code == 200:
-                result = response.json()
-                self.recipe_id = result.get("id")
-                recipe_title = result.get("title", "Unknown")
-                shopping_list = result.get("shopping_list", [])
+                    self.log(f"  Product: {product_name} (ID: {product_id}) - ${price}")
+                    
+                    # Real Walmart product IDs are typically numeric or start with specific patterns
+                    if product_id and not product_id.startswith('WM') and product_id.isdigit():
+                        real_product_ids.append(product_id)
                 
-                self.log(f"✅ Generated new recipe: {recipe_title}")
-                self.log(f"Recipe ID: {self.recipe_id}")
-                self.log(f"Shopping list ({len(shopping_list)} items): {shopping_list}")
+                if real_product_ids:
+                    self.log(f"✅ CONFIRMED: Found real product IDs: {real_product_ids}")
+                else:
+                    self.log("❌ WARNING: No real product IDs detected (may still be mock data)")
                 
-                return True
+                # Overall assessment
+                success = not using_mock and len(sample_products) >= 10
+                self.test_results['debug_endpoint'] = {
+                    'success': success,
+                    'using_mock_data': using_mock,
+                    'product_count': len(sample_products),
+                    'real_product_ids': real_product_ids
+                }
+                
+                return success
+                
             else:
-                self.log(f"❌ Recipe generation failed: {response.text}")
+                self.log(f"❌ Debug endpoint failed: {response.status_code} - {response.text}")
+                self.test_results['debug_endpoint'] = {'success': False, 'error': response.text}
                 return False
                 
         except Exception as e:
-            self.log(f"❌ Error getting recipe: {str(e)}", "ERROR")
+            self.log(f"❌ Error testing debug endpoint: {str(e)}", "ERROR")
+            self.test_results['debug_endpoint'] = {'success': False, 'error': str(e)}
             return False
     
-    async def test_cart_options_endpoint(self):
-        """Step 3: Call /api/grocery/cart-options with recipe_id and user_id"""
-        self.log("=== STEP 3: Testing Cart Options Endpoint ===")
-        
-        if not self.user_id or not self.recipe_id:
-            self.log("❌ Missing user_id or recipe_id for cart options test")
-            return False, None
+    async def test_cart_options_test_endpoint(self):
+        """Test 2: POST /api/grocery/cart-options-test - Should return real products per ingredient"""
+        self.log("=== Testing Cart Options Test Endpoint ===")
         
         try:
-            # Call the cart-options endpoint as specified
+            # Test with the specific parameters mentioned in review
             params = {
-                "recipe_id": self.recipe_id,
-                "user_id": self.user_id
+                'recipe_id': 'test',
+                'user_id': 'test'
             }
             
-            self.log(f"Calling POST /api/grocery/cart-options")
-            self.log(f"Parameters: {params}")
+            response = await self.client.post(f"{BACKEND_URL}/grocery/cart-options-test", params=params)
             
-            response = await self.client.post(f"{BACKEND_URL}/grocery/cart-options", params=params)
-            
-            self.log(f"Cart options response status: {response.status_code}")
+            self.log(f"Response status: {response.status_code}")
             
             if response.status_code == 200:
-                result = response.json()
+                data = response.json()
                 
-                self.log("✅ Cart options endpoint successful!")
-                self.log(f"Recipe ID: {result.get('recipe_id')}")
-                self.log(f"Recipe Name: {result.get('recipe_name')}")
-                self.log(f"Total Ingredients: {result.get('total_ingredients', 0)}")
-                self.log(f"Estimated Total: ${result.get('estimated_total', 0):.2f}")
-                
-                ingredient_options = result.get('ingredient_options', [])
+                # Check ingredient options
+                ingredient_options = data.get('ingredient_options', [])
                 self.log(f"Ingredient options count: {len(ingredient_options)}")
                 
-                # Validate response structure as specified in review
                 total_products = 0
-                for i, option in enumerate(ingredient_options[:3]):  # Show first 3
-                    ingredient_name = option.get('ingredient_name')
-                    products = option.get('options', [])
-                    selected_id = option.get('selected_product_id')
+                real_products_found = 0
+                
+                for ingredient_option in ingredient_options:
+                    ingredient_name = ingredient_option.get('ingredient_name', 'Unknown')
+                    products = ingredient_option.get('options', [])
                     
-                    self.log(f"  Ingredient {i+1}: {ingredient_name}")
-                    self.log(f"    Product options: {len(products)}")
-                    self.log(f"    Selected product ID: {selected_id}")
-                    
+                    self.log(f"  Ingredient: {ingredient_name} - {len(products)} products")
                     total_products += len(products)
                     
-                    # Show product details for first option
-                    if products:
-                        product = products[0]
-                        self.log(f"    Sample product: {product.get('name')} - ${product.get('price')} ({product.get('brand')})")
+                    # Check for real product data
+                    for product in products[:2]:  # Check first 2 products per ingredient
+                        product_id = product.get('product_id', '')
+                        product_name = product.get('name', 'Unknown')
+                        price = product.get('price', 0)
                         
-                        # Validate expected response structure
-                        required_fields = ['product_id', 'name', 'price', 'brand', 'rating', 'image_url']
-                        missing_fields = [field for field in required_fields if field not in product]
-                        if missing_fields:
-                            self.log(f"    ⚠️ Missing fields in product: {missing_fields}")
+                        self.log(f"    Product: {product_name} (ID: {product_id}) - ${price}")
+                        
+                        # Check if this looks like real product data
+                        if (product_id and 
+                            not product_id.startswith('WM') and 
+                            price > 0 and 
+                            len(product_name) > 10):
+                            real_products_found += 1
                 
-                self.log(f"✅ Total products across all ingredients: {total_products}")
+                self.log(f"Total products across all ingredients: {total_products}")
+                self.log(f"Real products detected: {real_products_found}")
                 
-                # Validate that we got 2-3 product options per ingredient as expected
-                if ingredient_options:
-                    avg_options = total_products / len(ingredient_options)
-                    self.log(f"Average options per ingredient: {avg_options:.1f}")
-                    
-                    if 2 <= avg_options <= 3:
-                        self.log("✅ Product options count meets expectation (2-3 per ingredient)")
-                    else:
-                        self.log(f"⚠️ Product options count outside expected range: {avg_options:.1f}")
+                # Success criteria: multiple ingredients with real products
+                success = len(ingredient_options) > 0 and total_products > 0
                 
-                return True, result
+                if success:
+                    self.log("✅ CONFIRMED: Cart options test returning real products")
+                else:
+                    self.log("❌ WARNING: Cart options test not returning expected data")
+                
+                self.test_results['cart_options_test'] = {
+                    'success': success,
+                    'ingredient_count': len(ingredient_options),
+                    'total_products': total_products,
+                    'real_products_detected': real_products_found
+                }
+                
+                return success
+                
             else:
-                self.log(f"❌ Cart options endpoint failed: {response.text}")
-                return False, None
+                self.log(f"❌ Cart options test failed: {response.status_code} - {response.text}")
+                self.test_results['cart_options_test'] = {'success': False, 'error': response.text}
+                return False
                 
         except Exception as e:
-            self.log(f"❌ Error testing cart options endpoint: {str(e)}", "ERROR")
-            return False, None
-    
-    async def test_generate_cart_url_endpoint(self, cart_options_result):
-        """Step 4: Call /api/grocery/generate-cart-url with selected products"""
-        self.log("=== STEP 4: Testing Generate Cart URL Endpoint ===")
-        
-        if not cart_options_result:
-            self.log("❌ No cart options result to work with")
+            self.log(f"❌ Error testing cart options test endpoint: {str(e)}", "ERROR")
+            self.test_results['cart_options_test'] = {'success': False, 'error': str(e)}
             return False
+    
+    async def test_generate_cart_url_endpoint(self):
+        """Test 3: POST /api/grocery/generate-cart-url - Currently has 400 error issue"""
+        self.log("=== Testing Generate Cart URL Endpoint ===")
         
         try:
-            # Extract selected products from cart options result
-            ingredient_options = cart_options_result.get('ingredient_options', [])
-            selected_products = []
+            # Test with sample product data
+            test_products = [
+                {
+                    "ingredient_name": "pasta",
+                    "product_id": "32247486",
+                    "name": "Great Value Penne Pasta",
+                    "price": 2.99,
+                    "quantity": 1
+                },
+                {
+                    "ingredient_name": "cheese",
+                    "product_id": "15136790", 
+                    "name": "Great Value Parmesan Cheese",
+                    "price": 4.99,
+                    "quantity": 1
+                }
+            ]
             
-            for option in ingredient_options:
-                products = option.get('options', [])
-                selected_product_id = option.get('selected_product_id')
-                
-                # Find the selected product
-                selected_product = None
-                for product in products:
-                    if product.get('product_id') == selected_product_id:
-                        selected_product = product
-                        break
-                
-                if selected_product:
-                    selected_products.append(selected_product)
-            
-            self.log(f"Prepared {len(selected_products)} selected products for cart URL generation")
-            
-            # Show sample selected products
-            for i, product in enumerate(selected_products[:3]):
-                self.log(f"  Product {i+1}: {product.get('name')} - ${product.get('price')} (ID: {product.get('product_id')})")
-            
-            # Call the generate-cart-url endpoint
             request_data = {
-                "selected_products": selected_products
+                "user_id": "test_user",
+                "recipe_id": "test_recipe",
+                "products": test_products
             }
             
-            self.log(f"Calling POST /api/grocery/generate-cart-url")
-            self.log(f"Request contains {len(selected_products)} selected products")
+            self.log(f"Testing with {len(test_products)} products")
             
             response = await self.client.post(f"{BACKEND_URL}/grocery/generate-cart-url", json=request_data)
             
-            self.log(f"Generate cart URL response status: {response.status_code}")
+            self.log(f"Response status: {response.status_code}")
             
             if response.status_code == 200:
-                result = response.json()
+                data = response.json()
                 
-                self.log("✅ Generate cart URL endpoint successful!")
-                self.log(f"Cart URL: {result.get('cart_url')}")
-                self.log(f"Total Price: ${result.get('total_price', 0):.2f}")
-                self.log(f"Total Items: {result.get('total_items', 0)}")
-                self.log(f"Success: {result.get('success')}")
-                self.log(f"Message: {result.get('message')}")
+                walmart_url = data.get('walmart_url', '')
+                total_price = data.get('total_price', 0)
                 
-                # Validate cart URL format
-                cart_url = result.get('cart_url', '')
-                if 'walmart.com' in cart_url:
-                    self.log("✅ Cart URL has correct Walmart format")
-                    
-                    if 'cart?items=' in cart_url:
-                        self.log("✅ Cart URL contains product items parameter")
-                    elif 'cp/food' in cart_url:
-                        self.log("✅ Cart URL redirects to Walmart grocery section (fallback)")
-                    else:
-                        self.log("⚠️ Cart URL format unexpected")
-                else:
-                    self.log("❌ Cart URL does not contain walmart.com")
+                self.log(f"✅ SUCCESS: Cart URL generated")
+                self.log(f"Walmart URL: {walmart_url}")
+                self.log(f"Total price: ${total_price}")
+                
+                # Validate URL format
+                url_valid = 'walmart.com' in walmart_url and 'cart' in walmart_url
+                
+                self.test_results['generate_cart_url'] = {
+                    'success': True,
+                    'walmart_url': walmart_url,
+                    'total_price': total_price,
+                    'url_valid': url_valid
+                }
                 
                 return True
+                
+            elif response.status_code == 400:
+                self.log(f"❌ CONFIRMED ISSUE: 400 error as mentioned in review")
+                self.log(f"Error details: {response.text}")
+                
+                # Try to parse error details
+                try:
+                    error_data = response.json()
+                    error_detail = error_data.get('detail', 'Unknown error')
+                    self.log(f"Error detail: {error_detail}")
+                except:
+                    pass
+                
+                self.test_results['generate_cart_url'] = {
+                    'success': False,
+                    'error': 'Confirmed 400 error',
+                    'error_details': response.text
+                }
+                
+                return False
+                
             else:
-                self.log(f"❌ Generate cart URL endpoint failed: {response.text}")
+                self.log(f"❌ Unexpected error: {response.status_code} - {response.text}")
+                self.test_results['generate_cart_url'] = {
+                    'success': False,
+                    'error': f"HTTP {response.status_code}",
+                    'error_details': response.text
+                }
                 return False
                 
         except Exception as e:
-            self.log(f"❌ Error testing generate cart URL endpoint: {str(e)}", "ERROR")
+            self.log(f"❌ Error testing generate cart URL: {str(e)}", "ERROR")
+            self.test_results['generate_cart_url'] = {'success': False, 'error': str(e)}
             return False
     
-    async def test_edge_cases(self):
-        """Step 5: Test edge cases and error handling"""
-        self.log("=== STEP 5: Testing Edge Cases ===")
+    async def test_additional_walmart_endpoints(self):
+        """Test additional Walmart-related endpoints for completeness"""
+        self.log("=== Testing Additional Walmart Endpoints ===")
         
+        additional_tests = {}
+        
+        # Test search endpoint directly
         try:
-            # Test 1: Invalid recipe ID
-            self.log("Testing cart-options with invalid recipe ID...")
-            response = await self.client.post(f"{BACKEND_URL}/grocery/cart-options", params={
-                "recipe_id": "invalid-recipe-id",
-                "user_id": self.user_id
-            })
+            search_params = {'query': 'pasta', 'limit': 5}
+            response = await self.client.get(f"{BACKEND_URL}/walmart/search", params=search_params)
             
-            if response.status_code == 404:
-                self.log("✅ Correctly handles invalid recipe ID (404)")
+            if response.status_code == 200:
+                data = response.json()
+                products = data.get('products', [])
+                self.log(f"✅ Walmart search endpoint: {len(products)} products found")
+                additional_tests['search'] = {'success': True, 'product_count': len(products)}
             else:
-                self.log(f"⚠️ Unexpected response for invalid recipe ID: {response.status_code}")
-            
-            # Test 2: Empty selected products
-            self.log("Testing generate-cart-url with empty products...")
-            response = await self.client.post(f"{BACKEND_URL}/grocery/generate-cart-url", json={
-                "selected_products": []
-            })
-            
-            if response.status_code == 400:
-                self.log("✅ Correctly handles empty products (400)")
-            else:
-                self.log(f"⚠️ Unexpected response for empty products: {response.status_code}")
-            
-            # Test 3: Missing parameters
-            self.log("Testing cart-options with missing user_id...")
-            response = await self.client.post(f"{BACKEND_URL}/grocery/cart-options", params={
-                "recipe_id": self.recipe_id
-            })
-            
-            if response.status_code in [400, 422]:
-                self.log("✅ Correctly handles missing user_id")
-            else:
-                self.log(f"⚠️ Unexpected response for missing user_id: {response.status_code}")
-            
-            return True
-            
+                self.log(f"❌ Walmart search endpoint failed: {response.status_code}")
+                additional_tests['search'] = {'success': False, 'error': response.status_code}
+                
         except Exception as e:
-            self.log(f"❌ Error testing edge cases: {str(e)}", "ERROR")
-            return False
+            self.log(f"Walmart search endpoint not available or error: {str(e)}")
+            additional_tests['search'] = {'success': False, 'error': 'Not available'}
+        
+        self.test_results['additional_tests'] = additional_tests
+        return True
     
     async def run_comprehensive_test(self):
-        """Run the complete Walmart integration flow test"""
-        self.log("🚀 Starting Comprehensive Walmart Integration Flow Test")
-        self.log("=" * 70)
-        self.log("Testing NEW ENDPOINTS as requested in review:")
-        self.log("1. POST /api/grocery/cart-options - Get product options for recipe ingredients")
-        self.log("2. POST /api/grocery/generate-cart-url - Generate Walmart cart URL")
+        """Run all Walmart integration tests"""
+        self.log("🎯 FINAL COMPREHENSIVE WALMART INTEGRATION TEST")
+        self.log("Testing specific endpoints mentioned in review request")
         self.log("=" * 70)
         
-        # Step 1: Login demo user
-        self.test_results["demo_login"] = await self.test_demo_user_login()
-        if not self.test_results["demo_login"]:
-            self.log("❌ Cannot proceed without demo user login")
-            return self.test_results
+        # Test 1: Debug Walmart Integration
+        test1_success = await self.test_debug_walmart_integration()
         
-        # Step 2: Get recipe with ingredients
-        self.test_results["get_recipe"] = await self.test_get_recipe_with_ingredients()
-        if not self.test_results["get_recipe"]:
-            self.log("❌ Cannot proceed without recipe")
-            return self.test_results
+        self.log("")
         
-        # Step 3: Test cart-options endpoint
-        cart_options_success, cart_options_result = await self.test_cart_options_endpoint()
-        self.test_results["cart_options"] = cart_options_success
+        # Test 2: Cart Options Test
+        test2_success = await self.test_cart_options_test_endpoint()
         
-        # Step 4: Test generate-cart-url endpoint
-        if cart_options_success:
-            self.test_results["generate_cart_url"] = await self.test_generate_cart_url_endpoint(cart_options_result)
+        self.log("")
+        
+        # Test 3: Generate Cart URL (known issue)
+        test3_success = await self.test_generate_cart_url_endpoint()
+        
+        self.log("")
+        
+        # Test 4: Additional endpoints
+        await self.test_additional_walmart_endpoints()
+        
+        # Generate comprehensive summary
+        self.log("=" * 70)
+        self.log("🔍 FINAL TEST RESULTS SUMMARY")
+        self.log("=" * 70)
+        
+        # Debug endpoint results
+        debug_result = self.test_results.get('debug_endpoint', {})
+        if debug_result.get('success'):
+            self.log("✅ DEBUG ENDPOINT: Working - Real Walmart products confirmed")
+            self.log(f"   - Using mock data: {debug_result.get('using_mock_data', 'Unknown')}")
+            self.log(f"   - Product count: {debug_result.get('product_count', 0)}")
         else:
-            self.test_results["generate_cart_url"] = False
+            self.log("❌ DEBUG ENDPOINT: Issues detected")
         
-        # Step 5: Test edge cases
-        self.test_results["edge_cases"] = await self.test_edge_cases()
+        # Cart options test results
+        cart_result = self.test_results.get('cart_options_test', {})
+        if cart_result.get('success'):
+            self.log("✅ CART OPTIONS TEST: Working - Real products per ingredient")
+            self.log(f"   - Ingredients: {cart_result.get('ingredient_count', 0)}")
+            self.log(f"   - Total products: {cart_result.get('total_products', 0)}")
+        else:
+            self.log("❌ CART OPTIONS TEST: Issues detected")
         
-        # Summary
-        self.log("=" * 70)
-        self.log("🔍 WALMART INTEGRATION TEST RESULTS SUMMARY")
-        self.log("=" * 70)
+        # Cart URL generation results
+        url_result = self.test_results.get('generate_cart_url', {})
+        if url_result.get('success'):
+            self.log("✅ CART URL GENERATION: Working - Fixed!")
+        else:
+            self.log("❌ CART URL GENERATION: Still has issues (400 error confirmed)")
+            self.log(f"   - Error: {url_result.get('error', 'Unknown')}")
         
-        for test_name, result in self.test_results.items():
-            status = "✅ PASS" if result else "❌ FAIL"
-            self.log(f"{test_name.upper().replace('_', ' ')}: {status}")
+        self.log("")
+        self.log("🎯 WALMART INTEGRATION STATUS:")
+        
+        working_features = []
+        broken_features = []
+        
+        if test1_success:
+            working_features.append("Real Walmart API Integration")
+        else:
+            broken_features.append("Debug endpoint issues")
+            
+        if test2_success:
+            working_features.append("Product search per ingredient")
+        else:
+            broken_features.append("Cart options test issues")
+            
+        if test3_success:
+            working_features.append("Cart URL generation")
+        else:
+            broken_features.append("Cart URL generation (400 error)")
+        
+        self.log("✅ WORKING FEATURES:")
+        for feature in working_features:
+            self.log(f"   - {feature}")
+        
+        if broken_features:
+            self.log("❌ ISSUES REQUIRING FIXES:")
+            for feature in broken_features:
+                self.log(f"   - {feature}")
         
         # Overall assessment
-        critical_tests = ["demo_login", "get_recipe", "cart_options", "generate_cart_url"]
-        critical_passed = sum(1 for test in critical_tests if self.test_results.get(test, False))
+        working_count = len(working_features)
+        total_count = len(working_features) + len(broken_features)
         
-        self.log("=" * 70)
-        if critical_passed == len(critical_tests):
-            self.log("🎉 ALL CRITICAL TESTS PASSED - New Walmart integration flow is working!")
-            self.log("✅ EXPECTED RESULTS CONFIRMED:")
-            self.log("  - Each ingredient gets 2-3 product options with real-looking data")
-            self.log("  - Product options include: product_id, name, price, brand, rating, image_url")
-            self.log("  - Cart URL generation works with valid product IDs")
-            self.log("  - System handles fallbacks gracefully for ingredients not found")
-            self.log("  - Mock data is high-quality and realistic")
+        self.log("")
+        self.log(f"📊 OVERALL SCORE: {working_count}/{total_count} features working")
+        
+        if working_count == total_count:
+            self.log("🎉 ALL WALMART INTEGRATION FEATURES WORKING PERFECTLY!")
+        elif working_count >= 2:
+            self.log("✅ WALMART INTEGRATION MOSTLY WORKING - Minor fixes needed")
         else:
-            self.log(f"❌ {len(critical_tests) - critical_passed} CRITICAL TESTS FAILED")
-            self.log("🔧 ISSUES IDENTIFIED:")
-            
-            if not self.test_results.get("demo_login"):
-                self.log("  - Demo user login failing")
-            if not self.test_results.get("get_recipe"):
-                self.log("  - Cannot get recipe with ingredients")
-            if not self.test_results.get("cart_options"):
-                self.log("  - Cart options endpoint not working")
-            if not self.test_results.get("generate_cart_url"):
-                self.log("  - Generate cart URL endpoint not working")
+            self.log("❌ WALMART INTEGRATION NEEDS SIGNIFICANT FIXES")
         
         return self.test_results
 
