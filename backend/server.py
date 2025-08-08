@@ -3181,8 +3181,12 @@ def get_cache_headers():
 async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[WalmartProductV2]:
     """Real Walmart API integration with proper error handling"""
     try:
-        if not WALMART_CONSUMER_ID or not WALMART_PRIVATE_KEY:
-            # Fallback to high-quality mock data if credentials not available
+        # Check if real credentials are available (not placeholder values)
+        if (not WALMART_CONSUMER_ID or not WALMART_PRIVATE_KEY or 
+            WALMART_CONSUMER_ID == "your-walmart-consumer-id-here" or 
+            WALMART_PRIVATE_KEY == "your-walmart-private-key-here"):
+            # Fallback to mock data only for placeholder/missing credentials
+            logger.info(f"Using mock data for query '{query}' - credentials not configured")
             return await generate_mock_walmart_products(query, max_results)
         
         # Prepare Walmart API request
