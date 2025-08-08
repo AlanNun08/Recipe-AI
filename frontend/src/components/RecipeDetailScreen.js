@@ -87,8 +87,8 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
     setIsGeneratingCart(true);
     try {
       const products = Object.values(selectedProducts).map(product => ({
-        ingredient_name: product.ingredient_name || 'Unknown',
-        product_id: product.product_id,
+        ingredient_name: product.ingredient || 'Unknown',
+        product_id: product.id, // Use 'id' field from WalmartProductV2
         name: product.name,
         price: product.price,
         quantity: 1
