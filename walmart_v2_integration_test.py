@@ -329,6 +329,9 @@ class WalmartV2IntegrationTester:
                     ]
                 }
                 
+                # Debug: Print the cart data to see what we're sending
+                print(f"DEBUG: Sending cart data: {json.dumps(cart_data, indent=2)}")
+                
                 response = await client.post(f"{API_BASE}/grocery/generate-cart-url", json=cart_data)
                 
                 if response.status_code == 200:
