@@ -3331,6 +3331,175 @@ async def generate_mock_walmart_products(query: str, max_results: int = 3) -> Li
         ))
     return products
 
+# ===== GROCERY CART API ENDPOINTS =====
+
+@api_router.post("/grocery/cart-options")
+async def get_grocery_cart_options(
+    recipe_id: str = Query(..., description="Recipe ID"),
+    user_id: str = Query(..., description="User ID")
+):
+    """
+    Get Walmart product options for each ingredient in a recipe's shopping list.
+    This is automatically called by frontend when a recipe with shopping_list loads.
+    """
+    try:
+        # Get recipe from database
+        recipe_collection = db["recipes"]
+        recipe_doc = await recipe_collection.find_one({"recipe_id": recipe_id})
+        
+        if not recipe_doc:
+            # Try weekly recipes collection
+            weekly_collection = db["weekly_meal_plans"]
+            weekly_plans = await weekly_collection.find({"user_id": user_id}).to_list(length=10)
+            
+            recipe_doc = None
+            for plan in weekly_plans:
+                for meal in plan.get('meals', []):
+                    if meal.get('id') == recipe_id:
+                        recipe_doc = meal
+                        break
+                if recipe_doc:
+                    break
+        
+        if not recipe_doc:
+            raise HTTPException(status_code=404, detail="Recipe not found")
+        
+        shopping_list = recipe_doc.get('shopping_list', recipe_doc.get('ingredients', []))
+        
+        if not shopping_list:
+            return {
+                "recipe_id": recipe_id,
+                "recipe_name": recipe_doc.get('name', 'Unknown Recipe'),
+                "ingredient_options": [],
+                "total_ingredients": 0,
+                "message": "No shopping list available for this recipe"
+            }
+        
+        # Get Walmart product options for each ingredient (2-3 options per ingredient)
+        ingredient_options = []
+        
+        for ingredient in shopping_list:
+            try:
+                # Get multiple product options for this ingredient
+                walmart_products = await search_walmart_products_v2(ingredient, max_results=3)
+                
+                if walmart_products and len(walmart_products) > 0:
+                    # Convert to options format
+                    options = []
+                    for product in walmart_products:
+                        options.append({
+                            "product_id": product.id,
+                            "name": product.name,
+                            "price": product.price,
+                            "brand": product.brand or "Great Value",
+                            "rating": product.rating,
+                            "image_url": product.image_url,
+                            "is_selected": len(options) == 0  # First option is default selected
+                        })
+                    
+                    ingredient_options.append({
+                        "ingredient_name": ingredient,
+                        "options": options,
+                        "selected_product_id": options[0]["product_id"] if options else None
+                    })
+                else:
+                    # Fallback for ingredients that can't be found
+                    fallback_option = {
+                        "product_id": f"search_{abs(hash(ingredient)) % 100000}",
+                        "name": f"Search for {ingredient.title()}",
+                        "price": 0.00,
+                        "brand": "Walmart",
+                        "rating": 0.0,
+                        "image_url": "https://via.placeholder.com/100x100?text=Search",
+                        "is_selected": True
+                    }
+                    
+                    ingredient_options.append({
+                        "ingredient_name": ingredient,
+                        "options": [fallback_option],
+                        "selected_product_id": fallback_option["product_id"]
+                    })
+                    
+            except Exception as e:
+                logger.error(f"Error processing ingredient '{ingredient}': {str(e)}")
+                # Create error fallback
+                error_option = {
+                    "product_id": f"error_{abs(hash(ingredient)) % 100000}",
+                    "name": f"Unable to find {ingredient.title()}",
+                    "price": 0.00,
+                    "brand": "Walmart",
+                    "rating": 0.0,
+                    "image_url": "https://via.placeholder.com/100x100?text=Error",
+                    "is_selected": True
+                }
+                
+                ingredient_options.append({
+                    "ingredient_name": ingredient,
+                    "options": [error_option],
+                    "selected_product_id": error_option["product_id"]
+                })
+        
+        return {
+            "recipe_id": recipe_id,
+            "recipe_name": recipe_doc.get('name', 'Unknown Recipe'),
+            "ingredient_options": ingredient_options,
+            "total_ingredients": len(ingredient_options),
+            "estimated_total": sum([opt["options"][0]["price"] for opt in ingredient_options if opt["options"]]),
+            "success": True
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting cart options: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get cart options")
+
+
+@api_router.post("/grocery/generate-cart-url")
+async def generate_grocery_cart_url(request: dict):
+    """
+    Generate Walmart cart URL with selected products.
+    Called when user clicks 'Add to Walmart Cart' after making selections.
+    """
+    try:
+        selected_products = request.get('selected_products', [])
+        
+        if not selected_products:
+            raise HTTPException(status_code=400, detail="No products selected")
+        
+        # Filter out search/error placeholder products and collect real product IDs
+        valid_product_ids = []
+        total_price = 0.0
+        
+        for product in selected_products:
+            product_id = product.get('product_id', '')
+            price = float(product.get('price', 0))
+            
+            # Only include real product IDs (not search/error fallbacks)
+            if not product_id.startswith('search_') and not product_id.startswith('error_'):
+                valid_product_ids.append(product_id)
+                total_price += price
+        
+        # Generate Walmart cart URL
+        if valid_product_ids:
+            cart_url = f"https://walmart.com/cart?items={','.join(valid_product_ids)}"
+        else:
+            # If no valid products, redirect to Walmart grocery section
+            cart_url = "https://walmart.com/cp/food/976759"
+        
+        return {
+            "cart_url": cart_url,
+            "total_price": total_price,
+            "total_items": len(valid_product_ids),
+            "success": True,
+            "message": f"Cart created with {len(valid_product_ids)} items" if valid_product_ids else "No valid products found - redirecting to Walmart grocery section"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating cart URL: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to generate cart URL")
+
+
 @api_router.get("/debug/walmart-integration")
 async def debug_walmart_integration():
     """Debug endpoint to verify Walmart API integration with credentials"""
