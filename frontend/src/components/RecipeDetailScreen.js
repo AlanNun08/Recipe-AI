@@ -46,21 +46,20 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
   const loadCartOptions = async () => {
     setIsLoadingCart(true);
     try {
-      // Get current user ID from session storage or use demo user
-      const userId = sessionStorage.getItem('user_id') || 'f99be98f-c1d5-4ccc-a3ad-9b62e01f4731';
+      console.log('🔍 Loading cart options for weekly recipe:', recipeId);
       
-      console.log('🔍 Loading cart options for recipe:', recipeId, 'user:', userId);
-      
-      const response = await axios.post(`${API}/api/grocery/cart-options-test?recipe_id=${recipeId}&user_id=${userId}`);
+      // Use the correct endpoint for weekly recipes
+      const response = await axios.post(`${API}/api/v2/walmart/weekly-cart-options?recipe_id=${recipeId}`);
       console.log('✅ Cart options loaded:', response.data);
       
       setCartOptions(response.data);
       
-      // Initialize selected products with first option for each ingredient
+      // Initialize selected products with first product for each ingredient
       const initialSelections = {};
-      response.data.ingredient_options?.forEach(ingredient => {
-        if (ingredient.options && ingredient.options.length > 0) {
-          initialSelections[ingredient.ingredient_name] = ingredient.options[0];
+      response.data.ingredient_matches?.forEach(ingredientMatch => {
+        if (ingredientMatch.products && ingredientMatch.products.length > 0) {
+          // Use 'id' field instead of 'product_id' for WalmartProductV2
+          initialSelections[ingredientMatch.ingredient] = ingredientMatch.products[0];
         }
       });
       setSelectedProducts(initialSelections);
