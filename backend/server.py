@@ -3474,19 +3474,55 @@ async def debug_walmart_integration():
         
         # Test with a simple ingredient
         test_ingredient = "pasta"
-        products = await search_walmart_products_v2(test_ingredient, max_results=1)
+        products = await search_walmart_products_v2(test_ingredient, max_results=3)
+        
+        # Get more sample products to show variety
+        sample_products = []
+        test_ingredients = ["pasta", "rice", "bread", "milk", "eggs"]
+        
+        for ingredient in test_ingredients:
+            try:
+                ingredient_products = await search_walmart_products_v2(ingredient, max_results=2)
+                for product in ingredient_products:
+                    sample_products.append({
+                        "ingredient": ingredient,
+                        "product_id": product.id,
+                        "name": product.name,
+                        "price": product.price,
+                        "brand": product.brand,
+                        "rating": product.rating,
+                        "url": product.product_url
+                    })
+                    if len(sample_products) >= 10:  # Limit to 10 sample products
+                        break
+                if len(sample_products) >= 10:
+                    break
+            except Exception as e:
+                logger.error(f"Error getting sample products for {ingredient}: {str(e)}")
+                continue
+        
+        # Determine if using mock data
+        using_mock_data = True
+        if products:
+            # Check if any product IDs are real (numeric, not starting with "WM")
+            for product in products:
+                if product.id.isdigit() and len(product.id) >= 6:
+                    using_mock_data = False
+                    break
         
         result = {
             "credentials_status": credentials_status,
             "test_ingredient": test_ingredient,
             "products_found": len(products),
-            "using_mock_data": products[0].id.startswith("WM") if products else True,
+            "using_mock_data": using_mock_data,
             "sample_product": {
                 "id": products[0].id,
                 "name": products[0].name,
                 "price": products[0].price,
                 "url": products[0].product_url
-            } if products else None
+            } if products else None,
+            "sample_products": sample_products,
+            "total_sample_products": len(sample_products)
         }
         
         return result
