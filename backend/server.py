@@ -3180,7 +3180,7 @@ def get_cache_headers():
 # V2 Clean API Client
 async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[WalmartProductV2]:
     """
-    Search Walmart API with proper authentication headers
+    Search Walmart API with proper authentication headers based on official documentation
     """
     try:
         # Check if real credentials are available (not placeholder values)
@@ -3196,47 +3196,76 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
         private_key_pem = WALMART_PRIVATE_KEY
         key_version = WALMART_KEY_VERSION
         
-        # 2. Load RSA private key from file or environment
+        # 2. Generate timestamp (Unix epoch time in milliseconds)
+        import time
+        timestamp = str(int(time.time() * 1000))
+        
+        # 3. Create headers map for canonicalization (as per Walmart documentation)
+        headers_map = {
+            "WM_CONSUMER.ID": consumer_id,
+            "WM_CONSUMER.INTIMESTAMP": timestamp,
+            "WM_SEC.KEY_VERSION": key_version
+        }
+        
+        # 4. Canonicalize headers (sort alphabetically and create string to sign)
+        sorted_keys = sorted(headers_map.keys())
+        string_to_sign = ""
+        for key in sorted_keys:
+            string_to_sign += headers_map[key].strip() + "\n"
+        
+        logger.info(f"String to sign: {repr(string_to_sign)}")
+        
+        # 5. Generate signature using SHA256WithRSA (as per Java example)
         from cryptography.hazmat.primitives import serialization, hashes
         from cryptography.hazmat.primitives.asymmetric import padding
-        import time
+        from cryptography.hazmat.backends import default_backend
         
-        # Try to load from PEM file first (more reliable), then fallback to env
-        pem_file_path = os.path.join(os.path.dirname(__file__), 'walmart_private_key.pem')
         try:
-            if os.path.exists(pem_file_path):
-                with open(pem_file_path, 'rb') as key_file:
-                    private_key = serialization.load_pem_private_key(
-                        key_file.read(),
-                        password=None
-                    )
-                logger.info("✅ Loaded private key from PEM file")
-            else:
+            # Handle different key formats
+            if private_key_pem.startswith("-----BEGIN"):
+                # PEM format - load directly
                 private_key = serialization.load_pem_private_key(
-                    private_key_pem.encode(), 
-                    password=None
+                    private_key_pem.encode(),
+                    password=None,
+                    backend=default_backend()
                 )
-                logger.info("✅ Loaded private key from environment")
+                logger.info("✅ Loaded PEM format private key")
+            else:
+                # Base64 PKCS#8 format (as suggested in Java example)
+                import base64
+                key_bytes = base64.b64decode(private_key_pem)
+                private_key = serialization.load_der_private_key(
+                    key_bytes,
+                    password=None,
+                    backend=default_backend()
+                )
+                logger.info("✅ Loaded base64 PKCS#8 format private key")
+            
+            # Generate RSA signature with SHA256 (equivalent to Java's SHA256WithRSA)
+            signature_bytes = private_key.sign(
+                string_to_sign.encode('utf-8'),
+                padding.PKCS1v15(),  # Standard RSA signature padding
+                hashes.SHA256()
+            )
+            
+            signature_b64 = base64.b64encode(signature_bytes).decode('utf-8')
+            logger.info("✅ RSA signature generated successfully!")
+            
         except Exception as e:
-            logger.error(f"❌ Failed to load private key: {str(e)}")
+            logger.error(f"❌ Failed to generate signature: {str(e)}")
             raise
         
-        # 3. Generate timestamp and signature
-        timestamp = str(int(time.time() * 1000))
-        message = f"{consumer_id}\n{timestamp}\n{key_version}\n".encode("utf-8")
-        signature = private_key.sign(message, padding.PKCS1v15(), hashes.SHA256())
-        signature_b64 = base64.b64encode(signature).decode("utf-8")
-        
-        # 4. Create authentication headers
-        headers = {
+        # 6. Create final authentication headers
+        auth_headers = {
             "WM_CONSUMER.ID": consumer_id,
             "WM_CONSUMER.INTIMESTAMP": timestamp,
             "WM_SEC.KEY_VERSION": key_version,
             "WM_SEC.AUTH_SIGNATURE": signature_b64,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Accept": "application/json"
         }
         
-        # 5. Make API request
+        # 7. Make API request
         url = "https://developer.api.walmart.com/api-proxy/service/affil/product/v2/search"
         params = {
             "query": query.replace(' ', '+'),
@@ -3245,9 +3274,11 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
         
         # Make API request with increased timeout for production reliability
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(url, headers=headers, params=params)
+            response = await client.get(url, headers=auth_headers, params=params)
             
-            # 6. Process response
+            logger.info(f"Walmart API response: {response.status_code}")
+            
+            # 8. Process response
             if response.status_code == 200:
                 data = response.json()
                 items = data.get("items", [])
@@ -3272,7 +3303,9 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
             
             else:
                 # Log API response details for debugging
-                logger.error(f"Walmart API returned {response.status_code}: {response.text[:200]}")
+                response_text = response.text[:500] if hasattr(response, 'text') else 'No response text'
+                logger.error(f"Walmart API returned {response.status_code}: {response_text}")
+                
                 # Only fallback to mock data for credential issues, not temporary API issues
                 if response.status_code == 401:
                     logger.warning("Walmart API authentication failed - using mock data")
@@ -3284,7 +3317,7 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
     except Exception as e:
         logger.error(f"Walmart API error for query '{query}': {str(e)}")
         # Only use mock data if credentials are definitely invalid
-        if "credentials" in str(e).lower() or "auth" in str(e).lower():
+        if "credentials" in str(e).lower() or "auth" in str(e).lower() or "signature" in str(e).lower():
             return await generate_mock_walmart_products(query, max_results)
         return []
 
