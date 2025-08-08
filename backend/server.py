@@ -3247,16 +3247,32 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
                     if len(products) >= max_results:
                         break
                 
-                return products if products else await generate_mock_walmart_products(query, max_results)
+                # Return real products even if empty - don't fallback to mock
+                return products
             
             else:
-                # API error, fallback to mock data
-                return await generate_mock_walmart_products(query, max_results)
+                # Log API response details for debugging
+                logger.error(f"Walmart API returned {response.status_code}: {response.text[:200]}")
+                # Only fallback to mock data for credential issues, not temporary API issues
+                if response.status_code == 401:
+                    logger.warning("Walmart API authentication failed - using mock data")
+                    return await generate_mock_walmart_products(query, max_results)
+                else:
+                    # For other errors, return empty list to let the system handle gracefully
+                    return []
                 
+    except httpx.TimeoutException as e:
+        logger.error(f"Walmart API timeout for query '{query}': {str(e)}")
+        return []  # Don't fallback to mock for timeouts
+    except httpx.RequestError as e:
+        logger.error(f"Walmart API request error for query '{query}': {str(e)}")
+        return []  # Don't fallback to mock for network issues  
     except Exception as e:
-        print(f"Walmart API error: {str(e)}")
-        # Always fallback to high-quality mock data on any error
-        return await generate_mock_walmart_products(query, max_results)
+        logger.error(f"Unexpected Walmart API error for query '{query}': {str(e)}")
+        # Only use mock data if credentials are definitely invalid
+        if "credentials" in str(e).lower() or "auth" in str(e).lower():
+            return await generate_mock_walmart_products(query, max_results)
+        return []
 
 async def generate_mock_walmart_products(query: str, max_results: int = 3) -> List[WalmartProductV2]:
     """High-quality mock data fallback when real API is unavailable"""
