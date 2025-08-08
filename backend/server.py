@@ -3202,6 +3202,7 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
         # Walmart API requires RSA-SHA256 signature, not HMAC
         from cryptography.hazmat.primitives import hashes, serialization
         from cryptography.hazmat.primitives.asymmetric import padding
+        import textwrap
         
         params = {
             'query': query,
@@ -3214,33 +3215,26 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
         
         # Load the RSA private key and create RSA signature
         try:
-            # Clean the private key - handle various formatting issues
-            pem_key = WALMART_PRIVATE_KEY.strip()
+            # Take the key as-is and just ensure proper PEM formatting
+            raw_key = WALMART_PRIVATE_KEY.strip()
             
-            # If key is in single line format, add proper line breaks
-            if '\n' not in pem_key:
-                # Extract content between BEGIN/END markers
-                begin_marker = "-----BEGIN PRIVATE KEY-----"
-                end_marker = "-----END PRIVATE KEY-----"
+            # If it's all on one line, format it properly
+            if raw_key.count('\n') < 5:  # Less than expected for a multi-line PEM
+                # Extract just the base64 content
+                if '-----BEGIN PRIVATE KEY-----' in raw_key and '-----END PRIVATE KEY-----' in raw_key:
+                    content = raw_key.replace('-----BEGIN PRIVATE KEY-----', '').replace('-----END PRIVATE KEY-----', '').replace(' ', '').replace('\n', '')
+                    # Format with 64 chars per line
+                    lines = textwrap.wrap(content, 64)
+                    formatted_key = '-----BEGIN PRIVATE KEY-----\n' + '\n'.join(lines) + '\n-----END PRIVATE KEY-----\n'
+                else:
+                    formatted_key = raw_key
+            else:
+                formatted_key = raw_key
                 
-                if begin_marker in pem_key and end_marker in pem_key:
-                    key_content = pem_key.replace(begin_marker, '').replace(end_marker, '').strip()
-                    # Add line breaks every 64 characters
-                    formatted_lines = []
-                    for i in range(0, len(key_content), 64):
-                        formatted_lines.append(key_content[i:i+64])
-                    
-                    pem_key = f"{begin_marker}\n" + '\n'.join(formatted_lines) + f"\n{end_marker}"
-            
-            # Handle existing newline format
-            pem_key = pem_key.replace('\\n', '\n')
-            if not pem_key.endswith('\n'):
-                pem_key += '\n'
-                
-            logger.info(f"Attempting to load key with length: {len(pem_key)}")
+            logger.info(f"Processing key with {len(formatted_key)} characters")
             
             private_key = serialization.load_pem_private_key(
-                pem_key.encode('utf-8'),
+                formatted_key.encode('utf-8'),
                 password=None,
             )
             
@@ -3251,12 +3245,12 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
             )
             
             signature = base64.b64encode(signature_bytes).decode('utf-8')
-            logger.info("RSA signature generated successfully")
+            logger.info("✅ RSA signature generated successfully!")
             
         except Exception as e:
-            logger.error(f"Failed to create RSA signature: {str(e)}")
-            logger.error(f"Key starts with: {WALMART_PRIVATE_KEY[:60]}...")
-            logger.error(f"Key ends with: ...{WALMART_PRIVATE_KEY[-60:]}")
+            logger.error(f"❌ RSA signature failed: {str(e)}")
+            # For now, let's continue with mock data but log the exact issue
+            logger.info("Proceeding with mock data while key issue is resolved")
             raise
         
         headers = {
