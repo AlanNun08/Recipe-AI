@@ -152,10 +152,10 @@ def mongo_to_dict(obj):
 # OpenAI setup
 openai_client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
 
-# Walmart API setup - NO LONGER NEEDED FOR V2 SIMPLE INTEGRATION
-# WALMART_CONSUMER_ID = os.environ.get('WALMART_CONSUMER_ID', 'not_needed')
-# WALMART_KEY_VERSION = os.environ.get('WALMART_KEY_VERSION', 'not_needed') 
-# WALMART_PRIVATE_KEY = os.environ.get('WALMART_PRIVATE_KEY', 'not_needed')
+# Walmart API setup - RESTORED REAL INTEGRATION
+WALMART_CONSUMER_ID = os.environ.get('WALMART_CONSUMER_ID')
+WALMART_KEY_VERSION = os.environ.get('WALMART_KEY_VERSION', '1') 
+WALMART_PRIVATE_KEY = os.environ.get('WALMART_PRIVATE_KEY')
 
 # Create the main app without a prefix
 app = FastAPI(
