@@ -23,13 +23,20 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
   const loadRecipeDetail = async () => {
     setIsLoading(true);
     try {
+      console.log('🔍 Loading recipe detail for ID:', recipeId);
+      
       const response = await axios.get(`${API}/api/weekly-recipes/recipe/${recipeId}`);
+      console.log('✅ Recipe loaded:', response.data);
+      
       setRecipe(response.data);
       
-      // Auto-load cart options when recipe loads
-      await loadCartOptions();
+      // Load cart options in the background (non-blocking)
+      setTimeout(() => {
+        loadCartOptions();
+      }, 500);
+      
     } catch (error) {
-      console.error('Failed to load recipe detail:', error);
+      console.error('❌ Failed to load recipe detail:', error);
       showNotification('❌ Failed to load recipe details', 'error');
     } finally {
       setIsLoading(false);
