@@ -1948,32 +1948,32 @@ async def health_check():
         # Check external API availability (basic)
         external_apis = {
             "openai": bool(OPENAI_API_KEY),
-            "stripe": bool(STRIPE_API_KEY),
-            "walmart": bool(WALMART_CONSUMER_ID and WALMART_PRIVATE_KEY),
-            "mailjet": bool(MAILJET_API_KEY and MAILJET_SECRET_KEY)
+            "mailjet": bool(MAILJET_API_KEY),
+            "walmart": bool(WALMART_CONSUMER_ID)
         }
         
-        return JSONResponse(
-            status_code=200,
-            content={
-                "status": "healthy",
-                "timestamp": datetime.utcnow().isoformat(),
-                "version": "2.0.0",
-                "database": db_status,
-                "apis_configured": external_apis,
-                "environment": "production" if os.getenv("NODE_ENV") == "production" else "development"
-            }
-        )
+        return {
+            "status": "healthy",
+            "service": "buildyoursmartcart",
+            "version": "2.2.1",
+            "features": "navigation-fix-active",
+            "last_updated": "2025-08-07T20:15:00Z",
+            "database": db_status,
+            "external_apis": external_apis,
+            "timestamp": datetime.utcnow().isoformat()
+        }
     except Exception as e:
-        logger.error(f"Health check failed: {e}")
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "unhealthy",
-                "error": str(e),
-                "timestamp": datetime.utcnow().isoformat()
-            }
-        )
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+# Add explicit OPTIONS handler for health endpoint
+@api_router.options("/health")
+async def health_options():
+    """Handle CORS preflight for health endpoint"""
+    return {"status": "ok"}
 
 @api_router.get("/")
 async def root():
