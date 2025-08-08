@@ -3214,24 +3214,35 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
         
         # Load the RSA private key and create RSA signature
         try:
-            # Try to read from PEM file first, then fall back to env variable
-            pem_file_path = os.path.join(os.path.dirname(__file__), 'walmart_private_key.pem')
-            if os.path.exists(pem_file_path):
-                with open(pem_file_path, 'rb') as key_file:
-                    private_key = serialization.load_pem_private_key(
-                        key_file.read(),
-                        password=None,
-                    )
-            else:
-                # Handle PEM key that might have escaped newlines from .env file
-                pem_key = WALMART_PRIVATE_KEY.replace('\\n', '\n')
-                if not pem_key.endswith('\n'):
-                    pem_key += '\n'
+            # Clean the private key - handle various formatting issues
+            pem_key = WALMART_PRIVATE_KEY.strip()
+            
+            # If key is in single line format, add proper line breaks
+            if '\n' not in pem_key:
+                # Extract content between BEGIN/END markers
+                begin_marker = "-----BEGIN PRIVATE KEY-----"
+                end_marker = "-----END PRIVATE KEY-----"
                 
-                private_key = serialization.load_pem_private_key(
-                    pem_key.encode('utf-8'),
-                    password=None,
-                )
+                if begin_marker in pem_key and end_marker in pem_key:
+                    key_content = pem_key.replace(begin_marker, '').replace(end_marker, '').strip()
+                    # Add line breaks every 64 characters
+                    formatted_lines = []
+                    for i in range(0, len(key_content), 64):
+                        formatted_lines.append(key_content[i:i+64])
+                    
+                    pem_key = f"{begin_marker}\n" + '\n'.join(formatted_lines) + f"\n{end_marker}"
+            
+            # Handle existing newline format
+            pem_key = pem_key.replace('\\n', '\n')
+            if not pem_key.endswith('\n'):
+                pem_key += '\n'
+                
+            logger.info(f"Attempting to load key with length: {len(pem_key)}")
+            
+            private_key = serialization.load_pem_private_key(
+                pem_key.encode('utf-8'),
+                password=None,
+            )
             
             signature_bytes = private_key.sign(
                 string_to_sign.encode('utf-8'),
@@ -3240,9 +3251,12 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
             )
             
             signature = base64.b64encode(signature_bytes).decode('utf-8')
+            logger.info("RSA signature generated successfully")
+            
         except Exception as e:
             logger.error(f"Failed to create RSA signature: {str(e)}")
-            logger.error(f"Key preview: {WALMART_PRIVATE_KEY[:50]}...")
+            logger.error(f"Key starts with: {WALMART_PRIVATE_KEY[:60]}...")
+            logger.error(f"Key ends with: ...{WALMART_PRIVATE_KEY[-60:]}")
             raise
         
         headers = {
