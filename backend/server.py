@@ -3954,8 +3954,10 @@ async def get_weekly_cart_options_v2(
         
         # Find the specific meal with this recipe ID
         for plan in plans:
-            print(f"Checking plan with {len(plan.get('meals', []))} meals")  # Debug
-            for meal in plan.get('meals', []):
+            # Access meals from plan.meals (same as working /current endpoint)
+            meals = plan.get('plan', {}).get('meals', []) if 'plan' in plan else plan.get('meals', [])
+            print(f"Checking plan with {len(meals)} meals")  # Debug
+            for meal in meals:
                 print(f"Checking meal ID: {meal.get('id')} vs target: {recipe_id}")  # Debug
                 if meal.get('id') == recipe_id:
                     target_meal = meal
