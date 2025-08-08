@@ -3199,6 +3199,13 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
         timestamp = str(int(time.time() * 1000))
         
         # Create signature for Walmart API authentication
+        # Handle both plain private key and PEM-formatted private key
+        private_key_for_hmac = WALMART_PRIVATE_KEY
+        if private_key_for_hmac.startswith('-----BEGIN'):
+            # Extract key content from PEM format if needed
+            lines = private_key_for_hmac.split('\n')
+            private_key_for_hmac = ''.join(line for line in lines if not line.startswith('-----'))
+        
         params = {
             'query': query,
             'format': 'json',
@@ -3210,7 +3217,7 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
         
         signature = base64.b64encode(
             hmac.new(
-                WALMART_PRIVATE_KEY.encode('utf-8'),
+                private_key_for_hmac.encode('utf-8'),
                 string_to_sign.encode('utf-8'),
                 hashlib.sha256
             ).digest()
