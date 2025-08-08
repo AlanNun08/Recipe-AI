@@ -3196,15 +3196,30 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
         private_key_pem = WALMART_PRIVATE_KEY
         key_version = WALMART_KEY_VERSION
         
-        # 2. Load RSA private key
+        # 2. Load RSA private key from file or environment
         from cryptography.hazmat.primitives import serialization, hashes
         from cryptography.hazmat.primitives.asymmetric import padding
         import time
         
-        private_key = serialization.load_pem_private_key(
-            private_key_pem.encode(), 
-            password=None
-        )
+        # Try to load from PEM file first (more reliable), then fallback to env
+        pem_file_path = os.path.join(os.path.dirname(__file__), 'walmart_private_key.pem')
+        try:
+            if os.path.exists(pem_file_path):
+                with open(pem_file_path, 'rb') as key_file:
+                    private_key = serialization.load_pem_private_key(
+                        key_file.read(),
+                        password=None
+                    )
+                logger.info("✅ Loaded private key from PEM file")
+            else:
+                private_key = serialization.load_pem_private_key(
+                    private_key_pem.encode(), 
+                    password=None
+                )
+                logger.info("✅ Loaded private key from environment")
+        except Exception as e:
+            logger.error(f"❌ Failed to load private key: {str(e)}")
+            raise
         
         # 3. Generate timestamp and signature
         timestamp = str(int(time.time() * 1000))
