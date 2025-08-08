@@ -3198,13 +3198,10 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
         base_url = "https://developer.api.walmart.com/api-proxy/service/affil/product/v2/search"
         timestamp = str(int(time.time() * 1000))
         
-        # Create signature for Walmart API authentication
-        # Handle both plain private key and PEM-formatted private key
-        private_key_for_hmac = WALMART_PRIVATE_KEY
-        if private_key_for_hmac.startswith('-----BEGIN'):
-            # Extract key content from PEM format if needed
-            lines = private_key_for_hmac.split('\n')
-            private_key_for_hmac = ''.join(line for line in lines if not line.startswith('-----'))
+        # Create RSA signature for Walmart API authentication
+        # Walmart API requires RSA-SHA256 signature, not HMAC
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import padding
         
         params = {
             'query': query,
@@ -3215,13 +3212,23 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
         query_string = urlencode(params)
         string_to_sign = f"{WALMART_CONSUMER_ID}\n{base_url}?{query_string}\n{WALMART_KEY_VERSION}\n{timestamp}\n"
         
-        signature = base64.b64encode(
-            hmac.new(
-                private_key_for_hmac.encode('utf-8'),
+        # Load the RSA private key and create RSA signature
+        try:
+            private_key = serialization.load_pem_private_key(
+                WALMART_PRIVATE_KEY.encode('utf-8'),
+                password=None,
+            )
+            
+            signature_bytes = private_key.sign(
                 string_to_sign.encode('utf-8'),
-                hashlib.sha256
-            ).digest()
-        ).decode('utf-8')
+                padding.PKCS1v15(),
+                hashes.SHA256()
+            )
+            
+            signature = base64.b64encode(signature_bytes).decode('utf-8')
+        except Exception as e:
+            logger.error(f"Failed to create RSA signature: {str(e)}")
+            raise
         
         headers = {
             'WM_CONSUMER.ID': WALMART_CONSUMER_ID,
