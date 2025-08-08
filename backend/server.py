@@ -3214,15 +3214,24 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
         
         # Load the RSA private key and create RSA signature
         try:
-            # Handle PEM key that might have escaped newlines from .env file
-            pem_key = WALMART_PRIVATE_KEY.replace('\\n', '\n')
-            if not pem_key.endswith('\n'):
-                pem_key += '\n'
-            
-            private_key = serialization.load_pem_private_key(
-                pem_key.encode('utf-8'),
-                password=None,
-            )
+            # Try to read from PEM file first, then fall back to env variable
+            pem_file_path = os.path.join(os.path.dirname(__file__), 'walmart_private_key.pem')
+            if os.path.exists(pem_file_path):
+                with open(pem_file_path, 'rb') as key_file:
+                    private_key = serialization.load_pem_private_key(
+                        key_file.read(),
+                        password=None,
+                    )
+            else:
+                # Handle PEM key that might have escaped newlines from .env file
+                pem_key = WALMART_PRIVATE_KEY.replace('\\n', '\n')
+                if not pem_key.endswith('\n'):
+                    pem_key += '\n'
+                
+                private_key = serialization.load_pem_private_key(
+                    pem_key.encode('utf-8'),
+                    password=None,
+                )
             
             signature_bytes = private_key.sign(
                 string_to_sign.encode('utf-8'),
