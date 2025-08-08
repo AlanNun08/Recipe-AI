@@ -3152,6 +3152,9 @@ class WalmartProductV2(BaseModel):
     price: float
     image_url: str = ""
     available: bool = True
+    product_url: Optional[str] = ""
+    brand: Optional[str] = "Great Value"
+    rating: Optional[float] = 4.0
     
 class IngredientMatchV2(BaseModel):
     ingredient: str
