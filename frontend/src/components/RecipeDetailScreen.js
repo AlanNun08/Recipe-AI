@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const RecipeDetailScreen = ({ recipeId, onBack, showNotification }) => {
-  const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
-  
+const API = process.env.REACT_APP_BACKEND_URL;
+
+function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
   const [recipe, setRecipe] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [cartOptions, setCartOptions] = useState(null);
+  const [selectedProducts, setSelectedProducts] = useState({});
+  const [cartItems, setCartItems] = useState([]);
+  const [finalWalmartUrl, setFinalWalmartUrl] = useState('');
+  const [loadingCart, setLoadingCart] = useState(false);
 
   useEffect(() => {
-    console.log('RecipeDetailScreen useEffect - recipeId:', recipeId);
     if (!recipeId) {
-      console.log('No recipeId provided - showing error');
       setIsLoading(false);
       return;
     }
-    console.log('Loading recipe details for ID:', recipeId);
     loadRecipeDetail();
   }, [recipeId]);
 
@@ -23,12 +25,144 @@ const RecipeDetailScreen = ({ recipeId, onBack, showNotification }) => {
     try {
       const response = await axios.get(`${API}/api/weekly-recipes/recipe/${recipeId}`);
       setRecipe(response.data);
+      
+      // Check if this recipe should use V2 cart system
+      if (response.data.use_v2_cart && response.data.v2_cart_endpoint) {
+        await loadCartOptions(response.data.v2_cart_endpoint);
+      }
     } catch (error) {
       console.error('Failed to load recipe detail:', error);
       showNotification('❌ Failed to load recipe details', 'error');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loadCartOptions = async (cartEndpoint) => {
+    setLoadingCart(true);
+    try {
+      // Extract recipe ID from current recipe or endpoint
+      const response = await axios.post(`${API}${cartEndpoint}`);
+      setCartOptions(response.data);
+      
+      // Initialize default selections (first product for each ingredient)
+      const defaultSelections = {};
+      const defaultCartItems = [];
+      
+      response.data.ingredient_matches.forEach(match => {
+        if (match.products && match.products.length > 0) {
+          const firstProduct = match.products[0];
+          defaultSelections[match.ingredient] = firstProduct.id;
+          defaultCartItems.push({
+            ingredient: match.ingredient,
+            product: firstProduct,
+            quantity: 1
+          });
+        }
+      });
+      
+      setSelectedProducts(defaultSelections);
+      setCartItems(defaultCartItems);
+      generateCartUrl(defaultCartItems);
+      
+    } catch (error) {
+      console.error('Failed to load cart options:', error);
+      showNotification('❌ Failed to load shopping options', 'error');
+    } finally {
+      setLoadingCart(false);
+    }
+  };
+
+  const handleProductSelection = (ingredient, productId) => {
+    const match = cartOptions.ingredient_matches.find(m => m.ingredient === ingredient);
+    const selectedProduct = match.products.find(p => p.id === productId);
+    
+    if (!selectedProduct) return;
+    
+    // Update selections
+    const newSelections = {
+      ...selectedProducts,
+      [ingredient]: productId
+    };
+    setSelectedProducts(newSelections);
+    
+    // Update cart items
+    const newCartItems = cartItems.map(item => {
+      if (item.ingredient === ingredient) {
+        return {
+          ...item,
+          product: selectedProduct
+        };
+      }
+      return item;
+    }).filter(item => newSelections[item.ingredient]); // Remove unselected items
+    
+    // Add new item if ingredient wasn't in cart before
+    if (!cartItems.some(item => item.ingredient === ingredient)) {
+      newCartItems.push({
+        ingredient,
+        product: selectedProduct,
+        quantity: 1
+      });
+    }
+    
+    setCartItems(newCartItems);
+    generateCartUrl(newCartItems);
+  };
+
+  const handleIngredientToggle = (ingredient, include) => {
+    if (include) {
+      // Add ingredient back to cart with first available product
+      const match = cartOptions.ingredient_matches.find(m => m.ingredient === ingredient);
+      if (match && match.products.length > 0) {
+        const firstProduct = match.products[0];
+        const newSelections = {
+          ...selectedProducts,
+          [ingredient]: firstProduct.id
+        };
+        setSelectedProducts(newSelections);
+        
+        const newCartItems = [...cartItems, {
+          ingredient,
+          product: firstProduct,
+          quantity: 1
+        }];
+        setCartItems(newCartItems);
+        generateCartUrl(newCartItems);
+      }
+    } else {
+      // Remove ingredient from cart
+      const newSelections = { ...selectedProducts };
+      delete newSelections[ingredient];
+      setSelectedProducts(newSelections);
+      
+      const newCartItems = cartItems.filter(item => item.ingredient !== ingredient);
+      setCartItems(newCartItems);
+      generateCartUrl(newCartItems);
+    }
+  };
+
+  const generateCartUrl = async (items) => {
+    try {
+      const selectedProductsData = items.map(item => ({
+        id: item.product.id,
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity
+      }));
+      
+      const response = await axios.post(`${API}/api/v2/walmart/generate-cart-url`, {
+        selected_products: selectedProductsData
+      });
+      
+      setFinalWalmartUrl(response.data.cart_url);
+    } catch (error) {
+      console.error('Failed to generate cart URL:', error);
+    }
+  };
+
+  const calculateTotal = () => {
+    return cartItems.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   };
 
   if (isLoading) {
