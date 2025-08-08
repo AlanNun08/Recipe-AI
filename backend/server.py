@@ -3846,98 +3846,55 @@ async def get_user_trial_status(user_id: str):
 
 @api_router.get("/weekly-recipes/recipe/{recipe_id}")
 async def get_weekly_recipe_detail(recipe_id: str):
-    """Get detailed recipe information for a specific meal from weekly plan"""
+    """Get detailed recipe information from weekly meal plan - PREMIUM FEATURE"""
     try:
-        # Find the weekly plan that contains this recipe
-        weekly_plan = await weekly_recipes_collection.find_one({
-            "meals.id": recipe_id,
-            "is_active": True
-        })
+        # Find the weekly meal plan that contains this recipe
+        current_week = get_current_week()
         
-        if not weekly_plan:
-            raise HTTPException(status_code=404, detail="Recipe not found")
+        # Search in current and recent weekly plans
+        plans = await weekly_recipes_collection.find({
+            "week_of": {"$in": [current_week, f"{int(current_week.split('-W')[0])}-W{int(current_week.split('-W')[1])-1:02d}"]}
+        }).sort("created_at", -1).to_list(5)
         
-        # Find the specific meal in the plan
         target_meal = None
-        for meal in weekly_plan.get('meals', []):
-            if meal.get('id') == recipe_id:
-                target_meal = meal
+        source_plan = None
+        
+        # Find the specific meal with this recipe ID
+        for plan in plans:
+            for meal in plan.get('plan', {}).get('meals', []):
+                if meal.get('id') == recipe_id:
+                    target_meal = meal
+                    source_plan = plan
+                    break
+            if target_meal:
                 break
         
         if not target_meal:
             raise HTTPException(status_code=404, detail="Recipe not found")
         
-        # Generate individual Walmart item links for each ingredient using real API
-        walmart_items = []
-        for ingredient in target_meal.get('ingredients', []):
-            try:
-                # Use real Walmart API search
-                walmart_products = await search_walmart_products_v2(ingredient, max_results=1)
-                
-                if walmart_products and len(walmart_products) > 0:
-                    product = walmart_products[0]
-                    # Generate proper affiliate URL
-                    affiliate_url = f"https://goto.walmart.com/c/1804968/{product.id}"
-                    
-                    walmart_items.append({
-                        "name": ingredient,
-                        "search_url": affiliate_url,
-                        "image_url": product.image_url or "https://via.placeholder.com/100x100?text=🛒",
-                        "estimated_price": f"${product.price:.2f}",
-                        "product_name": product.name,
-                        "brand": product.brand,
-                        "rating": product.rating,
-                        "walmart_item_id": product.id
-                    })
-                else:
-                    # Fallback to search URL if no specific product found
-                    clean_ingredient = ingredient.lower().replace(' ', '+')
-                    walmart_url = f"https://www.walmart.com/search/?query={clean_ingredient}"
-                    
-                    walmart_items.append({
-                        "name": ingredient,
-                        "search_url": walmart_url,
-                        "image_url": "https://via.placeholder.com/100x100?text=🛒",
-                        "estimated_price": "Est. $2-5"
-                    })
-            except Exception as e:
-                # Fallback on any error
-                clean_ingredient = ingredient.lower().replace(' ', '+')
-                walmart_url = f"https://www.walmart.com/search/?query={clean_ingredient}"
-                
-                walmart_items.append({
-                    "name": ingredient,
-                    "search_url": walmart_url,
-                    "image_url": "https://via.placeholder.com/100x100?text=🛒",
-                    "estimated_price": "Est. $2-5"
-                })
-        
-        # Return detailed recipe information
-        recipe_detail = {
+        # Use V2 cart system instead of individual buttons
+        # This will provide the advanced shopping cart experience
+        return {
             "id": target_meal.get('id'),
             "name": target_meal.get('name'),
             "description": target_meal.get('description'),
             "day": target_meal.get('day'),
             "ingredients": target_meal.get('ingredients', []),
             "instructions": target_meal.get('instructions', []),
-            "prep_time": target_meal.get('prep_time'),
-            "cook_time": target_meal.get('cook_time'),
-            "servings": target_meal.get('servings'),
-            "cuisine_type": target_meal.get('cuisine_type'),
-            "dietary_tags": target_meal.get('dietary_tags', []),
-            "calories_per_serving": target_meal.get('calories_per_serving'),
-            "walmart_items": walmart_items,
-            "week_of": weekly_plan.get('week_of')
+            "prep_time": target_meal.get('prep_time', '30 minutes'),
+            "cook_time": target_meal.get('cook_time', '25 minutes'),
+            "servings": target_meal.get('servings', 2),
+            "cuisine": target_meal.get('cuisine', 'International'),
+            "calories": target_meal.get('calories', 400),
+            "week_of": source_plan.get('week_of') if source_plan else current_week,
+            # Signal frontend to use V2 cart system
+            "use_v2_cart": True,
+            "v2_cart_endpoint": f"/api/v2/walmart/weekly-cart-options?recipe_id={recipe_id}"
         }
         
-        return recipe_detail
-        
     except Exception as e:
-        logger.error(f"Error getting recipe detail: {str(e)}")
-        if "not found" in str(e).lower():
-            raise HTTPException(status_code=404, detail="Recipe not found")
-        else:
-            raise HTTPException(status_code=500, detail="Failed to get recipe details")
+        logger.error(f"Error getting weekly recipe detail: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get recipe details")
 
 @api_router.get("/weekly-recipes/history/{user_id}")
 async def get_weekly_recipe_history(user_id: str):
