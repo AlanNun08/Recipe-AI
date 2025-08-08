@@ -2843,7 +2843,9 @@ async def generate_cart_url(cart_data: Dict[str, Any]):
         total_price = 0.0
         
         for product in selected_products:
-            product_ids.append(product.get('product_id'))
+            # Support both V2 format ('id') and legacy format ('product_id')
+            product_id = product.get('id') or product.get('product_id')
+            product_ids.append(product_id)
             total_price += float(product.get('price', 0))
         
         # Simple cart URL format
