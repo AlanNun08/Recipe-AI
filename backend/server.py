@@ -3867,19 +3867,50 @@ async def get_weekly_recipe_detail(recipe_id: str):
         if not target_meal:
             raise HTTPException(status_code=404, detail="Recipe not found")
         
-        # Generate individual Walmart item links for each ingredient
+        # Generate individual Walmart item links for each ingredient using real API
         walmart_items = []
         for ingredient in target_meal.get('ingredients', []):
-            # Create individual Walmart search URL for each ingredient
-            clean_ingredient = ingredient.lower().replace(' ', '+')
-            walmart_url = f"https://www.walmart.com/search/?query={clean_ingredient}"
-            
-            walmart_items.append({
-                "name": ingredient,
-                "search_url": walmart_url,
-                "image_url": "https://via.placeholder.com/100x100?text=🛒",  # Placeholder image
-                "estimated_price": "Est. $2-5"  # Placeholder pricing
-            })
+            try:
+                # Use real Walmart API search
+                walmart_products = await search_walmart_products_v2(ingredient, max_results=1)
+                
+                if walmart_products and len(walmart_products) > 0:
+                    product = walmart_products[0]
+                    # Generate proper affiliate URL
+                    affiliate_url = f"https://goto.walmart.com/c/1804968/{product.id}"
+                    
+                    walmart_items.append({
+                        "name": ingredient,
+                        "search_url": affiliate_url,
+                        "image_url": product.image_url or "https://via.placeholder.com/100x100?text=🛒",
+                        "estimated_price": f"${product.price:.2f}",
+                        "product_name": product.name,
+                        "brand": product.brand,
+                        "rating": product.rating,
+                        "walmart_item_id": product.id
+                    })
+                else:
+                    # Fallback to search URL if no specific product found
+                    clean_ingredient = ingredient.lower().replace(' ', '+')
+                    walmart_url = f"https://www.walmart.com/search/?query={clean_ingredient}"
+                    
+                    walmart_items.append({
+                        "name": ingredient,
+                        "search_url": walmart_url,
+                        "image_url": "https://via.placeholder.com/100x100?text=🛒",
+                        "estimated_price": "Est. $2-5"
+                    })
+            except Exception as e:
+                # Fallback on any error
+                clean_ingredient = ingredient.lower().replace(' ', '+')
+                walmart_url = f"https://www.walmart.com/search/?query={clean_ingredient}"
+                
+                walmart_items.append({
+                    "name": ingredient,
+                    "search_url": walmart_url,
+                    "image_url": "https://via.placeholder.com/100x100?text=🛒",
+                    "estimated_price": "Est. $2-5"
+                })
         
         # Return detailed recipe information
         recipe_detail = {
