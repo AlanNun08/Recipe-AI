@@ -6,9 +6,6 @@ const API = process.env.REACT_APP_BACKEND_URL;
 function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
   const [recipe, setRecipe] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedProducts, setSelectedProducts] = useState({});
-  const [cartItems, setCartItems] = useState([]);
-  const [finalWalmartUrl, setFinalWalmartUrl] = useState('');
 
   useEffect(() => {
     if (!recipeId) {
@@ -23,11 +20,6 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
     try {
       const response = await axios.get(`${API}/api/weekly-recipes/recipe/${recipeId}`);
       setRecipe(response.data);
-      
-      // Initialize cart system if cart_ingredients are available
-      if (response.data.cart_ingredients) {
-        initializeCart(response.data.cart_ingredients);
-      }
     } catch (error) {
       console.error('Failed to load recipe detail:', error);
       showNotification('❌ Failed to load recipe details', 'error');
@@ -36,94 +28,12 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
     }
   };
 
-  const initializeCart = (cartIngredients) => {
-    // Initialize default selections and cart items
-    const defaultSelections = {};
-    const defaultCartItems = [];
-    
-    cartIngredients.forEach(item => {
-      if (item.products && item.products.length > 0) {
-        // Use the selected_product_id from backend or default to first product
-        const selectedId = item.selected_product_id || item.products[0].id;
-        const selectedProduct = item.products.find(p => p.id === selectedId) || item.products[0];
-        
-        defaultSelections[item.ingredient] = selectedId;
-        defaultCartItems.push({
-          ingredient: item.ingredient,
-          product: selectedProduct,
-          quantity: 1,
-          included: true
-        });
-      }
-    });
-    
-    setSelectedProducts(defaultSelections);
-    setCartItems(defaultCartItems);
-    generateCartUrl(defaultCartItems);
-  };
-
-  const handleProductSelection = (ingredient, productId) => {
-    if (!recipe.cart_ingredients) return;
-    
-    const ingredientData = recipe.cart_ingredients.find(item => item.ingredient === ingredient);
-    const selectedProduct = ingredientData.products.find(p => p.id === productId);
-    
-    if (!selectedProduct) return;
-    
-    // Update selections
-    const newSelections = {
-      ...selectedProducts,
-      [ingredient]: productId
-    };
-    setSelectedProducts(newSelections);
-    
-    // Update cart items
-    const newCartItems = cartItems.map(item => {
-      if (item.ingredient === ingredient) {
-        return {
-          ...item,
-          product: selectedProduct
-        };
-      }
-      return item;
-    });
-    
-    setCartItems(newCartItems);
-    generateCartUrl(newCartItems.filter(item => item.included));
-  };
-
-  const handleIngredientToggle = (ingredient, include) => {
-    const newCartItems = cartItems.map(item => {
-      if (item.ingredient === ingredient) {
-        return { ...item, included: include };
-      }
-      return item;
-    });
-    
-    setCartItems(newCartItems);
-    generateCartUrl(newCartItems.filter(item => item.included));
-  };
-
-  const generateCartUrl = async (items) => {
-    if (items.length === 0) {
-      setFinalWalmartUrl('');
-      return;
-    }
-
-    try {
-      const productIds = items.map(item => item.product.id);
-      // Generate Walmart affiliate cart URL
-      const cartUrl = `https://affil.walmart.com/cart/addToCart?items=${productIds.join(',')}`;
-      setFinalWalmartUrl(cartUrl);
-    } catch (error) {
-      console.error('Failed to generate cart URL:', error);
-    }
-  };
-
-  const calculateTotal = () => {
-    return cartItems
-      .filter(item => item.included)
-      .reduce((total, item) => total + (item.product.price * item.quantity), 0);
+  const calculateTotalPrice = () => {
+    if (!recipe.cart_ingredients) return 0;
+    return recipe.cart_ingredients.reduce((total, item) => {
+      const product = item.products[0];
+      return total + (product.price || 0);
+    }, 0);
   };
 
   if (isLoading) {
@@ -212,25 +122,51 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
               </div>
             )}
 
-            {/* Ingredients */}
+            {/* Ingredients with Buy Buttons */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
                 <span className="mr-2">🥕</span>
-                Ingredients
+                Ingredients & Shopping
                 <span className="ml-2 text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
                   {recipe.ingredients.length} items
                 </span>
               </h2>
               
-              <div className="grid md:grid-cols-2 gap-4">
-                {recipe.ingredients.map((ingredient, index) => (
-                  <div key={index} className="flex items-center p-4 bg-gray-50 rounded-xl">
-                    <div className="text-2xl mr-3">🛒</div>
-                    <div>
-                      <p className="font-medium text-gray-800">{ingredient}</p>
+              <div className="space-y-4">
+                {recipe.ingredients.map((ingredient, index) => {
+                  // Find the corresponding Walmart product for this ingredient
+                  const cartItem = recipe.cart_ingredients?.find(item => item.ingredient === ingredient);
+                  const product = cartItem?.products[0];
+                  
+                  return (
+                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-center">
+                        <div className="text-2xl mr-3">🛒</div>
+                        <div>
+                          <p className="font-medium text-gray-800">{ingredient}</p>
+                          {product && (
+                            <p className="text-sm text-gray-600">
+                              {product.name} - ${product.price.toFixed(2)}
+                              {product.brand && <span className="text-gray-500"> • {product.brand}</span>}
+                              {product.rating > 0 && <span className="text-yellow-500"> • ⭐ {product.rating}</span>}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Buy on Walmart Button */}
+                      {product && product.url && (
+                        <button
+                          onClick={() => window.open(product.url, '_blank')}
+                          className="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:shadow-lg transition-all flex items-center"
+                        >
+                          <span className="mr-1">🛒</span>
+                          Buy on Walmart
+                        </button>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -257,87 +193,42 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
             )}
           </div>
 
-          {/* Right Column - Enhanced Shopping Cart */}
+          {/* Right Column - Shopping Summary */}
           <div className="space-y-6">
             <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-6">
               <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
                 <span className="mr-2">🛍️</span>
-                Smart Shopping Cart
+                Shopping Summary
               </h3>
               
               {recipe.cart_ingredients && recipe.cart_ingredients.length > 0 ? (
                 <div className="space-y-4">
-                  {/* Ingredient Selection */}
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {recipe.cart_ingredients.map((ingredientData, index) => {
-                      const cartItem = cartItems.find(item => item.ingredient === ingredientData.ingredient);
-                      const isIncluded = cartItem?.included || false;
-                      const selectedProductId = selectedProducts[ingredientData.ingredient];
-                      const selectedProduct = ingredientData.products.find(p => p.id === selectedProductId);
-                      
-                      return (
-                        <div key={index} className="border rounded-lg p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={isIncluded}
-                                onChange={(e) => handleIngredientToggle(ingredientData.ingredient, e.target.checked)}
-                                className="mr-2"
-                              />
-                              <span className="font-medium text-gray-800 text-sm">{ingredientData.ingredient}</span>
-                            </div>
-                            <span className="text-xs text-gray-500">{ingredientData.products.length} options</span>
-                          </div>
-                          
-                          {isIncluded && ingredientData.products.length > 1 && (
-                            <select
-                              value={selectedProductId || ''}
-                              onChange={(e) => handleProductSelection(ingredientData.ingredient, e.target.value)}
-                              className="w-full text-xs border rounded px-2 py-1 bg-white mb-2"
-                            >
-                              {ingredientData.products.map(product => (
-                                <option key={product.id} value={product.id}>
-                                  {product.name} - ${product.price.toFixed(2)}
-                                </option>
-                              ))}
-                            </select>
-                          )}
-                          
-                          {selectedProduct && isIncluded && (
-                            <div className="mt-2 text-xs text-gray-600">
-                              Selected: <span className="font-semibold">${selectedProduct.price.toFixed(2)}</span> • {selectedProduct.brand}
-                              {selectedProduct.rating && <span> • ⭐ {selectedProduct.rating}</span>}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Cart Summary */}
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between items-center font-bold text-lg mb-3">
-                      <span>Total ({cartItems.filter(item => item.included).length} items):</span>
-                      <span className="text-green-600">${calculateTotal().toFixed(2)}</span>
+                  {/* Shopping Summary */}
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="font-medium text-gray-700">Estimated Total:</span>
+                      <span className="text-xl font-bold text-green-600">
+                        ${calculateTotalPrice().toFixed(2)}
+                      </span>
                     </div>
-
-                    {/* Shop Button */}
-                    {finalWalmartUrl && cartItems.filter(item => item.included).length > 0 && (
+                    <div className="text-sm text-gray-600 mb-4">
+                      {recipe.cart_ingredients.length} ingredients found on Walmart
+                    </div>
+                    
+                    {/* Shop All Button */}
+                    {recipe.walmart_cart_url && (
                       <button
-                        onClick={() => window.open(finalWalmartUrl, '_blank')}
-                        className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold py-3 px-4 rounded-xl hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center"
+                        onClick={() => window.open(recipe.walmart_cart_url, '_blank')}
+                        className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 px-4 rounded-xl hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center mb-3"
                       >
                         <span className="mr-2">🛒</span>
-                        Shop Selected Items on Walmart
+                        Add All to Walmart Cart
                       </button>
                     )}
                     
-                    {cartItems.filter(item => item.included).length === 0 && (
-                      <div className="text-center py-4 text-gray-500">
-                        Select ingredients to add them to your cart
-                      </div>
-                    )}
+                    <div className="text-xs text-gray-500 text-center">
+                      Prices are estimates and may vary. You can also buy ingredients individually using the buttons above.
+                    </div>
                   </div>
                 </div>
               ) : (
