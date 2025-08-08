@@ -2666,6 +2666,88 @@ async def search_walmart_products(ingredient: str) -> List[WalmartProduct]:
         # Error searching Walmart
         return []
 
+@api_router.post("/grocery/cart-options-test")
+async def get_grocery_cart_options_test(
+    recipe_id: str = Query(..., description="Recipe ID"),
+    user_id: str = Query(..., description="User ID")
+):
+    """Test endpoint for cart options without user validation"""
+    try:
+        print(f"🔍 TEST: Looking for recipe_id: {recipe_id} for user: {user_id}")
+        
+        # Test with hardcoded ingredients from a real recipe
+        test_ingredients = ["12 oz penne pasta", "1 lb ground beef", "24 oz marinara sauce", "1 cup shredded mozzarella", "2 tbsp olive oil"]
+        
+        print(f"Testing with {len(test_ingredients)} ingredients")
+        
+        # Get Walmart product options for each ingredient (2-3 options per ingredient)
+        ingredient_options = []
+        
+        for ingredient in test_ingredients:
+            try:
+                # Get multiple product options for this ingredient
+                walmart_products = await search_walmart_products_v2(ingredient, max_results=3)
+                
+                if walmart_products and len(walmart_products) > 0:
+                    # Convert to options format
+                    options = []
+                    for i, product in enumerate(walmart_products):
+                        options.append({
+                            "product_id": product.id,
+                            "name": product.name,
+                            "price": product.price,
+                            "brand": product.brand or "Great Value",
+                            "rating": product.rating,
+                            "image_url": product.image_url or "https://via.placeholder.com/100x100?text=Product",
+                            "is_selected": i == 0  # First option is default selected
+                        })
+                    
+                    ingredient_options.append({
+                        "ingredient_name": ingredient,
+                        "options": options,
+                        "selected_product_id": options[0]["product_id"] if options else None
+                    })
+                    print(f"  ✅ {ingredient}: Found {len(options)} Walmart products")
+                else:
+                    # Fallback for ingredients that can't be found
+                    fallback_option = {
+                        "product_id": f"search_{abs(hash(ingredient)) % 100000}",
+                        "name": f"Search for {ingredient.title()}",
+                        "price": 0.00,
+                        "brand": "Walmart",
+                        "rating": 0.0,
+                        "image_url": "https://via.placeholder.com/100x100?text=Search",
+                        "is_selected": True
+                    }
+                    
+                    ingredient_options.append({
+                        "ingredient_name": ingredient,
+                        "options": [fallback_option],
+                        "selected_product_id": fallback_option["product_id"]
+                    })
+                    print(f"  ⚠️ {ingredient}: Using search fallback")
+                    
+            except Exception as e:
+                print(f"❌ Error processing ingredient '{ingredient}': {str(e)}")
+        
+        estimated_total = sum([opt["options"][0]["price"] for opt in ingredient_options if opt["options"]])
+        
+        print(f"✅ Successfully processed cart options for {len(ingredient_options)} ingredients")
+        
+        return {
+            "recipe_id": recipe_id,
+            "recipe_name": "Test Recipe with Real Walmart Data",
+            "ingredient_options": ingredient_options,
+            "total_ingredients": len(ingredient_options),
+            "estimated_total": round(estimated_total, 2),
+            "success": True
+        }
+        
+    except Exception as e:
+        print(f"❌ ERROR in cart-options-test: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get cart options: {str(e)}")
+
+
 @api_router.post("/grocery/cart-options")
 async def get_cart_options(
     recipe_id: str = Query(..., description="Recipe ID"),
