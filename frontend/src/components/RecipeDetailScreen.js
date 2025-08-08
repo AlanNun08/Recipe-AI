@@ -330,7 +330,7 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
                 Smart Walmart Cart
               </h3>
               
-              {cartOptions?.ingredient_options ? (
+              {cartOptions?.ingredient_matches ? (
                 <div className="space-y-4">
                   {/* Selected Products Summary */}
                   <div className="bg-blue-50 rounded-lg p-4">
