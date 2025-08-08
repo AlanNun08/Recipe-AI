@@ -3477,7 +3477,13 @@ async def generate_grocery_cart_url(request: dict):
         selected_products = request.get('selected_products', [])
         
         if not selected_products:
-            raise HTTPException(status_code=400, detail="No products selected")
+            return {
+                "cart_url": "https://walmart.com/cp/food/976759",
+                "total_price": 0.0,
+                "total_items": 0,
+                "success": True,
+                "message": "No products selected - redirecting to Walmart grocery section"
+            }
         
         # Filter out search/error placeholder products and collect real product IDs
         valid_product_ids = []
@@ -3488,28 +3494,33 @@ async def generate_grocery_cart_url(request: dict):
             price = float(product.get('price', 0))
             
             # Only include real product IDs (not search/error fallbacks)
-            if not product_id.startswith('search_') and not product_id.startswith('error_'):
+            if (not product_id.startswith('search_') and 
+                not product_id.startswith('error_') and 
+                not product_id.startswith('WM') and  # Exclude mock data
+                product_id.strip()):  # Ensure not empty
                 valid_product_ids.append(product_id)
                 total_price += price
         
         # Generate Walmart cart URL
         if valid_product_ids:
             cart_url = f"https://walmart.com/cart?items={','.join(valid_product_ids)}"
+            message = f"Cart created with {len(valid_product_ids)} items"
         else:
             # If no valid products, redirect to Walmart grocery section
             cart_url = "https://walmart.com/cp/food/976759"
+            message = "No valid products found - redirecting to Walmart grocery section"
         
         return {
             "cart_url": cart_url,
-            "total_price": total_price,
+            "total_price": round(total_price, 2),
             "total_items": len(valid_product_ids),
             "success": True,
-            "message": f"Cart created with {len(valid_product_ids)} items" if valid_product_ids else "No valid products found - redirecting to Walmart grocery section"
+            "message": message
         }
         
     except Exception as e:
         logger.error(f"Error generating cart URL: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to generate cart URL")
+        raise HTTPException(status_code=500, detail=f"Failed to generate cart URL: {str(e)}")
 
 
 @api_router.get("/debug/walmart-integration")
