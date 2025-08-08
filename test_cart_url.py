@@ -15,7 +15,7 @@ async def test_cart_url():
     
     # Test data with real product IDs from the previous test
     test_data = {
-        'selected_products': [
+        'products': [
             {
                 'ingredient_name': 'pasta',
                 'product_id': '32247486',
