@@ -3848,19 +3848,23 @@ async def get_user_trial_status(user_id: str):
 async def get_weekly_recipe_detail(recipe_id: str):
     """Get detailed recipe information from weekly meal plan - PREMIUM FEATURE"""
     try:
-        # Find the weekly meal plan that contains this recipe
+        # Find the weekly meal plan that contains this recipe using the same query as /current
         current_week = get_current_week()
         
-        # Search in current and recent weekly plans - simplified query
-        plans = await weekly_recipes_collection.find({}).sort("created_at", -1).to_list(10)
+        # Query the database using the same structure as the working /current endpoint
+        plans = await weekly_recipes_collection.find({
+            "week_of": current_week,
+            "is_active": True
+        }).sort("created_at", -1).to_list(10)
         
         target_meal = None
         source_plan = None
         
-        # Find the specific meal with this recipe ID
+        # Find the specific meal with this recipe ID (meals are at root level)
         for plan in plans:
-            print(f"Checking plan with {len(plan.get('plan', {}).get('meals', []))} meals")  # Debug
-            for meal in plan.get('plan', {}).get('meals', []):
+            meals = plan.get('meals', [])
+            print(f"Checking plan with {len(meals)} meals")  # Debug
+            for meal in meals:
                 print(f"Checking meal ID: {meal.get('id')} vs target: {recipe_id}")  # Debug
                 if meal.get('id') == recipe_id:
                     target_meal = meal
