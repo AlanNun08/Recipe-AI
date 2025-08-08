@@ -3343,22 +3343,31 @@ async def get_grocery_cart_options(
     This is automatically called by frontend when a recipe with shopping_list loads.
     """
     try:
+        logger.info(f"Looking for recipe_id: {recipe_id} for user: {user_id}")
         recipe_doc = None
         
         # First try weekly meal plans collection
         weekly_collection = db["weekly_meal_plans"]
         weekly_plans = await weekly_collection.find({"user_id": user_id}).sort([("created_at", -1)]).to_list(length=10)
         
+        logger.info(f"Found {len(weekly_plans)} weekly plans for user")
+        
         for plan in weekly_plans:
-            for meal in plan.get('meals', []):
-                if meal.get('id') == recipe_id:
+            meals = plan.get('meals', [])
+            logger.info(f"Checking plan with {len(meals)} meals")
+            for meal in meals:
+                meal_id = meal.get('id')
+                logger.info(f"Checking meal ID: {meal_id} against target: {recipe_id}")
+                if meal_id == recipe_id:
                     recipe_doc = meal
+                    logger.info(f"✅ Found matching recipe: {meal.get('name')}")
                     break
             if recipe_doc:
                 break
         
         # If not found in weekly plans, try regular recipes collection
         if not recipe_doc:
+            logger.info("Recipe not found in weekly plans, trying regular recipes...")
             recipe_collection = db["recipes"]
             recipe_doc = await recipe_collection.find_one({"recipe_id": recipe_id})
             
@@ -3370,6 +3379,10 @@ async def get_grocery_cart_options(
                     pass
         
         if not recipe_doc:
+            logger.error(f"Recipe still not found after all searches. Available IDs in first plan:")
+            if weekly_plans and weekly_plans[0].get('meals'):
+                for meal in weekly_plans[0]['meals'][:3]:
+                    logger.error(f"  Available ID: {meal.get('id')} ({meal.get('name')})")
             raise HTTPException(status_code=404, detail=f"Recipe not found with ID: {recipe_id}")
         
         # Get shopping list from the recipe
@@ -3384,6 +3397,8 @@ async def get_grocery_cart_options(
                 "estimated_total": 0.0,
                 "message": "No shopping list available for this recipe"
             }
+        
+        logger.info(f"Processing {len(shopping_list)} ingredients for Walmart search")
         
         # Get Walmart product options for each ingredient (2-3 options per ingredient)
         ingredient_options = []
@@ -3450,6 +3465,8 @@ async def get_grocery_cart_options(
                 })
         
         estimated_total = sum([opt["options"][0]["price"] for opt in ingredient_options if opt["options"]])
+        
+        logger.info(f"✅ Successfully processed cart options for {len(ingredient_options)} ingredients")
         
         return {
             "recipe_id": recipe_id,
