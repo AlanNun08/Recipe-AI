@@ -267,16 +267,49 @@ class WalmartWeeklyRecipeTester:
                 # Check if any ingredients couldn't be found
                 if cart_ingredients:
                     not_found_count = 0
+                    total_products = 0
+                    
                     for cart_item in cart_ingredients:
-                        product = cart_item.get("product", {})
-                        if not product.get("product_id") or not product.get("name"):
+                        products = cart_item.get("products", [])
+                        if not products or not products[0].get("id"):
                             not_found_count += 1
+                        else:
+                            total_products += len(products)
+                    
+                    self.log(f"Total products found: {total_products}")
                     
                     if not_found_count > 0:
                         self.log(f"⚠️ {not_found_count} ingredients couldn't be found on Walmart")
                         self.log("✅ Fallback handling appears to be working")
                     else:
                         self.log("✅ All ingredients found on Walmart")
+                        
+                    # Test walmart_cart_url generation
+                    self.log("=== Testing Walmart Cart URL Generation ===")
+                    
+                    # Generate cart URL from selected products
+                    selected_product_ids = []
+                    for cart_item in cart_ingredients:
+                        selected_id = cart_item.get("selected_product_id")
+                        if selected_id:
+                            selected_product_ids.append(selected_id)
+                    
+                    if selected_product_ids:
+                        self.log(f"✅ Found {len(selected_product_ids)} selected product IDs")
+                        self.log(f"Selected IDs: {selected_product_ids[:3]}...")  # Show first 3
+                        
+                        # Check if there's a walmart_cart_url in the response
+                        walmart_cart_url = result.get("walmart_cart_url")
+                        if walmart_cart_url:
+                            self.log(f"✅ Found walmart_cart_url in response")
+                            self.log(f"Cart URL: {walmart_cart_url}")
+                        else:
+                            # Generate expected cart URL
+                            expected_cart_url = f"https://www.walmart.com/cart?items={','.join(selected_product_ids)}"
+                            self.log(f"⚠️ No walmart_cart_url in response")
+                            self.log(f"Expected format: {expected_cart_url}")
+                    else:
+                        self.log("❌ No selected product IDs found for cart URL generation")
                 
                 return True
             else:
