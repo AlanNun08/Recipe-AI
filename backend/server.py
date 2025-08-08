@@ -3948,8 +3948,9 @@ async def get_weekly_recipe_detail(recipe_id: str):
         # Generate Walmart cart URL if we have valid products
         walmart_cart_url = ""
         if valid_product_ids:
-            # Use Walmart's add multiple items to cart URL format
-            walmart_cart_url = f"https://www.walmart.com/cart/add-multiple?items={','.join(valid_product_ids)}"
+            # Use Walmart's affiliate cart URL format with real product IDs
+            # This will work with actual itemIds from Walmart API response
+            walmart_cart_url = f"https://www.walmart.com/cart?items={','.join(valid_product_ids)}"
         
         # Return detailed recipe information with simplified Walmart integration
         recipe_detail = {
