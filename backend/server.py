@@ -3604,7 +3604,8 @@ async def generate_grocery_cart_url(request: Request):
         total_price = 0.0
         
         for product in selected_products:
-            product_id = product.get('product_id', '')
+            # Support both V2 format ('id') and legacy format ('product_id')
+            product_id = product.get('id') or product.get('product_id', '')
             price = float(product.get('price', 0))
             
             print(f"  Processing product: {product_id} - ${price}")
