@@ -3343,27 +3343,36 @@ async def get_grocery_cart_options(
     This is automatically called by frontend when a recipe with shopping_list loads.
     """
     try:
-        # Get recipe from database
-        recipe_collection = db["recipes"]
-        recipe_doc = await recipe_collection.find_one({"recipe_id": recipe_id})
+        recipe_doc = None
         
-        if not recipe_doc:
-            # Try weekly recipes collection
-            weekly_collection = db["weekly_meal_plans"]
-            weekly_plans = await weekly_collection.find({"user_id": user_id}).to_list(length=10)
-            
-            recipe_doc = None
-            for plan in weekly_plans:
-                for meal in plan.get('meals', []):
-                    if meal.get('id') == recipe_id:
-                        recipe_doc = meal
-                        break
-                if recipe_doc:
+        # First try weekly meal plans collection
+        weekly_collection = db["weekly_meal_plans"]
+        weekly_plans = await weekly_collection.find({"user_id": user_id}).sort([("created_at", -1)]).to_list(length=10)
+        
+        for plan in weekly_plans:
+            for meal in plan.get('meals', []):
+                if meal.get('id') == recipe_id:
+                    recipe_doc = meal
                     break
+            if recipe_doc:
+                break
+        
+        # If not found in weekly plans, try regular recipes collection
+        if not recipe_doc:
+            recipe_collection = db["recipes"]
+            recipe_doc = await recipe_collection.find_one({"recipe_id": recipe_id})
+            
+            # Also try with _id if recipe_id doesn't work
+            if not recipe_doc:
+                try:
+                    recipe_doc = await recipe_collection.find_one({"_id": recipe_id})
+                except:
+                    pass
         
         if not recipe_doc:
-            raise HTTPException(status_code=404, detail="Recipe not found")
+            raise HTTPException(status_code=404, detail=f"Recipe not found with ID: {recipe_id}")
         
+        # Get shopping list from the recipe
         shopping_list = recipe_doc.get('shopping_list', recipe_doc.get('ingredients', []))
         
         if not shopping_list:
@@ -3372,6 +3381,7 @@ async def get_grocery_cart_options(
                 "recipe_name": recipe_doc.get('name', 'Unknown Recipe'),
                 "ingredient_options": [],
                 "total_ingredients": 0,
+                "estimated_total": 0.0,
                 "message": "No shopping list available for this recipe"
             }
         
@@ -3386,15 +3396,15 @@ async def get_grocery_cart_options(
                 if walmart_products and len(walmart_products) > 0:
                     # Convert to options format
                     options = []
-                    for product in walmart_products:
+                    for i, product in enumerate(walmart_products):
                         options.append({
                             "product_id": product.id,
                             "name": product.name,
                             "price": product.price,
                             "brand": product.brand or "Great Value",
                             "rating": product.rating,
-                            "image_url": product.image_url,
-                            "is_selected": len(options) == 0  # First option is default selected
+                            "image_url": product.image_url or "https://via.placeholder.com/100x100?text=Product",
+                            "is_selected": i == 0  # First option is default selected
                         })
                     
                     ingredient_options.append({
@@ -3439,12 +3449,14 @@ async def get_grocery_cart_options(
                     "selected_product_id": error_option["product_id"]
                 })
         
+        estimated_total = sum([opt["options"][0]["price"] for opt in ingredient_options if opt["options"]])
+        
         return {
             "recipe_id": recipe_id,
             "recipe_name": recipe_doc.get('name', 'Unknown Recipe'),
             "ingredient_options": ingredient_options,
             "total_ingredients": len(ingredient_options),
-            "estimated_total": sum([opt["options"][0]["price"] for opt in ingredient_options if opt["options"]]),
+            "estimated_total": round(estimated_total, 2),
             "success": True
         }
         
@@ -3452,7 +3464,7 @@ async def get_grocery_cart_options(
         raise
     except Exception as e:
         logger.error(f"Error getting cart options: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to get cart options")
+        raise HTTPException(status_code=500, detail=f"Failed to get cart options: {str(e)}")
 
 
 @api_router.post("/grocery/generate-cart-url")
