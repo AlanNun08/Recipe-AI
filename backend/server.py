@@ -3575,15 +3575,17 @@ async def get_grocery_cart_options(
 
 
 @api_router.post("/grocery/generate-cart-url")
-async def generate_grocery_cart_url(request: dict):
+async def generate_grocery_cart_url(request: Request):
     """
     Generate Walmart cart URL with selected products.
     Called when user clicks 'Add to Walmart Cart' after making selections.
     """
     try:
-        print(f"🔍 Received cart URL request: {request}")
+        # Parse JSON request body
+        body = await request.json()
+        print(f"🔍 Received cart URL request: {body}")
         
-        selected_products = request.get('selected_products', [])
+        selected_products = body.get('selected_products', [])
         
         if not selected_products:
             return {
