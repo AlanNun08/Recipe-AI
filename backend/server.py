@@ -3895,6 +3895,72 @@ async def get_weekly_recipe_detail(recipe_id: str):
     except Exception as e:
         logger.error(f"Error getting weekly recipe detail: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to get recipe details")
+@api_router.post("/v2/walmart/weekly-cart-options")
+async def get_weekly_cart_options_v2(
+    recipe_id: str = Query(..., description="Weekly Recipe ID")
+):
+    """V2 Cart options for weekly recipes - Advanced shopping cart system"""
+    try:
+        # Find the weekly meal plan that contains this recipe
+        current_week = get_current_week()
+        
+        plans = await weekly_recipes_collection.find({
+            "week_of": {"$in": [current_week, f"{int(current_week.split('-W')[0])}-W{int(current_week.split('-W')[1])-1:02d}"]}
+        }).sort("created_at", -1).to_list(5)
+        
+        target_meal = None
+        
+        for plan in plans:
+            for meal in plan.get('plan', {}).get('meals', []):
+                if meal.get('id') == recipe_id:
+                    target_meal = meal
+                    break
+            if target_meal:
+                break
+        
+        if not target_meal:
+            raise HTTPException(status_code=404, detail="Recipe not found")
+        
+        # Extract ingredients for shopping
+        shopping_list = target_meal.get('ingredients', [])
+        
+        if not shopping_list:
+            return CartOptionsV2(
+                recipe_id=recipe_id,
+                user_id="weekly_recipe_system",
+                ingredient_matches=[],
+                total_products=0
+            )
+        
+        # Search products for each ingredient using V2 system
+        ingredient_matches = []
+        total_products = 0
+        
+        for ingredient in shopping_list[:8]:  # Limit for performance
+            # Use the real Walmart API integration we restored
+            products = await search_walmart_products_v2(ingredient, max_results=3)
+            if products:
+                ingredient_matches.append(IngredientMatchV2(
+                    ingredient=ingredient,
+                    products=products
+                ))
+                total_products += len(products)
+        
+        # Return structured V2 response
+        result = CartOptionsV2(
+            recipe_id=recipe_id,
+            user_id="weekly_recipe_system",
+            ingredient_matches=ingredient_matches,
+            total_products=total_products
+        )
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Weekly cart options V2 error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/weekly-recipes/history/{user_id}")
 async def get_weekly_recipe_history(user_id: str):
