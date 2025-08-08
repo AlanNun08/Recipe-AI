@@ -3219,6 +3219,7 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
         from cryptography.hazmat.primitives import serialization, hashes
         from cryptography.hazmat.primitives.asymmetric import padding
         from cryptography.hazmat.backends import default_backend
+        import base64
         
         try:
             # Handle different key formats
@@ -3232,7 +3233,6 @@ async def search_walmart_products_v2(query: str, max_results: int = 3) -> List[W
                 logger.info("✅ Loaded PEM format private key")
             else:
                 # Base64 PKCS#8 format (as suggested in Java example)
-                import base64
                 key_bytes = base64.b64decode(private_key_pem)
                 private_key = serialization.load_der_private_key(
                     key_bytes,
