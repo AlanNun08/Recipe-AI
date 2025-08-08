@@ -3905,9 +3905,8 @@ async def get_weekly_cart_options_v2(
         # Find the weekly meal plan that contains this recipe
         current_week = get_current_week()
         
-        plans = await weekly_recipes_collection.find({
-            "week_of": {"$in": [current_week, f"{int(current_week.split('-W')[0])}-W{int(current_week.split('-W')[1])-1:02d}"]}
-        }).sort("created_at", -1).to_list(5)
+        # Query the database for weekly plans around the current week  
+        plans = await weekly_recipes_collection.find({}).sort("created_at", -1).to_list(10)
         
         target_meal = None
         
