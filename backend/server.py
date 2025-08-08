@@ -3581,6 +3581,8 @@ async def generate_grocery_cart_url(request: dict):
     Called when user clicks 'Add to Walmart Cart' after making selections.
     """
     try:
+        print(f"🔍 Received cart URL request: {request}")
+        
         selected_products = request.get('selected_products', [])
         
         if not selected_products:
@@ -3600,24 +3602,30 @@ async def generate_grocery_cart_url(request: dict):
             product_id = product.get('product_id', '')
             price = float(product.get('price', 0))
             
+            print(f"  Processing product: {product_id} - ${price}")
+            
             # Only include real product IDs (not search/error fallbacks)
             if (not product_id.startswith('search_') and 
                 not product_id.startswith('error_') and 
                 not product_id.startswith('WM') and  # Exclude mock data
-                product_id.strip()):  # Ensure not empty
+                product_id.strip() and  # Ensure not empty
+                product_id.isdigit()):  # Real Walmart IDs are numeric
                 valid_product_ids.append(product_id)
                 total_price += price
+                print(f"    ✅ Added to cart: {product_id}")
+            else:
+                print(f"    ❌ Skipped (invalid ID): {product_id}")
         
         # Generate Walmart cart URL
         if valid_product_ids:
             cart_url = f"https://walmart.com/cart?items={','.join(valid_product_ids)}"
-            message = f"Cart created with {len(valid_product_ids)} items"
+            message = f"Cart created with {len(valid_product_ids)} real Walmart products"
         else:
             # If no valid products, redirect to Walmart grocery section
             cart_url = "https://walmart.com/cp/food/976759"
             message = "No valid products found - redirecting to Walmart grocery section"
         
-        return {
+        result = {
             "cart_url": cart_url,
             "total_price": round(total_price, 2),
             "total_items": len(valid_product_ids),
@@ -3625,8 +3633,11 @@ async def generate_grocery_cart_url(request: dict):
             "message": message
         }
         
+        print(f"✅ Cart URL result: {result}")
+        return result
+        
     except Exception as e:
-        logger.error(f"Error generating cart URL: {str(e)}")
+        print(f"❌ ERROR generating cart URL: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to generate cart URL: {str(e)}")
 
 
