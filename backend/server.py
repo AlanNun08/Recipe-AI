@@ -3018,7 +3018,7 @@ async def get_grocery_cart_options_test(
                         "options": options,
                         "selected_product_id": options[0]["product_id"] if options else None
                     })
-                    print(f"  ✅ {ingredient}: Found {len(options)} Walmart products")
+                    logger.info(f"✅ {ingredient}: Found {len(options)} Walmart products")
                 else:
                     # Fallback for ingredients that can't be found
                     fallback_option = {
