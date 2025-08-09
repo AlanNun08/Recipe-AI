@@ -2241,15 +2241,23 @@ function App() {
           onBack={() => setCurrentScreen('dashboard')}
           showNotification={showNotification}
           onViewRecipe={(recipeId, source = 'history') => {
+            console.log('🔍 onViewRecipe called with:', { recipeId, source });
+            
             if (!recipeId) {
               console.error('❌ Recipe ID is null or undefined in App.js');
               showNotification('❌ Recipe ID is missing', 'error');
               return;
             }
             
-            setCurrentRecipeId(recipeId);
+            // Set state in the correct order and ensure source is set first
+            console.log('📝 Setting currentRecipeSource to:', source);
+            console.log('📝 Setting currentRecipeId to:', recipeId);
+            
             setCurrentRecipeSource(source);
+            setCurrentRecipeId(recipeId);
             setCurrentScreen('recipe-detail');
+            
+            console.log('✅ Navigation to recipe-detail initiated');
           }}
           onViewStarbucksRecipe={(recipe) => {
             console.log('onViewStarbucksRecipe called with recipe:', recipe);
