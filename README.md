@@ -96,8 +96,10 @@ A complete AI-powered recipe generation and community sharing platform that comb
 ### **Infrastructure**
 - **Kubernetes** - Container orchestration and scaling
 - **Supervisor** - Process management and auto-restart
+- **Environment Variables** - All API keys and configurations accessed via OS environment only
 - **CORS** - Secure cross-origin request handling
-- **JWT Authentication** - Secure user sessions
+- **JWT Authentication** - Secure user sessions with 7-day persistence
+- **Secure Configuration** - No hardcoded API keys, all secrets via environment variables
 
 ---
 
