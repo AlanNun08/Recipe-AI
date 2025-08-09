@@ -5151,7 +5151,7 @@ async def get_weekly_cart_options_v2(
             meals = plan.get('plan', {}).get('meals', []) if 'plan' in plan else plan.get('meals', [])
             # Checking plan with meals
             for meal in meals:
-                print(f"Checking meal ID: {meal.get('id')} vs target: {recipe_id}")  # Debug
+                # Checking meal ID vs target  # Debug
                 if meal.get('id') == recipe_id:
                     target_meal = meal
                     break
