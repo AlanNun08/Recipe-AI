@@ -2481,6 +2481,84 @@ async def get_recipe_by_id(recipe_id: str):
         logging.error(f"Error fetching recipe: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch recipe")
 
+@api_router.get("/recipes/{recipe_id}/detail")
+async def get_recipe_detail_with_walmart(recipe_id: str):
+    """Get a specific recipe by ID with Walmart integration support"""
+    try:
+        recipe = await db.recipes.find_one({"id": recipe_id})
+        if not recipe:
+            raise HTTPException(status_code=404, detail="Recipe not found")
+        
+        # Convert MongoDB document to dict, handling _id field
+        recipe_dict = mongo_to_dict(recipe)
+        
+        # Add default values if missing
+        recipe_dict.update({
+            "prep_time": recipe_dict.get('prep_time', '30 minutes'),
+            "cook_time": recipe_dict.get('cook_time', '25 minutes'),
+            "servings": recipe_dict.get('servings', 2),
+            "cuisine": recipe_dict.get('cuisine', 'International'),
+            "calories": recipe_dict.get('calories', 400)
+        })
+        
+        return recipe_dict
+    except Exception as e:
+        logging.error(f"Error fetching recipe detail: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch recipe detail")
+
+# Add cart options endpoint for generated recipes
+@api_router.post("/recipes/{recipe_id}/cart-options")
+async def get_recipe_cart_options(recipe_id: str):
+    """Get Walmart cart options for a generated recipe"""
+    try:
+        # Get the recipe first
+        recipe = await db.recipes.find_one({"id": recipe_id})
+        if not recipe:
+            raise HTTPException(status_code=404, detail="Recipe not found")
+        
+        # Extract ingredients from the recipe
+        ingredients = recipe.get('ingredients', [])
+        if not ingredients:
+            raise HTTPException(status_code=400, detail="No ingredients found in recipe")
+        
+        # Use the same V2 Walmart integration as weekly recipes
+        ingredient_matches = []
+        total_products = 0
+        
+        for ingredient in ingredients:
+            try:
+                # Search for each ingredient using Walmart API
+                walmart_products = await search_walmart_products_v2(ingredient.strip())
+                
+                if walmart_products:
+                    # Limit to top 3 products per ingredient
+                    limited_products = walmart_products[:3]
+                    
+                    ingredient_matches.append({
+                        "ingredient": ingredient.strip(),
+                        "products": limited_products
+                    })
+                    total_products += len(limited_products)
+                
+            except Exception as ingredient_error:
+                logging.warning(f"Failed to get Walmart products for ingredient '{ingredient}': {str(ingredient_error)}")
+                continue
+        
+        # Return V2 format response
+        return {
+            "recipe_id": recipe_id,
+            "user_id": recipe.get('user_id', 'unknown'),
+            "ingredient_matches": ingredient_matches,
+            "total_products": total_products,
+            "version": "v2.1.0"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Recipe cart options error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @api_router.get("/recipes/history/{user_id}")
 async def get_recipe_history(user_id: str):
     """Get all recipes for a user including regular recipes and Starbucks drinks"""
