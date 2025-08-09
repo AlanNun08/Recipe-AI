@@ -269,7 +269,10 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
                 <span className="mr-2">🛒</span>
                 Smart Shopping with Real Walmart Products
                 {isLoadingCart && (
-                  <div className="ml-3 w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="ml-3 flex items-center">
+                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                    <span className="text-sm text-blue-600">Fetching real Walmart products... (8-10 seconds)</span>
+                  </div>
                 )}
               </h2>
               
