@@ -3746,7 +3746,7 @@ async def get_grocery_cart_options(
 ):
     """Get Walmart product options for recipe ingredients"""
     try:
-        print(f"🔍 DEBUG: Looking for recipe_id: {recipe_id} for user: {user_id}")
+        logger.info(f"🔍 DEBUG: Looking for recipe_id: {recipe_id} for user: {user_id}")
         
         recipe_doc = None
         
