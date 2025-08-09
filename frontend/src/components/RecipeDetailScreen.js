@@ -42,8 +42,8 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
         setRecipe(data);
         
         // Load cart options in the background (non-blocking) 
-        setTimeout(() => {
-          loadCartOptionsForRecipe(recipeId);
+        setTimeout(async () => {
+          await loadCartOptionsForRecipe(recipeId);
         }, 500);
         
       } catch (error) {
