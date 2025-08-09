@@ -2202,7 +2202,7 @@ function App() {
     }
     
     // Show loading if waiting for session restoration
-    const protectedScreens = ['dashboard', 'generate-recipe', 'all-recipes', 'recipe-detail', 'starbucks-generator', 'welcome-onboarding', 'tutorial'];
+    const protectedScreens = ['dashboard', 'generate-recipe', 'recipe-detail', 'starbucks-generator', 'welcome-onboarding', 'tutorial'];
     if (!user && protectedScreens.includes(currentScreen)) {
       const savedUser = localStorage.getItem('ai_chef_user');
       if (savedUser) {
