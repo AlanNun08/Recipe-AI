@@ -62,15 +62,26 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
     try {
       console.log('🔍 Loading cart options for weekly recipe:', recipeId);
       
-      // Use the correct endpoint for weekly recipes
-      const response = await axios.post(`${API}/api/v2/walmart/weekly-cart-options?recipe_id=${recipeId}`);
-      console.log('✅ Cart options loaded:', response.data);
+      // Use native fetch instead of axios for V2 endpoint
+      const response = await fetch(`${API}/api/v2/walmart/weekly-cart-options?recipe_id=${recipeId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       
-      setCartOptions(response.data);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Cart options loaded:', data);
+      
+      setCartOptions(data);
       
       // Initialize selected products with first product for each ingredient
       const initialSelections = {};
-      response.data.ingredient_matches?.forEach(ingredientMatch => {
+      data.ingredient_matches?.forEach(ingredientMatch => {
         if (ingredientMatch.products && ingredientMatch.products.length > 0) {
           // Use 'id' field instead of 'product_id' for WalmartProductV2
           initialSelections[ingredientMatch.ingredient] = ingredientMatch.products[0];
