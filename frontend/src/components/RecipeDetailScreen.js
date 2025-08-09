@@ -253,7 +253,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
             onClick={onBack}
             className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all"
           >
-            ← Back to Weekly Plan
+            ← {getBackButtonText()}
           </button>
         </div>
       </div>
