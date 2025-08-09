@@ -23,9 +23,13 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
       console.log('🔍 Loading recipe history for user:', user.id);
       
       const response = await axios.get(`${API}/api/recipes/history/${user.id}`);
-      console.log('✅ Recipe history loaded:', response.data);
+      console.log('✅ Recipe history response:', response.data);
       
-      setRecipes(response.data);
+      // Extract recipes array from response
+      const recipesData = response.data.recipes || response.data || [];
+      console.log('✅ Setting recipes array:', recipesData.length, 'recipes');
+      
+      setRecipes(recipesData);
     } catch (error) {
       console.error('❌ Error loading recipe history:', error);
       const errorMessage = error.response?.data?.detail || 'Failed to load recipe history';
