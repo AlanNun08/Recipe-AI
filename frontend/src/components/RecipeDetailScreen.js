@@ -116,7 +116,6 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
       });
       setSelectedProducts(initialSelections);
       
-      console.log('✅ Selected products initialized:', initialSelections);
       showNotification(`✅ Found ${data.total_products} real Walmart products!`, 'success');
       
     } catch (error) {
