@@ -13,7 +13,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
   const [isGeneratingCart, setIsGeneratingCart] = useState(false);
 
   useEffect(() => {
-    console.log('🔍 useEffect triggered with recipeId:', recipeId);
+    console.log('🔍 useEffect triggered with recipeId:', recipeId, 'source:', recipeSource);
     
     if (!recipeId) {
       console.log('⚠️ No recipeId provided, setting loading to false');
@@ -22,15 +22,26 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     }
     
     const loadRecipeDetail = async () => {
-      console.log('🔍 Starting loadRecipeDetail...');
+      console.log('🔍 Starting loadRecipeDetail for source:', recipeSource);
       setIsLoading(true);
       
       try {
+        // Use different API endpoints based on recipe source
+        let apiUrl;
+        if (recipeSource === 'weekly') {
+          apiUrl = `${API}/api/weekly-recipes/recipe/${recipeId}`;
+        } else if (recipeSource === 'generated' || recipeSource === 'history') {
+          apiUrl = `${API}/api/recipes/${recipeId}/detail`;
+        } else {
+          // Default to weekly recipes
+          apiUrl = `${API}/api/weekly-recipes/recipe/${recipeId}`;
+        }
+        
         console.log('🔍 Loading recipe detail for ID:', recipeId);
-        console.log('🔍 API URL:', `${API}/api/weekly-recipes/recipe/${recipeId}`);
+        console.log('🔍 API URL:', apiUrl);
         
         // Use native fetch instead of axios
-        const response = await fetch(`${API}/api/weekly-recipes/recipe/${recipeId}`, {
+        const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -48,11 +59,11 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
         setRecipe(data);
         setIsLoading(false);
         console.log('✅ Recipe state set and loading disabled');
-        
+
         // Load cart options in the background (non-blocking) 
         console.log('🔍 Starting cart options loading in 2 seconds...');
         setTimeout(() => {
-          loadCartOptions(recipeId);
+          loadCartOptionsForRecipe(recipeId, recipeSource);
         }, 2000);
         
       } catch (error) {
@@ -63,7 +74,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     };
     
     loadRecipeDetail();
-  }, [recipeId]);
+  }, [recipeId, recipeSource]);
 
   const loadCartOptions = async (currentRecipeId) => {
     console.log('🔍 Starting loadCartOptions for recipe:', currentRecipeId);
