@@ -82,9 +82,6 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
       }
       
 
-      console.log('🔍 API URL:', apiUrl);
-      console.log('⏰ This may take 8-10 seconds - fetching real Walmart products...');
-      
       // Add longer timeout for slow Walmart API (backend takes ~8 seconds)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
