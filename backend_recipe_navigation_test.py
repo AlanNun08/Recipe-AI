@@ -12,7 +12,7 @@ from typing import Dict, List, Any
 
 class BackendRecipeNavigationTester:
     def __init__(self):
-        self.backend_url = "https://2c83b5a7-3245-4a38-a9d6-ccc45cb3ba91.preview.emergentagent.com/api"
+        self.backend_url = "https://f27522a1-c4ec-4127-af1d-ec55a4acb311.preview.emergentagent.com/api"
         self.client = httpx.AsyncClient(timeout=30.0)
         
         # Demo user credentials

@@ -8,7 +8,7 @@ import httpx
 import json
 from datetime import datetime
 
-BACKEND_URL = "https://2c83b5a7-3245-4a38-a9d6-ccc45cb3ba91.preview.emergentagent.com/api"
+BACKEND_URL = "https://f27522a1-c4ec-4127-af1d-ec55a4acb311.preview.emergentagent.com/api"
 WORKING_EMAIL = "demo@test.com"
 WORKING_PASSWORD = "password123"
 WORKING_USER_ID = "e7f7121a-3d85-427c-89ad-989294a14844"

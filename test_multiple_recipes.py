@@ -8,11 +8,11 @@ async def test_multiple_recipes():
     try:
         # Login first
         login_data = {'email': 'demo@test.com', 'password': 'password123'}
-        login_response = await client.post('https://2c83b5a7-3245-4a38-a9d6-ccc45cb3ba91.preview.emergentagent.com/api/auth/login', json=login_data)
+        login_response = await client.post('https://f27522a1-c4ec-4127-af1d-ec55a4acb311.preview.emergentagent.com/api/auth/login', json=login_data)
         user_id = login_response.json()['user']['id']
         
         # Get current plan
-        plan_response = await client.get(f'https://2c83b5a7-3245-4a38-a9d6-ccc45cb3ba91.preview.emergentagent.com/api/weekly-recipes/current/{user_id}')
+        plan_response = await client.get(f'https://f27522a1-c4ec-4127-af1d-ec55a4acb311.preview.emergentagent.com/api/weekly-recipes/current/{user_id}')
         plan_data = plan_response.json()
         meals = plan_data['plan']['meals']
         
@@ -25,7 +25,7 @@ async def test_multiple_recipes():
             print(f'Recipe {i+1}: {recipe_name}')
             
             # Get recipe detail
-            recipe_response = await client.get(f'https://2c83b5a7-3245-4a38-a9d6-ccc45cb3ba91.preview.emergentagent.com/api/weekly-recipes/recipe/{recipe_id}')
+            recipe_response = await client.get(f'https://f27522a1-c4ec-4127-af1d-ec55a4acb311.preview.emergentagent.com/api/weekly-recipes/recipe/{recipe_id}')
             
             if recipe_response.status_code == 200:
                 recipe_data = recipe_response.json()
