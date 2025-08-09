@@ -2470,8 +2470,30 @@ Make the drink visually Instagram-worthy and perfect for any season.""")
         
         prompt_parts.append(f"Difficulty level: {request.difficulty}.")
         
+        # Combine user's stored preferences with request preferences
+        all_dietary_preferences = set()
+        
+        # Add user's stored dietary preferences from their profile
+        if user_dietary_preferences:
+            all_dietary_preferences.update(user_dietary_preferences)
+            
+        # Add dietary preferences from current request
         if request.dietary_preferences:
-            prompt_parts.append(f"Dietary preferences: {', '.join(request.dietary_preferences)}.")
+            all_dietary_preferences.update(request.dietary_preferences)
+        
+        # Add dietary preferences to prompt
+        if all_dietary_preferences:
+            prompt_parts.append(f"Dietary preferences: {', '.join(sorted(all_dietary_preferences))}.")
+        
+        # Add user's allergies as strict requirements
+        if user_allergies:
+            prompt_parts.append(f"IMPORTANT - Avoid these allergens completely: {', '.join(user_allergies)}. Do not include any ingredients containing these allergens.")
+        
+        # Consider user's favorite cuisines if no specific cuisine requested
+        if user_favorite_cuisines and not request.cuisine_type:
+            prompt_parts.append(f"Consider incorporating flavors from the user's favorite cuisines: {', '.join(user_favorite_cuisines)}.")
+        elif user_favorite_cuisines and request.cuisine_type in user_favorite_cuisines:
+            prompt_parts.append(f"This aligns with the user's favorite cuisine preferences.")
         
         if request.ingredients_on_hand:
             prompt_parts.append(f"Try to use these ingredients: {', '.join(request.ingredients_on_hand)}.")
