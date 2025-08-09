@@ -459,11 +459,15 @@ python production_account_cleanup.py
 - ✅ **Secured:** Production environment variables and CORS
 
 ### **Developer Notes**
-- Backend runs on `0.0.0.0:8001` via supervisor
-- Frontend accesses backend via `REACT_APP_BACKEND_URL`
+- **Environment Variable Usage**: ALL API access via `os.environ.get()` - no hardcoded credentials
+- Backend runs on `0.0.0.0:8001` via supervisor with external URL mapping
+- Frontend accesses backend via `REACT_APP_BACKEND_URL` environment variable only
 - All API routes must be prefixed with `/api` for correct Kubernetes ingress routing
 - MongoDB connection uses `MONGO_URL` from environment variables only
-- Stripe webhooks configured for subscription management
+- Stripe webhooks configured for subscription management via environment variables
 - Weekly recipes stored in `weekly_recipes_collection` with 7-day meal structure
 - Recipe detail endpoint provides individual Walmart shopping URLs for each ingredient
 - Mock data fallback system activates when OpenAI API key is not configured
+- **Session Management**: 7-day expiry with automatic cleanup and intelligent restoration
+- **Security**: All private keys stored as files, accessed via environment variable paths
+- **Fallback Systems**: Graceful degradation when external APIs are unavailable
