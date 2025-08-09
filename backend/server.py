@@ -3771,7 +3771,7 @@ async def get_grocery_cart_options(
         
         # If not found in weekly plans, try regular recipes collection
         if not recipe_doc:
-            print("Recipe not found in weekly plans, trying regular recipes...")
+            # Recipe not found in weekly plans, trying regular recipes...
             recipe_collection = db["recipes"]
             recipe_doc = await recipe_collection.find_one({"recipe_id": recipe_id})
             
