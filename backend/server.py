@@ -3954,7 +3954,7 @@ async def generate_grocery_cart_url_v2(request: Request):
             "message": message
         }
         
-        print(f"✅ Cart URL result: {result}")
+        logger.info(f"✅ Cart URL result generated successfully")
         return result
         
     except Exception as e:
