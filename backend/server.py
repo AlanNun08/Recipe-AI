@@ -4032,6 +4032,121 @@ Format as JSON array with 7 meal objects, each containing:
         # Fallback to mock data on any other error
         return await generate_mock_weekly_meals(family_size, dietary_preferences, cuisines)
 
+async def generate_mock_recipe(request: RecipeGenRequest) -> dict:
+    """Generate mock recipe for testing when OpenAI is not available"""
+    logger.info(f"Generating mock recipe for user {request.user_id} with preferences: {request.dietary_preferences}")
+    
+    # Determine recipe type based on request
+    recipe_category = request.recipe_category or 'cuisine'
+    cuisine_type = request.cuisine_type or 'Italian'
+    
+    # Create a mock recipe based on the request
+    if recipe_category == "snack":
+        mock_recipe = Recipe(
+            title=f"Healthy {cuisine_type} Snack",
+            description=f"A delicious and nutritious {cuisine_type.lower()} snack perfect for any time of day",
+            ingredients=[
+                "2 cups mixed nuts",
+                "1 cup dried fruits",
+                "1 tbsp honey",
+                "1 tsp cinnamon",
+                "1/2 tsp vanilla extract"
+            ],
+            instructions=[
+                "Preheat oven to 350°F (175°C)",
+                "Mix all ingredients in a large bowl",
+                "Spread on baking sheet",
+                "Bake for 10-15 minutes until golden",
+                "Cool completely before serving"
+            ],
+            prep_time=10,
+            cook_time=15,
+            servings=request.servings,
+            cuisine_type=cuisine_type,
+            dietary_tags=request.dietary_preferences,
+            difficulty=request.difficulty,
+            calories_per_serving=250 if request.max_calories_per_serving else None,
+            is_healthy=request.is_healthy,
+            user_id=request.user_id,
+            shopping_list=["mixed nuts", "dried fruits", "honey", "cinnamon", "vanilla extract"]
+        )
+    elif recipe_category == "beverage":
+        mock_recipe = Recipe(
+            title=f"Refreshing {cuisine_type} Beverage",
+            description=f"A refreshing {cuisine_type.lower()} drink perfect for any occasion",
+            ingredients=[
+                "2 cups fresh fruit juice",
+                "1 cup sparkling water",
+                "2 tbsp honey",
+                "1 tbsp fresh lime juice",
+                "Ice cubes",
+                "Fresh mint leaves"
+            ],
+            instructions=[
+                "Combine fruit juice and honey in a pitcher",
+                "Stir until honey is dissolved",
+                "Add lime juice and mix well",
+                "Add ice cubes to glasses",
+                "Pour mixture over ice",
+                "Top with sparkling water and mint"
+            ],
+            prep_time=5,
+            cook_time=0,
+            servings=request.servings,
+            cuisine_type=cuisine_type,
+            dietary_tags=request.dietary_preferences,
+            difficulty="easy",
+            calories_per_serving=120 if request.max_calories_per_serving else None,
+            is_healthy=request.is_healthy,
+            user_id=request.user_id,
+            shopping_list=["fruit juice", "sparkling water", "honey", "lime", "mint"]
+        )
+    else:
+        # Default cuisine recipe
+        mock_recipe = Recipe(
+            title=f"Classic {cuisine_type} Pasta",
+            description=f"A traditional {cuisine_type.lower()} pasta dish with rich flavors and fresh ingredients",
+            ingredients=[
+                "1 lb pasta",
+                "2 tbsp olive oil",
+                "3 cloves garlic, minced",
+                "1 can diced tomatoes",
+                "1/2 cup fresh basil",
+                "1/2 cup parmesan cheese",
+                "Salt and pepper to taste"
+            ],
+            instructions=[
+                "Cook pasta according to package directions",
+                "Heat olive oil in large pan",
+                "Add garlic and cook until fragrant",
+                "Add tomatoes and simmer for 10 minutes",
+                "Toss with cooked pasta",
+                "Add basil and cheese",
+                "Season with salt and pepper"
+            ],
+            prep_time=15,
+            cook_time=25,
+            servings=request.servings,
+            cuisine_type=cuisine_type,
+            dietary_tags=request.dietary_preferences,
+            difficulty=request.difficulty,
+            calories_per_serving=450 if request.max_calories_per_serving else None,
+            is_healthy=request.is_healthy,
+            user_id=request.user_id,
+            shopping_list=["pasta", "olive oil", "garlic", "diced tomatoes", "basil", "parmesan cheese"]
+        )
+    
+    # Save to database
+    recipe_dict = mock_recipe.dict()
+    result = await db.recipes.insert_one(recipe_dict)
+    
+    # Get the inserted document and return it
+    if result.inserted_id:
+        inserted_recipe = await db.recipes.find_one({"_id": result.inserted_id})
+        return mongo_to_dict(inserted_recipe)
+    
+    return recipe_dict
+
 async def generate_mock_weekly_meals(family_size: int = 2, dietary_preferences: List[str] = [], cuisines: List[str] = []) -> List[WeeklyMeal]:
     """Generate mock weekly meals for testing when OpenAI is not available"""
     logger.info(f"Generating mock weekly meals for {family_size} people with preferences: {dietary_preferences}, cuisines: {cuisines}")
