@@ -85,10 +85,13 @@ A complete AI-powered recipe generation and community sharing platform that comb
 - **Mailjet** - Email verification and notifications
 
 ### **Frontend**
-- **React 19** - Latest React with modern hooks
-- **Tailwind CSS** - Utility-first styling framework
+- **React 19** - Latest React with modern hooks and enhanced session management
+- **Step-by-Step Wizard UI** - Premium recipe generator with visual selection and progress tracking
+- **Tailwind CSS** - Utility-first styling framework with responsive design
 - **PWA Service Worker** - Offline capabilities and app installation
+- **Persistent Sessions** - 7-day session management with automatic expiry handling
 - **Responsive Design** - Mobile-first UI that works on all devices
+- **Interactive Components** - Visual feedback, hover effects, and smooth animations
 
 ### **Infrastructure**
 - **Kubernetes** - Container orchestration and scaling
