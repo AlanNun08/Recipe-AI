@@ -43,7 +43,7 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
         
         // Load cart options in the background (non-blocking) 
         setTimeout(() => {
-          loadCartOptions();
+          loadCartOptionsForRecipe(recipeId);
         }, 500);
         
       } catch (error) {
