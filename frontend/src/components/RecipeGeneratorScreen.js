@@ -142,13 +142,18 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
     try {
       const response = await axios.post(`${API}/api/recipes/generate`, {
         user_id: user.id,
-        cuisine: formData.cuisine,
+        cuisine_type: formData.cuisine,                    // Fixed: was 'cuisine'
+        recipe_category: 'cuisine',                        // Added: missing field
         meal_type: formData.meal_type,
         difficulty: formData.difficulty,
-        prep_time: formData.prep_time,
-        dietary_restrictions: formData.dietary_restrictions || '',
-        ingredients: formData.ingredients || '',
-        servings: parseInt(formData.servings) || 4
+        prep_time_max: formData.prep_time ? parseInt(formData.prep_time) : null,  // Fixed: was 'prep_time'
+        dietary_preferences: formData.dietary_restrictions ? formData.dietary_restrictions.split(',').map(d => d.trim()) : [],  // Fixed: was 'dietary_restrictions'
+        ingredients_on_hand: formData.ingredients ? formData.ingredients.split(',').map(i => i.trim()) : [],  // Fixed: was 'ingredients'
+        servings: parseInt(formData.servings) || 4,
+        is_healthy: false,                                 // Added: default value
+        max_calories_per_serving: null,                    // Added: default value
+        is_budget_friendly: false,                         // Added: default value
+        max_budget: null                                   // Added: default value
       });
 
       setGeneratedRecipe(response.data);
