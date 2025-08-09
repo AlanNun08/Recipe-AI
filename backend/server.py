@@ -2242,12 +2242,12 @@ async def generate_recipe_frontend_compatible(data: dict):
         # Create standardized request
         recipe_request = RecipeGenRequest(
             user_id=user_id,
-            recipe_category='cuisine',  # Default to cuisine
-            cuisine_type=data.get('cuisine', 'Italian'),
+            recipe_category=data.get('recipe_category', 'cuisine'),
+            cuisine_type=data.get('cuisine_type', data.get('cuisine', 'Italian')),
             dietary_preferences=dietary_preferences,
             ingredients_on_hand=ingredients_on_hand,
-            prep_time_max=prep_time_max,
-            servings=4,  # default
+            prep_time_max=prep_time_max or data.get('prep_time_max', 30),
+            servings=data.get('servings', 4),
             difficulty=data.get('difficulty', 'medium').lower()
         )
         
