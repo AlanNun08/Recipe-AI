@@ -99,50 +99,8 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
     loadRecipeDetail();
   }, [recipeId]);
 
-  const loadCartOptions = async () => {
-    setIsLoadingCart(true);
-    try {
-      console.log('🔍 Loading cart options for weekly recipe:', recipeId);
-      
-      // Use native fetch instead of axios for V2 endpoint
-      const response = await fetch(`${API}/api/v2/walmart/weekly-cart-options?recipe_id=${recipeId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('✅ Cart options loaded:', data);
-      
-      setCartOptions(data);
-      
-      // Initialize selected products with first product for each ingredient
-      const initialSelections = {};
-      data.ingredient_matches?.forEach(ingredientMatch => {
-        if (ingredientMatch.products && ingredientMatch.products.length > 0) {
-          // Use 'id' field instead of 'product_id' for WalmartProductV2
-          initialSelections[ingredientMatch.ingredient] = ingredientMatch.products[0];
-        }
-      });
-      setSelectedProducts(initialSelections);
-      
-      console.log('✅ Selected products initialized:', initialSelections);
-      showNotification('✅ Found real Walmart products!', 'success');
-    } catch (error) {
-      console.error('❌ Failed to load cart options:', error);
-      console.log('⚠️ Will show basic ingredients instead of Walmart products');
-      // Don't show error notification - just continue without cart options
-      // showNotification('⚠️ Using recipe ingredients without Walmart integration', 'warning');
-    } finally {
-      setIsLoadingCart(false);
-    }
-  };
-
+  // Remove the external loadCartOptions function since it's now inline
+  
   const handleProductSelection = (ingredientName, product) => {
     setSelectedProducts(prev => ({
       ...prev,
