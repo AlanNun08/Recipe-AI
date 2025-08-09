@@ -1040,7 +1040,7 @@ function App() {
           </button>
           
           <button
-            onClick={() => setCurrentScreen('generate-recipe')}
+            onClick={() => setCurrentScreen('recipe-generation')}
             className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:from-purple-600 hover:via-pink-600 hover:to-orange-600 text-white font-bold py-6 px-8 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-300 text-lg relative overflow-hidden"
           >
             <span className="relative z-10 flex items-center justify-center">
@@ -1048,6 +1048,18 @@ function App() {
               Generate AI Recipe
               <span className="text-2xl ml-3 animate-bounce">✨</span>
             </span>
+          </button>
+          
+          <button
+            onClick={() => setCurrentScreen('recipe-history')}
+            className="w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white font-bold py-6 px-8 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-300 text-lg relative overflow-hidden"
+          >
+            <span className="relative z-10 flex items-center justify-center">
+              <span className="text-2xl mr-3 animate-bounce">📚</span>
+              Recipe History
+              <span className="text-2xl ml-3 animate-pulse">📖</span>
+            </span>
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-pink-400 opacity-20 animate-pulse"></div>
           </button>
           
           <button
