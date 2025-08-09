@@ -2370,6 +2370,20 @@ async def generate_recipe(request: RecipeGenRequest):
         # Check subscription access for premium feature
         await check_subscription_access(request.user_id)
         
+        # Get user preferences from database
+        user = await db.users.find_one({"id": request.user_id})
+        if not user:
+            logger.warning(f"User not found: {request.user_id}")
+            user_dietary_preferences = []
+            user_allergies = []
+            user_favorite_cuisines = []
+        else:
+            user_dietary_preferences = user.get("dietary_preferences", [])
+            user_allergies = user.get("allergies", [])
+            user_favorite_cuisines = user.get("favorite_cuisines", [])
+        
+        logger.info(f"User preferences loaded: dietary={user_dietary_preferences}, allergies={user_allergies}, cuisines={user_favorite_cuisines}")
+        
         # Build the prompt based on recipe category
         prompt_parts = []
         
