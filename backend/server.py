@@ -4686,38 +4686,29 @@ async def generate_mock_recipe(request: RecipeGenRequest) -> dict:
                 shopping_list=["chicken", "onion", "garlic", "ginger", "curry powder", "coconut milk", "diced tomatoes", "basmati rice"]
             )
         else:
-            # Default Italian pasta recipe
+            # Generate diverse recipes based on cuisine type and add randomization
+            import random
+            recipe_variations = get_diverse_recipe_for_cuisine(cuisine_type, request.dietary_preferences)
+            
+            # Add some randomization to make each recipe unique
+            recipe_id = random.randint(1, 100)
+            variation = random.choice(recipe_variations)
+            
             mock_recipe = Recipe(
-                title=f"Classic {cuisine_type} Pasta",
-                description=f"A traditional {cuisine_type.lower()} pasta dish with rich flavors and fresh ingredients",
-                ingredients=[
-                    "1 lb pasta",
-                    "2 tbsp olive oil",
-                    "3 cloves garlic, minced",
-                    "1 can diced tomatoes",
-                    "1/2 cup fresh basil",
-                    "1/2 cup parmesan cheese",
-                    "Salt and pepper to taste"
-                ],
-                instructions=[
-                    "Cook pasta according to package directions",
-                    "Heat olive oil in large pan",
-                    "Add garlic and cook until fragrant",
-                    "Add tomatoes and simmer for 10 minutes",
-                    "Toss with cooked pasta",
-                    "Add basil and cheese",
-                    "Season with salt and pepper"
-                ],
-                prep_time=15,
-                cook_time=25,
+                title=variation["title"],
+                description=variation["description"],
+                ingredients=variation["ingredients"],
+                instructions=variation["instructions"],
+                prep_time=variation["prep_time"],
+                cook_time=variation["cook_time"],
                 servings=request.servings,
                 cuisine_type=cuisine_type,
                 dietary_tags=request.dietary_preferences,
                 difficulty=request.difficulty,
-                calories_per_serving=450 if request.max_calories_per_serving else None,
+                calories_per_serving=variation.get("calories", 420) if request.max_calories_per_serving else None,
                 is_healthy=request.is_healthy,
                 user_id=request.user_id,
-                shopping_list=["pasta", "olive oil", "garlic", "diced tomatoes", "basil", "parmesan cheese"]
+                shopping_list=variation["shopping_list"]
             )
     
     # Save to database
