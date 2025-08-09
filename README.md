@@ -43,12 +43,16 @@ A complete AI-powered recipe generation and community sharing platform that comb
 - **📱 Mobile Responsive**: Touch-friendly meal cards and recipe details
 
 ### **AI Recipe Generation**
+- **Step-by-Step Wizard Interface**: Premium 5-step guided experience eliminates confusion
+- **Visual Selection**: Cuisine cards with emojis, difficulty with color-coding, meal types with icons
 - **4 Categories**: Cuisine-based, Beverages, Snacks, Starbucks drinks
 - **Smart Ingredients**: AI generates recipes from your available ingredients
-- **Dietary Restrictions**: Supports gluten-free, vegan, keto, and more
-- **Difficulty Levels**: Easy, medium, hard recipes with time estimates
+- **Dietary Restrictions**: Interactive tags for gluten-free, vegan, keto, and more
+- **Difficulty Levels**: Visual cards with time estimates (Easy: 15-30min, Medium: 30-60min, Hard: 60+min)
+- **Customization Options**: Servings (1-12+ people), prep time limits, specific ingredients
 - **🔄 Reliable Fallback System**: Mock data ensures recipes are always available
 - **🌍 Cuisine-Specific Recipes**: Proper cultural authenticity (Chinese → Fried Rice, Mexican → Tacos, Indian → Curry)
+- **Session Persistence**: 7-day session management keeps users logged in
 
 ### **Starbucks Secret Menu Generator**
 - **5 Drink Types**: Frappuccino, Refresher, Lemonade, Iced Matcha, Mystery drinks
