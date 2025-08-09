@@ -243,11 +243,14 @@ Run the production verification script:
 6. See complete cooking instructions and ingredients
 7. Shop individual ingredients with "Buy on Walmart" buttons
 
-### **Using Recipe Generation**
-1. Go to "Generate Recipes" 
-2. Enter available ingredients
-3. Select cuisine type and preferences
-4. Get AI-generated recipe with shopping list
+### **Using Enhanced Recipe Generation (NEW)**
+1. Go to "Generate AI Recipe" from dashboard
+2. **Step 1 - Cuisine & Meal Type**: Select from visual cards with emojis and descriptions
+3. **Step 2 - Difficulty Level**: Choose Easy (15-30min), Medium (30-60min), or Hard (60+min)
+4. **Step 3 - Customize (Optional)**: Set servings (1-12+ people), prep time, dietary restrictions, specific ingredients
+5. **Step 4 - Review**: Confirm all selections and generate recipe
+6. **Step 5 - Results**: View complete recipe with ingredients, instructions, shopping list
+7. Get full recipe with Walmart shopping integration or generate another recipe
 
 ### **Using Starbucks Generator**
 1. Navigate to "Starbucks Secret Menu"
