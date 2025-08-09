@@ -3923,7 +3923,7 @@ async def generate_grocery_cart_url_v2(request: Request):
             product_id = product.get('id') or product.get('product_id', '')
             price = float(product.get('price', 0))
             
-            print(f"  Processing product: {product_id} - ${price}")
+            # Process products for cart URL
             
             # Only include real product IDs (not search/error fallbacks)
             if (not product_id.startswith('search_') and 
