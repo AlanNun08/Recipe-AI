@@ -2259,7 +2259,7 @@ function App() {
             } else {
               setCurrentScreen('weekly-recipes');
             }
-          }}}
+          }}
           showNotification={showNotification}
         />;
       case 'welcome-onboarding':
