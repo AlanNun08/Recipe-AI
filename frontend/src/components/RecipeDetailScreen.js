@@ -52,7 +52,6 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
         setIsLoading(false);
 
         // Load cart options in the background (non-blocking) 
-        console.log('🔍 Starting cart options loading in 2 seconds...');
         setTimeout(() => {
           loadCartOptionsForRecipe(recipeId, recipeSource);
         }, 2000);
