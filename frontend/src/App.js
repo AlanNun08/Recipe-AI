@@ -75,16 +75,23 @@ function App() {
   const setUserWithSession = (userData) => {
     if (userData) {
       // Save to both new and legacy localStorage keys for compatibility
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('ai_chef_user', JSON.stringify(userData)); // Legacy compatibility
+      const userDataToSave = {
+        ...userData,
+        lastLoginTime: Date.now(),
+        sessionExpiry: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
+      };
+      
+      localStorage.setItem('user', JSON.stringify(userDataToSave));
+      localStorage.setItem('ai_chef_user', JSON.stringify(userDataToSave)); // Legacy compatibility
       localStorage.setItem('userSession', JSON.stringify({
         userId: userData.id,
         email: userData.email,
         first_name: userData.first_name,
         is_verified: userData.is_verified,
-        loginTime: Date.now()
+        loginTime: Date.now(),
+        sessionExpiry: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
       }));
-      setUser(userData);
+      setUser(userDataToSave);
       
       // Auto-redirect to dashboard for verified users
       if (userData.is_verified && (currentScreen === 'landing' || currentScreen === 'login' || currentScreen === 'register')) {
@@ -102,6 +109,16 @@ function App() {
       const savedUser = localStorage.getItem('ai_chef_user');
       if (savedUser) {
         const userData = JSON.parse(savedUser);
+        
+        // Check if session is expired (7 days)
+        const sessionExpiry = userData.sessionExpiry || (userData.lastLoginTime + (7 * 24 * 60 * 60 * 1000));
+        if (Date.now() > sessionExpiry) {
+          // Session expired, clear it
+          clearUserSession();
+          setIsLoadingAuth(false);
+          return;
+        }
+        
         // Restore user session
         setUser(userData);
         // Only set to dashboard if we're on landing page or if currentScreen is a protected route
