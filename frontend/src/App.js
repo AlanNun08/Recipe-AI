@@ -2245,11 +2245,21 @@ function App() {
           }}
         />;
       case 'recipe-detail':
-        console.log('Rendering RecipeDetailScreen with currentRecipeId:', currentRecipeId);
+        console.log('Rendering RecipeDetailScreen with currentRecipeId:', currentRecipeId, 'source:', currentRecipeSource);
         return <RecipeDetailScreen 
-          key={currentRecipeId} // Force re-render when recipe ID changes
+          key={`${currentRecipeId}-${currentRecipeSource}`} // Force re-render when recipe ID or source changes
           recipeId={currentRecipeId}
-          onBack={() => setCurrentScreen('weekly-recipes')}
+          recipeSource={currentRecipeSource}
+          onBack={() => {
+            // Navigate back to appropriate screen based on source
+            if (currentRecipeSource === 'generated') {
+              setCurrentScreen('generator');
+            } else if (currentRecipeSource === 'history') {
+              setCurrentScreen('recipe-history');
+            } else {
+              setCurrentScreen('weekly-recipes');
+            }
+          }}}
           showNotification={showNotification}
         />;
       case 'welcome-onboarding':
