@@ -3039,7 +3039,7 @@ async def get_grocery_cart_options_test(
                     logger.warning(f"⚠️ {ingredient}: Using search fallback")
                     
             except Exception as e:
-                print(f"❌ Error processing ingredient '{ingredient}': {str(e)}")
+                logger.error(f"❌ Error processing ingredient '{ingredient}': {str(e)}")
         
         estimated_total = sum([opt["options"][0]["price"] for opt in ingredient_options if opt["options"]])
         
