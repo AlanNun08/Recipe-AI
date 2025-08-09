@@ -54,6 +54,7 @@ function App() {
   const [notification, setNotification] = useState(null);
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState(null);
   const [currentRecipeId, setCurrentRecipeId] = useState(null); // NEW: For recipe detail view
+  const [currentRecipeSource, setCurrentRecipeSource] = useState('weekly'); // NEW: Track recipe source
   const [pendingResetEmail, setPendingResetEmail] = useState(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
