@@ -395,36 +395,43 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
                 </div>
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-4">📋</div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Basic Ingredients List</h3>
-                  <div className="grid md:grid-cols-2 gap-4 mt-6">
-                    {recipe.ingredients.map((ingredient, index) => (
-                      <div key={index} className="flex items-center p-4 bg-gray-50 rounded-xl">
-                        <div className="text-2xl mr-3">📝</div>
-                        <span className="font-medium text-gray-800">{ingredient}</span>
-                      </div>
-                    ))}
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-6">📋</div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">Basic Ingredients List</h3>
+                  <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                    Smart shopping not available for this recipe. Here's the basic ingredient list:
+                  </p>
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 text-left max-w-2xl mx-auto">
+                    <div className="grid gap-3">
+                      {recipe.ingredients?.map((ingredient, index) => (
+                        <div key={index} className="flex items-center p-3 bg-white rounded-lg border border-gray-200">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                            <span className="text-blue-600 font-bold text-sm">{index + 1}</span>
+                          </div>
+                          <span className="text-gray-800 font-medium">{ingredient}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Cooking Instructions */}
+            {/* Enhanced Instructions Section */}
             {recipe.instructions && recipe.instructions.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                  <span className="mr-2">👩‍🍳</span>
+              <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 flex items-center">
+                  <span className="mr-3 text-4xl">👩‍🍳</span>
                   Cooking Instructions
                 </h2>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {recipe.instructions.map((instruction, index) => (
-                    <div key={index} className="flex items-start">
-                      <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-4 mt-1">
+                    <div key={index} className="group flex items-start hover:bg-gray-50 rounded-2xl p-6 transition-colors duration-200">
+                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl flex items-center justify-center font-bold mr-6 mt-1 shadow-lg group-hover:scale-110 transition-transform duration-200">
                         {index + 1}
                       </div>
                       <div className="flex-grow">
-                        <p className="text-gray-800 leading-relaxed">{instruction}</p>
+                        <p className="text-gray-800 leading-relaxed text-lg font-medium">{instruction}</p>
                       </div>
                     </div>
                   ))}
