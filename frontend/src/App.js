@@ -2279,6 +2279,30 @@ function App() {
         return <SubscriptionSuccess 
           onContinue={() => setCurrentScreen('dashboard')}
         />;
+      case 'recipe-generation':
+        return <RecipeGeneratorScreen
+          user={user}
+          onBack={() => setCurrentScreen('dashboard')}
+          showNotification={showNotification}
+          onViewRecipe={(recipeId, source = 'generated') => {
+            console.log('onViewRecipe called from generator with recipeId:', recipeId, 'source:', source);
+            setCurrentRecipeId(recipeId);
+            setCurrentRecipeSource(source);
+            setCurrentScreen('recipe-detail');
+          }}
+        />;
+      case 'recipe-history':
+        return <RecipeHistoryScreen
+          user={user}
+          onBack={() => setCurrentScreen('dashboard')}
+          showNotification={showNotification}
+          onViewRecipe={(recipeId, source = 'history') => {
+            console.log('onViewRecipe called from history with recipeId:', recipeId, 'source:', source);
+            setCurrentRecipeId(recipeId);
+            setCurrentRecipeSource(source);
+            setCurrentScreen('recipe-detail');
+          }}
+        />;
       default:
         return <LandingScreen />;
     }
