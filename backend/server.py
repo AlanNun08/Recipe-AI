@@ -3935,7 +3935,7 @@ async def generate_grocery_cart_url_v2(request: Request):
                 total_price += price
                 # Added to cart
             else:
-                print(f"    ❌ Skipped (invalid ID): {product_id}")
+                pass  # Skipped invalid product ID
         
         # Generate Walmart cart URL
         if valid_product_ids:
