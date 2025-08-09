@@ -59,12 +59,10 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
     
     // Validate recipe ID before navigation
     if (!recipe.id) {
-      console.error('❌ Recipe ID is missing or null:', recipe);
       showNotification('❌ Recipe ID is missing. Cannot open recipe details.', 'error');
       return;
     }
     
-    console.log('✅ Calling onViewRecipe with ID:', recipe.id, 'source: history');
     // Use the enhanced RecipeDetailScreen for regular recipes
     onViewRecipe(recipe.id, 'history');
   };
