@@ -2249,7 +2249,7 @@ function App() {
             setCurrentRecipeSource(source);
             setCurrentRecipeId(recipeId);
             setCurrentScreen('recipe-detail');
-          }}}
+          }}
           onViewStarbucksRecipe={(recipe) => {
             console.log('onViewStarbucksRecipe called with recipe:', recipe);
             // Navigate to Starbucks generator screen for Starbucks recipes
