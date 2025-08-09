@@ -76,11 +76,18 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     loadRecipeDetail();
   }, [recipeId, recipeSource]);
 
-  const loadCartOptions = async (currentRecipeId) => {
-    console.log('🔍 Starting loadCartOptions for recipe:', currentRecipeId);
+  const loadCartOptionsForRecipe = async (currentRecipeId, currentRecipeSource = 'weekly') => {
+    console.log('🔍 Starting loadCartOptionsForRecipe for recipe:', currentRecipeId, 'source:', currentRecipeSource);
     setIsLoadingCart(true);
     
     try {
+      // Only load cart options for weekly recipes for now
+      if (currentRecipeSource !== 'weekly') {
+        console.log('⚠️ Cart options only available for weekly recipes, skipping for source:', currentRecipeSource);
+        setIsLoadingCart(false);
+        return;
+      }
+      
       console.log('🔍 Loading cart options for weekly recipe:', currentRecipeId);
       console.log('🔍 API URL:', `${API}/api/v2/walmart/weekly-cart-options?recipe_id=${currentRecipeId}`);
       console.log('⏰ This may take 8-10 seconds - fetching real Walmart products...');
