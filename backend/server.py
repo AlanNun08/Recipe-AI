@@ -3758,7 +3758,7 @@ async def get_grocery_cart_options(
         
         for plan in weekly_plans:
             meals = plan.get('meals', [])
-            print(f"Checking plan with {len(meals)} meals")
+            # Checking plan with meals
             for meal in meals:
                 meal_id = meal.get('id')
                 print(f"Checking meal ID: {meal_id} vs target: {recipe_id}")
