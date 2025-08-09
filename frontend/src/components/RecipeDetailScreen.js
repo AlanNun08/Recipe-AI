@@ -393,7 +393,6 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
                     </div>
                   ))}
                 </div>
-                </div>
               ) : (
                 <div className="text-center py-12">
                   <div className="text-6xl mb-6">📋</div>
