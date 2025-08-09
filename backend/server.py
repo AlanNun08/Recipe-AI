@@ -2989,7 +2989,7 @@ async def get_grocery_cart_options_test(
         # Test with hardcoded ingredients from a real recipe
         test_ingredients = ["12 oz penne pasta", "1 lb ground beef", "24 oz marinara sauce", "1 cup shredded mozzarella", "2 tbsp olive oil"]
         
-        print(f"Testing with {len(test_ingredients)} ingredients")
+        logger.info(f"Testing with {len(test_ingredients)} ingredients")
         
         # Get Walmart product options for each ingredient (2-3 options per ingredient)
         ingredient_options = []
