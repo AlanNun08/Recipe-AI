@@ -2487,7 +2487,7 @@ Make the drink visually Instagram-worthy and perfect for any season.""")
         
         # Add user's allergies as strict requirements
         if user_allergies:
-            prompt_parts.append(f"IMPORTANT - Avoid these allergens completely: {', '.join(user_allergies)}. Do not include any ingredients containing these allergens.")
+            prompt_parts.append(f"CRITICAL ALLERGY WARNING - The user is allergic to: {', '.join(user_allergies)}. NEVER include any ingredients containing {', '.join(user_allergies)}. This is a health safety requirement. Find suitable alternatives.")
         
         # Consider user's favorite cuisines if no specific cuisine requested
         if user_favorite_cuisines and not request.cuisine_type:
