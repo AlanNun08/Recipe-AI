@@ -41,14 +41,8 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
   });
 
   const handleViewRecipe = (recipe) => {
-    console.log('🔍 handleViewRecipe called with recipe:', recipe);
-    console.log('🔍 Recipe ID:', recipe.id);
-    console.log('🔍 Recipe type:', recipe.type);
-    console.log('🔍 Recipe category:', recipe.category);
-    
     if (recipe.category === 'starbucks' || recipe.type === 'starbucks') {
       // Navigate to Starbucks generator screen for Starbucks recipes
-      console.log('🔍 Navigating to Starbucks screen for recipe:', recipe.drink_name || recipe.title);
       if (onViewStarbucksRecipe) {
         onViewStarbucksRecipe(recipe);
       } else {
@@ -66,7 +60,6 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
       return;
     }
     
-    console.log('🔍 Navigating to recipe detail with ID:', recipe.id);
     // Use the enhanced RecipeDetailScreen for regular recipes
     onViewRecipe(recipe.id, 'history');
   };
