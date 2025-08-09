@@ -3958,7 +3958,7 @@ async def generate_grocery_cart_url_v2(request: Request):
         return result
         
     except Exception as e:
-        print(f"❌ ERROR generating cart URL: {str(e)}")
+        logger.error(f"❌ ERROR generating cart URL: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to generate cart URL: {str(e)}")
 
 
