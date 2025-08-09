@@ -20,7 +20,7 @@ import subprocess
 import time
 
 # Test configuration
-BACKEND_URL = "https://d14c8dce-243d-4ebb-a34c-aee1807fadfa.preview.emergentagent.com"
+BACKEND_URL = "https://2c83b5a7-3245-4a38-a9d6-ccc45cb3ba91.preview.emergentagent.com"
 API_BASE = f"{BACKEND_URL}/api"
 
 class BackendEnvironmentTester:

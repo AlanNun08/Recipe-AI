@@ -22,7 +22,7 @@ with open('/app/frontend/.env', 'r') as f:
             BACKEND_URL = line.split('=', 1)[1].strip()
             break
     else:
-        BACKEND_URL = 'https://d14c8dce-243d-4ebb-a34c-aee1807fadfa.preview.emergentagent.com'
+        BACKEND_URL = 'https://2c83b5a7-3245-4a38-a9d6-ccc45cb3ba91.preview.emergentagent.com'
 
 if not BACKEND_URL.endswith('/api'):
     BACKEND_URL = f"{BACKEND_URL}/api"

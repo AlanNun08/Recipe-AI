@@ -18,7 +18,7 @@ import string
 sys.path.append('/app/backend')
 
 # Test configuration
-BACKEND_URL = "https://d14c8dce-243d-4ebb-a34c-aee1807fadfa.preview.emergentagent.com/api"
+BACKEND_URL = "https://2c83b5a7-3245-4a38-a9d6-ccc45cb3ba91.preview.emergentagent.com/api"
 TEST_USER_EMAIL = "aitest.user@example.com"
 TEST_USER_PASSWORD = "testpass123"
 
