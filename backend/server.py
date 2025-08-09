@@ -3761,7 +3761,7 @@ async def get_grocery_cart_options(
             # Checking plan with meals
             for meal in meals:
                 meal_id = meal.get('id')
-                print(f"Checking meal ID: {meal_id} vs target: {recipe_id}")
+                # Checking meal ID vs target
                 if meal_id == recipe_id:
                     recipe_doc = meal
                     print(f"✅ Found matching recipe: {meal.get('name')}")
