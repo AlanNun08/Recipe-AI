@@ -96,10 +96,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
       });
       
       clearTimeout(timeoutId);
-      
-      console.log('📥 Cart options response status:', response.status);
-      console.log('📥 Cart options response ok:', response.ok);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.log('❌ Cart options error response body:', errorText);
@@ -107,9 +104,6 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
       }
       
       const data = await response.json();
-      console.log('✅ Cart options loaded successfully:', data);
-      console.log(`📊 Found ${data.total_products} total products across ${data.ingredient_matches?.length} ingredients`);
-      
       setCartOptions(data);
       
       // Initialize selected products with first product for each ingredient
