@@ -439,87 +439,119 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
             )}
           </div>
 
-          {/* Right Column - Smart Shopping Cart */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-6">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                <span className="mr-2">🛍️</span>
-                Smart Walmart Cart
-              </h3>
+          {/* Enhanced Right Column - Smart Shopping Cart */}
+          <div className="space-y-8">
+            <div className="bg-white rounded-3xl shadow-xl p-8 sticky top-6 border border-gray-100">
+              <div className="text-center mb-6">
+                <h3 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-2 flex items-center justify-center">
+                  <span className="mr-3 text-4xl">🛍️</span>
+                  Smart Walmart Cart
+                </h3>
+                <p className="text-gray-600 text-sm">Real-time pricing • One-click shopping</p>
+              </div>
               
               {cartOptions?.ingredient_matches ? (
-                <div className="space-y-4">
-                  {/* Selected Products Summary */}
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <h4 className="font-bold text-gray-800 mb-3">Selected Products:</h4>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                <div className="space-y-6">
+                  {/* Enhanced Selected Products Summary */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+                    <div className="flex items-center mb-4">
+                      <div className="bg-blue-500 rounded-full p-2 mr-3">
+                        <span className="text-white text-lg">🛒</span>
+                      </div>
+                      <h4 className="font-bold text-gray-800 text-lg">Selected Products</h4>
+                    </div>
+                    <div className="space-y-3 max-h-48 overflow-y-auto">
                       {Object.entries(selectedProducts).map(([ingredient, product]) => (
-                        <div key={ingredient} className="flex justify-between items-center text-sm">
-                          <span className="text-gray-700 truncate flex-1 mr-2">{product.name}</span>
-                          <span className="font-semibold text-green-600">${product.price.toFixed(2)}</span>
+                        <div key={ingredient} className="flex justify-between items-center bg-white rounded-lg p-3 shadow-sm">
+                          <div className="flex-1 mr-3">
+                            <div className="font-medium text-gray-800 text-sm leading-tight mb-1">{product.name}</div>
+                            <div className="text-xs text-gray-500">{product.brand}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-green-600 text-lg">${product.price.toFixed(2)}</div>
+                            {product.rating && (
+                              <div className="text-xs text-yellow-600">⭐ {product.rating}</div>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Cart Summary */}
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between items-center font-bold text-lg mb-4">
-                      <span>Total ({Object.keys(selectedProducts).length} items):</span>
-                      <span className="text-2xl text-green-600">${calculateSelectedTotal().toFixed(2)}</span>
+                  {/* Enhanced Cart Summary */}
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-100">
+                    <div className="text-center mb-6">
+                      <div className="text-sm text-gray-600 mb-2">Cart Total</div>
+                      <div className="text-4xl font-bold text-green-600 mb-2">${calculateSelectedTotal().toFixed(2)}</div>
+                      <div className="text-sm text-gray-600">
+                        {Object.keys(selectedProducts).length} items • Ready for checkout
+                      </div>
                     </div>
 
-                    {/* Generate Cart Button */}
+                    {/* Enhanced Generate Cart Button */}
                     <button
                       onClick={generateCartUrl}
                       disabled={isGeneratingCart || Object.keys(selectedProducts).length === 0}
-                      className={`w-full font-bold py-4 px-4 rounded-xl transition-all duration-300 flex items-center justify-center mb-4 ${
+                      className={`w-full font-bold py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center mb-4 text-lg shadow-lg ${
                         isGeneratingCart || Object.keys(selectedProducts).length === 0
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg transform hover:-translate-y-1'
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                          : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:shadow-xl transform hover:-translate-y-1 hover:from-green-600 hover:to-emerald-700'
                       }`}
                     >
                       {isGeneratingCart ? (
                         <>
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                          Creating Cart...
+                          <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
+                          Creating Your Cart...
                         </>
                       ) : (
                         <>
-                          <span className="mr-2">🛒</span>
+                          <span className="mr-3 text-2xl">🚀</span>
                           Add All to Walmart Cart
                         </>
                       )}
                     </button>
 
-                    {/* Cart URL Display */}
+                    {/* Enhanced Cart URL Display */}
                     {cartUrl && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <p className="text-sm font-medium text-green-800 mb-2">
-                          ✅ Cart created successfully!
-                        </p>
+                      <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl p-6 shadow-lg">
+                        <div className="text-center mb-4">
+                          <div className="text-3xl mb-2">🎉</div>
+                          <div className="font-bold text-xl mb-2">Cart Ready!</div>
+                          <p className="text-green-100 text-sm">Your Walmart cart has been created with all selected items</p>
+                        </div>
                         <button
                           onClick={() => window.open(cartUrl, '_blank')}
-                          className="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+                          className="w-full bg-white text-green-600 font-bold py-4 px-6 rounded-xl hover:bg-green-50 transition-all duration-300 flex items-center justify-center text-lg shadow-md hover:shadow-lg"
                         >
-                          🛒 Open Walmart Cart
+                          <span className="mr-3 text-2xl">🛒</span>
+                          Open Walmart Cart
                         </button>
-                        <p className="text-xs text-green-700 mt-2 break-all">
-                          {cartUrl}
-                        </p>
+                        <div className="mt-4 p-3 bg-green-600 bg-opacity-20 rounded-lg">
+                          <p className="text-xs text-green-100 break-all font-mono leading-relaxed">
+                            {cartUrl}
+                          </p>
+                        </div>
                       </div>
                     )}
                     
-                    <div className="text-xs text-gray-500 text-center mt-3">
-                      Prices are current Walmart prices. Final prices may vary at checkout.
+                    <div className="text-center mt-4">
+                      <div className="text-xs text-gray-500 leading-relaxed">
+                        💡 Prices are current Walmart prices<br/>
+                        Final prices may vary at checkout
+                      </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-4">🏪</div>
-                  <p className="text-gray-600 mb-4">Smart shopping not available for this recipe.</p>
-                  <p className="text-sm text-gray-500">You can still save this recipe and shop manually.</p>
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-6">🏪</div>
+                  <h4 className="text-xl font-bold text-gray-800 mb-4">Smart Shopping Unavailable</h4>
+                  <p className="text-gray-600 mb-6 leading-relaxed">
+                    Smart shopping with real Walmart products isn't available for this recipe yet.
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    You can still save this recipe and shop manually using the ingredient list above.
+                  </p>
                 </div>
               )}
             </div>
