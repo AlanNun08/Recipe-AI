@@ -3854,7 +3854,7 @@ async def get_grocery_cart_options(
                     logger.warning(f"⚠️ {ingredient}: Using search fallback")
                     
             except Exception as e:
-                print(f"❌ Error processing ingredient '{ingredient}': {str(e)}")
+                logger.error(f"❌ Error processing ingredient '{ingredient}': {str(e)}")
                 # Create error fallback
                 error_option = {
                     "product_id": f"error_{abs(hash(ingredient)) % 100000}",
