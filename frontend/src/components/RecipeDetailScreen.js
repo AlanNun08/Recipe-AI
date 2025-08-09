@@ -19,7 +19,6 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     }
     
     const loadRecipeDetail = async () => {
-      console.log('🔍 Starting loadRecipeDetail for source:', recipeSource);
       setIsLoading(true);
       
       try {
