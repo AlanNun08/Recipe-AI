@@ -147,19 +147,37 @@ POST /api/grocery/cart-options       # Walmart product search
 
 ## 🔧 **Environment Configuration**
 
+### **Required Environment Variables**
+All API keys and configurations **MUST** be set as OS environment variables. The application uses `os.environ.get()` to access all external services:
+
+```env
+# Backend Environment Variables (required)
+OPENAI_API_KEY=your-openai-api-key-here          # OpenAI GPT-3.5 (graceful fallback if unavailable)
+WALMART_CONSUMER_ID=your-walmart-consumer-id      # Walmart API access
+WALMART_PRIVATE_KEY_PATH=walmart_private_key.pem  # Walmart RSA private key file path
+MAILJET_API_KEY=your-mailjet-api-key             # Email service
+MAILJET_SECRET_KEY=your-mailjet-secret-key       # Email service secret
+STRIPE_PUBLISHABLE_KEY=your-stripe-publishable   # Payment processing (public)
+STRIPE_SECRET_KEY=your-stripe-secret-key         # Payment processing (private)
+MONGO_URL=your-mongodb-connection-string         # Database connection
+SECRET_KEY=your-jwt-secret-key                   # JWT token signing
+
+# Frontend Environment Variables (required)
+REACT_APP_BACKEND_URL=your-backend-url           # Backend API endpoint
+```
+
 ### **Production Settings**
 ```env
 REACT_APP_BACKEND_URL=https://buildyoursmartcart.com
 WDS_SOCKET_PORT=443
 ```
 
-### **Required API Keys**
-- `OPENAI_API_KEY` - OpenAI GPT-3.5 access (graceful fallback if unavailable)
-- `WALMART_CONSUMER_ID` + `WALMART_PRIVATE_KEY` - Walmart affiliate API
-- `MAILJET_API_KEY` + `MAILJET_SECRET_KEY` - Email service
-- `STRIPE_PUBLISHABLE_KEY` + `STRIPE_SECRET_KEY` - Payment processing
-
-**Note**: Recipe generation works with or without OpenAI API key through intelligent mock data fallback system.
+### **Security Requirements**
+- ✅ **ALL API keys accessed via `os.environ.get()`** - No hardcoded credentials
+- ✅ **Environment file protection** - `.env` files excluded from version control
+- ✅ **Graceful fallback handling** - Application continues if optional APIs are unavailable
+- ✅ **Key validation** - System detects placeholder values and activates fallback modes
+- ✅ **Secure key storage** - Private keys stored as separate files, accessed via environment paths
 
 ---
 
