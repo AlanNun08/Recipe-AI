@@ -2214,18 +2214,28 @@ async def generate_recipe_frontend_compatible(data: dict):
         if not user_id:
             raise HTTPException(status_code=400, detail="User ID is required")
         
-        await check_subscription_access(user_id)
+        # Check subscription access with proper error handling
+        try:
+            await check_subscription_access(user_id)
+        except HTTPException as e:
+            if e.status_code == 404:
+                raise HTTPException(status_code=400, detail="Invalid user ID")
+            raise e
         
         # Map frontend data to backend format
         dietary_preferences = []
         if data.get('dietary_restrictions'):
             # Split comma-separated string into list
             dietary_preferences = [pref.strip() for pref in data.get('dietary_restrictions').split(',') if pref.strip()]
+        elif data.get('dietary_preferences'):
+            dietary_preferences = data.get('dietary_preferences', [])
         
         ingredients_on_hand = []
         if data.get('ingredients'):
             # Split comma-separated string into list
             ingredients_on_hand = [ing.strip() for ing in data.get('ingredients').split(',') if ing.strip()]
+        elif data.get('ingredients_on_hand'):
+            ingredients_on_hand = data.get('ingredients_on_hand', [])
         
         # Extract prep time as number (remove "minutes" text)
         prep_time_max = None
@@ -2254,6 +2264,8 @@ async def generate_recipe_frontend_compatible(data: dict):
         # Use the existing generate_mock_recipe function or OpenAI logic
         return await generate_recipe_with_fallback(recipe_request)
         
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Frontend recipe generation error: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to generate recipe")
