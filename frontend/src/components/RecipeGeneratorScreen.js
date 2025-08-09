@@ -368,79 +368,193 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
           </div>
 
           {/* Right Column - Generated Recipe Preview */}
-          <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-8 flex items-center">
-              <span className="mr-3 text-4xl">🎉</span>
-              Generated Recipe
-            </h2>
+          <div className="xl:col-span-1">
+            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 sticky top-6">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-8 flex items-center">
+                <span className="mr-3 text-4xl">🎉</span>
+                Generated Recipe
+              </h2>
 
-            {generatedRecipe ? (
-              <div className="space-y-6">
-                {/* Recipe Header */}
-                <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-6 border border-green-200">
-                  <h3 className="text-2xl font-bold text-gray-800 mb-3">{generatedRecipe.title}</h3>
-                  <p className="text-gray-600 leading-relaxed mb-4">{generatedRecipe.description}</p>
+              {generatedRecipe ? (
+                <div className="space-y-6">
+                  {/* Recipe Header */}
+                  <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-6 border border-green-200">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-3 leading-tight">
+                      {generatedRecipe.title}
+                    </h3>
+                    <p className="text-gray-600 leading-relaxed mb-4">
+                      {generatedRecipe.description}
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center bg-white rounded-xl p-3">
+                        <div className="text-2xl mb-1">⏱️</div>
+                        <div className="text-xs text-gray-500">Prep Time</div>
+                        <div className="font-bold text-gray-800">
+                          {generatedRecipe.prep_time ? `${generatedRecipe.prep_time} min` : 'N/A'}
+                        </div>
+                      </div>
+                      <div className="text-center bg-white rounded-xl p-3">
+                        <div className="text-2xl mb-1">👥</div>
+                        <div className="text-xs text-gray-500">Servings</div>
+                        <div className="font-bold text-gray-800">
+                          {generatedRecipe.servings || formData.servings || '4'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {generatedRecipe.cook_time && (
+                      <div className="mt-4 text-center bg-white rounded-xl p-3">
+                        <div className="text-2xl mb-1">🔥</div>
+                        <div className="text-xs text-gray-500">Cook Time</div>
+                        <div className="font-bold text-gray-800">
+                          {generatedRecipe.cook_time} min
+                        </div>
+                      </div>
+                    )}
+
+                    {generatedRecipe.calories_per_serving && (
+                      <div className="mt-4 text-center bg-white rounded-xl p-3">
+                        <div className="text-2xl mb-1">🔥</div>
+                        <div className="text-xs text-gray-500">Calories per Serving</div>
+                        <div className="font-bold text-gray-800">
+                          {generatedRecipe.calories_per_serving}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ingredients Preview */}
+                  {generatedRecipe.ingredients && (
+                    <div className="bg-amber-50 rounded-2xl p-6 border border-amber-200">
+                      <h4 className="font-bold text-gray-800 mb-4 flex items-center">
+                        <span className="mr-2">🥘</span>
+                        Ingredients ({generatedRecipe.ingredients.length})
+                      </h4>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {generatedRecipe.ingredients.slice(0, 8).map((ingredient, index) => (
+                          <div key={index} className="flex items-start text-sm text-gray-700">
+                            <span className="w-2 h-2 bg-amber-500 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                            <span className="leading-relaxed">{ingredient}</span>
+                          </div>
+                        ))}
+                        {generatedRecipe.ingredients.length > 8 && (
+                          <div className="text-sm text-gray-500 italic pl-5">
+                            +{generatedRecipe.ingredients.length - 8} more ingredients...
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Instructions Preview */}
+                  {generatedRecipe.instructions && (
+                    <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
+                      <h4 className="font-bold text-gray-800 mb-4 flex items-center">
+                        <span className="mr-2">📋</span>
+                        Instructions ({generatedRecipe.instructions.length} steps)
+                      </h4>
+                      <div className="space-y-3 max-h-40 overflow-y-auto">
+                        {generatedRecipe.instructions.slice(0, 4).map((instruction, index) => (
+                          <div key={index} className="flex items-start text-sm text-gray-700">
+                            <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5 flex-shrink-0">
+                              {index + 1}
+                            </span>
+                            <span className="leading-relaxed">{instruction}</span>
+                          </div>
+                        ))}
+                        {generatedRecipe.instructions.length > 4 && (
+                          <div className="text-sm text-gray-500 italic pl-9">
+                            +{generatedRecipe.instructions.length - 4} more steps...
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Shopping List Preview */}
+                  {generatedRecipe.shopping_list && (
+                    <div className="bg-purple-50 rounded-2xl p-6 border border-purple-200">
+                      <h4 className="font-bold text-gray-800 mb-4 flex items-center">
+                        <span className="mr-2">🛒</span>
+                        Shopping List ({generatedRecipe.shopping_list.length} items)
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {generatedRecipe.shopping_list.slice(0, 10).map((item, index) => (
+                          <span key={index} className="px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-full font-medium">
+                            {item}
+                          </span>
+                        ))}
+                        {generatedRecipe.shopping_list.length > 10 && (
+                          <span className="px-3 py-1 bg-gray-100 text-gray-500 text-sm rounded-full">
+                            +{generatedRecipe.shopping_list.length - 10} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="space-y-3">
+                    <button
+                      onClick={viewRecipeDetail}
+                      className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white font-bold py-4 px-6 rounded-2xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center text-lg"
+                    >
+                      <span className="mr-3 text-2xl">👀</span>
+                      View Full Recipe with Walmart Shopping
+                    </button>
+
+                    <button
+                      onClick={() => setGeneratedRecipe(null)}
+                      className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center"
+                    >
+                      <span className="mr-2 text-lg">🔄</span>
+                      Generate New Recipe
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-6 opacity-50">🍳</div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">Ready to Create?</h3>
+                  <p className="text-gray-600 leading-relaxed mb-6">
+                    Fill out the form to generate your personalized recipe with AI.
+                  </p>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl mb-1">⏱️</div>
-                      <div className="text-sm text-gray-600">Prep Time</div>
-                      <div className="font-bold">{generatedRecipe.prep_time || 'N/A'}</div>
+                  {/* Progress Indicator */}
+                  <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-200">
+                    <div className="text-orange-600 font-medium text-sm mb-4">
+                      💡 Recipe Generation Progress
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl mb-1">👥</div>
-                      <div className="text-sm text-gray-600">Servings</div>
-                      <div className="font-bold">{generatedRecipe.servings || 'N/A'}</div>
+                    <div className="space-y-2">
+                      <div className={`flex items-center text-sm ${formData.cuisine ? 'text-green-600' : 'text-gray-400'}`}>
+                        <span className="mr-2">{formData.cuisine ? '✅' : '⭕'}</span>
+                        Cuisine selected
+                      </div>
+                      <div className={`flex items-center text-sm ${formData.meal_type ? 'text-green-600' : 'text-gray-400'}`}>
+                        <span className="mr-2">{formData.meal_type ? '✅' : '⭕'}</span>
+                        Meal type chosen
+                      </div>
+                      <div className={`flex items-center text-sm ${formData.difficulty ? 'text-green-600' : 'text-gray-400'}`}>
+                        <span className="mr-2">{formData.difficulty ? '✅' : '⭕'}</span>
+                        Difficulty set
+                      </div>
+                    </div>
+                    {formData.cuisine && formData.meal_type && formData.difficulty && (
+                      <div className="mt-4 text-green-600 font-medium text-sm">
+                        🎉 Ready to generate! Click the button below.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-6 bg-blue-50 rounded-2xl p-6 border border-blue-200">
+                    <div className="text-blue-600 font-medium text-sm">
+                      ✨ Your generated recipe will include step-by-step instructions and a complete Walmart shopping list with real products and pricing!
                     </div>
                   </div>
                 </div>
-
-                {/* Ingredients Preview */}
-                {generatedRecipe.ingredients && (
-                  <div className="bg-gray-50 rounded-2xl p-6">
-                    <h4 className="font-bold text-gray-800 mb-4 flex items-center">
-                      <span className="mr-2">🥘</span>
-                      Ingredients ({generatedRecipe.ingredients.length})
-                    </h4>
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
-                      {generatedRecipe.ingredients.slice(0, 5).map((ingredient, index) => (
-                        <div key={index} className="flex items-center text-sm text-gray-700">
-                          <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
-                          {ingredient}
-                        </div>
-                      ))}
-                      {generatedRecipe.ingredients.length > 5 && (
-                        <div className="text-sm text-gray-500 italic">
-                          +{generatedRecipe.ingredients.length - 5} more ingredients...
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* View Full Recipe Button */}
-                <button
-                  onClick={viewRecipeDetail}
-                  className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white font-bold py-4 px-6 rounded-2xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center text-lg"
-                >
-                  <span className="mr-3 text-2xl">👀</span>
-                  View Full Recipe with Walmart Shopping
-                </button>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-6">🍳</div>
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Ready to Create?</h3>
-                <p className="text-gray-600 leading-relaxed mb-6">
-                  Fill out the form on the left to generate your personalized recipe with AI.
-                </p>
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-200">
-                  <div className="text-orange-600 font-medium text-sm">
-                    💡 Your generated recipe will include step-by-step instructions and a complete Walmart shopping list with real products and pricing!
-                  </div>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
