@@ -3804,7 +3804,7 @@ async def get_grocery_cart_options(
                 "message": "No shopping list available for this recipe"
             }
         
-        print(f"Processing {len(shopping_list)} ingredients for Walmart search")
+        logger.info(f"Processing {len(shopping_list)} ingredients for Walmart search")
         
         # Get Walmart product options for each ingredient (2-3 options per ingredient)
         ingredient_options = []
