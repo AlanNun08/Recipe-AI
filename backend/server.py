@@ -3181,6 +3181,26 @@ async def generate_cart_url(cart_data: Dict[str, Any]):
 # END NEW WALMART INTEGRATION
 
 # CORS middleware configuration - Production ready
+@api_router.delete("/recipes/{recipe_id}")
+async def delete_recipe(recipe_id: str):
+    """Delete a specific recipe"""
+    try:
+        # Delete the recipe by ID
+        result = await db.recipes.delete_one({"id": recipe_id})
+        
+        if result.deleted_count == 1:
+            logger.info(f"Successfully deleted recipe: {recipe_id}")
+            return {"success": True, "message": "Recipe deleted successfully"}
+        else:
+            logger.warning(f"Recipe not found for deletion: {recipe_id}")
+            raise HTTPException(status_code=404, detail="Recipe not found")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting recipe {recipe_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete recipe")
+
 @api_router.delete("/starbucks-recipes/{recipe_id}")
 async def delete_starbucks_recipe(recipe_id: str):
     """Delete a specific Starbucks recipe"""
