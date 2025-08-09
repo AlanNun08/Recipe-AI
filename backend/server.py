@@ -3754,7 +3754,7 @@ async def get_grocery_cart_options(
         weekly_collection = db["weekly_meal_plans"]
         weekly_plans = await weekly_collection.find({"user_id": user_id}).sort([("created_at", -1)]).to_list(length=10)
         
-        print(f"Found {len(weekly_plans)} weekly plans for user")
+        # Found weekly plans for user
         
         for plan in weekly_plans:
             meals = plan.get('meals', [])
