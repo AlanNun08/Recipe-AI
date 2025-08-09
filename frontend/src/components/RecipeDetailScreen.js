@@ -257,7 +257,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
             className="group flex items-center text-blue-700 hover:text-blue-800 font-medium mb-6 transition-all duration-200 hover:transform hover:-translate-x-1"
           >
             <span className="mr-2 group-hover:mr-3 transition-all duration-200">←</span>
-            Back to Weekly Plan
+            {getBackButtonText()}
           </button>
           
           <div className="text-center bg-white rounded-3xl shadow-lg p-8 mb-8">
