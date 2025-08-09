@@ -81,15 +81,19 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     setIsLoadingCart(true);
     
     try {
-      // Only load cart options for weekly recipes for now
-      if (currentRecipeSource !== 'weekly') {
-        console.log('⚠️ Cart options only available for weekly recipes, skipping for source:', currentRecipeSource);
-        setIsLoadingCart(false);
-        return;
+      // Use different endpoints based on recipe source
+      let apiUrl;
+      if (currentRecipeSource === 'weekly') {
+        apiUrl = `${API}/api/v2/walmart/weekly-cart-options?recipe_id=${currentRecipeId}`;
+      } else if (currentRecipeSource === 'generated' || currentRecipeSource === 'history') {
+        apiUrl = `${API}/api/recipes/${currentRecipeId}/cart-options`;
+      } else {
+        // Default to weekly
+        apiUrl = `${API}/api/v2/walmart/weekly-cart-options?recipe_id=${currentRecipeId}`;
       }
       
-      console.log('🔍 Loading cart options for weekly recipe:', currentRecipeId);
-      console.log('🔍 API URL:', `${API}/api/v2/walmart/weekly-cart-options?recipe_id=${currentRecipeId}`);
+      console.log('🔍 Loading cart options for', currentRecipeSource, 'recipe:', currentRecipeId);
+      console.log('🔍 API URL:', apiUrl);
       console.log('⏰ This may take 8-10 seconds - fetching real Walmart products...');
       
       // Add longer timeout for slow Walmart API (backend takes ~8 seconds)
@@ -97,7 +101,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
       const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
       
       // Use native fetch instead of axios for V2 endpoint
-      const response = await fetch(`${API}/api/v2/walmart/weekly-cart-options?recipe_id=${currentRecipeId}`, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
