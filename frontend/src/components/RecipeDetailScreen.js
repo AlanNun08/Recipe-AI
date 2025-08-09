@@ -147,7 +147,8 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
     try {
       const products = Object.values(selectedProducts).map(product => ({
         ingredient_name: product.ingredient || 'Unknown',
-        product_id: product.id, // Use 'id' field from WalmartProductV2
+        id: product.id, // Use 'id' field from WalmartProductV2 (correct field name)
+        product_id: product.id, // Keep for backward compatibility 
         name: product.name,
         price: product.price,
         quantity: 1
@@ -166,14 +167,20 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Cart URL generation failed:', errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
       console.log('✅ Cart URL generated:', data);
 
-      setCartUrl(data.cart_url);
-      showNotification(`🛒 Cart created with ${data.total_items} items! Total: $${data.total_price}`, 'success');
+      if (data.success && data.cart_url) {
+        setCartUrl(data.cart_url);
+        showNotification(`🛒 Cart created with ${data.total_items || data.product_count} items! Total: $${data.total_price}`, 'success');
+      } else {
+        throw new Error('Cart URL generation failed');
+      }
     } catch (error) {
       console.error('❌ Failed to generate cart URL:', error);
       console.log('Request failed with:', error.message);
