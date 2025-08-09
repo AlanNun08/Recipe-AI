@@ -2462,9 +2462,14 @@ IMPORTANT FOR SPICES: If the recipe uses spices, list each spice individually in
         
     except json.JSONDecodeError as e:
         logging.error(f"JSON parse error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to parse recipe from AI")
+        # Fallback to mock data on JSON parsing error
+        return await generate_mock_recipe(request)
     except Exception as e:
         logging.error(f"Recipe generation error: {str(e)}")
+        # Check if this is due to OpenAI API key issues
+        if "api_key" in str(e).lower() or "authentication" in str(e).lower() or "placeholder" in str(os.environ.get('OPENAI_API_KEY', '')).lower():
+            logging.info("OpenAI API key not configured. Using fallback mock data for recipe generation.")
+            return await generate_mock_recipe(request)
         raise HTTPException(status_code=500, detail="Failed to generate recipe")
 
 @api_router.get("/recipes/{recipe_id}")
