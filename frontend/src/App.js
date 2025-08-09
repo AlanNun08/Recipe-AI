@@ -2236,8 +2236,6 @@ function App() {
         return <DashboardScreen />;
       case 'generate-recipe':
         return <RecipeGenerationScreen />;
-      case 'all-recipes':
-        return <RecipeHistoryScreen />;
       case 'starbucks-generator':
         return <StarbucksGeneratorScreen 
           showNotification={showNotification}
