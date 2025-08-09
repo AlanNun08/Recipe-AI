@@ -48,12 +48,8 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
         }
         
         const data = await response.json();
-        console.log('✅ Recipe loaded successfully:', data);
-        
-        console.log('🔍 About to set recipe data and disable loading...');
         setRecipe(data);
         setIsLoading(false);
-        console.log('✅ Recipe state set and loading disabled');
 
         // Load cart options in the background (non-blocking) 
         console.log('🔍 Starting cart options loading in 2 seconds...');
