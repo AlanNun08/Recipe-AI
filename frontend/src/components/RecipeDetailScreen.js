@@ -33,8 +33,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
           apiUrl = `${API}/api/weekly-recipes/recipe/${recipeId}`;
         }
         
-        console.log('🔍 Loading recipe detail for ID:', recipeId);
-        console.log('🔍 API URL:', apiUrl);
+
         
         // Use native fetch instead of axios
         const response = await fetch(apiUrl, {
