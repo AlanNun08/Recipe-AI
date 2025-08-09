@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
-function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNotification }) {
+function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNotification, backDestination }) {
   const [recipe, setRecipe] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [cartOptions, setCartOptions] = useState(null);
