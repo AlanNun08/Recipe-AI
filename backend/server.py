@@ -3783,7 +3783,7 @@ async def get_grocery_cart_options(
                     pass
         
         if not recipe_doc:
-            print(f"Recipe still not found after all searches")
+            # Recipe still not found after all searches
             if weekly_plans and len(weekly_plans) > 0 and weekly_plans[0].get('meals'):
                 print("Available recipe IDs:")
                 for meal in weekly_plans[0]['meals'][:3]:
