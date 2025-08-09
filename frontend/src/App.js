@@ -2235,6 +2235,29 @@ function App() {
         return <DashboardScreen />;
       case 'generate-recipe':
         return <RecipeGenerationScreen />;
+      case 'all-recipes':
+        return <RecipeHistoryScreen
+          user={user}
+          onBack={() => setCurrentScreen('dashboard')}
+          showNotification={showNotification}
+          onViewRecipe={(recipeId, source = 'history') => {
+            if (!recipeId) {
+              console.error('❌ Recipe ID is null or undefined in App.js');
+              showNotification('❌ Recipe ID is missing', 'error');
+              return;
+            }
+            
+            setCurrentRecipeId(recipeId);
+            setCurrentRecipeSource(source);
+            setCurrentScreen('recipe-detail');
+          }}
+          onViewStarbucksRecipe={(recipe) => {
+            console.log('onViewStarbucksRecipe called with recipe:', recipe);
+            // Navigate to Starbucks generator screen for Starbucks recipes
+            setCurrentScreen('starbucks-generator');
+            showNotification('🌟 Opening Starbucks recipe generator', 'info');
+          }}
+        />;
       case 'starbucks-generator':
         return <StarbucksGeneratorScreen 
           showNotification={showNotification}
