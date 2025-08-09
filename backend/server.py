@@ -554,7 +554,6 @@ async def generate_starbucks_drink(request: StarbucksRequest):
         
         # Handle random drink type
         if request.drink_type == "random":
-            import random
             drink_types = ["frappuccino", "refresher", "lemonade", "iced_matcha_latte"]
             request.drink_type = random.choice(drink_types)
             
