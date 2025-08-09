@@ -3182,18 +3182,26 @@ async def generate_cart_url(cart_data: Dict[str, Any]):
 
 # CORS middleware configuration - Production ready
 @api_router.delete("/recipes/{recipe_id}")
-async def delete_recipe(recipe_id: str):
-    """Delete a specific recipe"""
+async def delete_recipe(recipe_id: str, user_id: str = None):
+    """Delete a specific recipe - with optional user validation"""
     try:
-        # Delete the recipe by ID
-        result = await db.recipes.delete_one({"id": recipe_id})
+        # Build the query filter
+        query_filter = {"id": recipe_id}
+        
+        # If user_id is provided, ensure user can only delete their own recipes
+        if user_id:
+            query_filter["user_id"] = user_id
+        
+        # Delete the recipe
+        result = await db.recipes.delete_one(query_filter)
         
         if result.deleted_count == 1:
             logger.info(f"Successfully deleted recipe: {recipe_id}")
             return {"success": True, "message": "Recipe deleted successfully"}
         else:
-            logger.warning(f"Recipe not found for deletion: {recipe_id}")
-            raise HTTPException(status_code=404, detail="Recipe not found")
+            # Could be either recipe not found or user doesn't own the recipe
+            logger.warning(f"Recipe not found or access denied for deletion: {recipe_id}")
+            raise HTTPException(status_code=404, detail="Recipe not found or access denied")
             
     except HTTPException:
         raise
