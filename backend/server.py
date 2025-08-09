@@ -3933,7 +3933,7 @@ async def generate_grocery_cart_url_v2(request: Request):
                 product_id.isdigit()):  # Real Walmart IDs are numeric
                 valid_product_ids.append(product_id)
                 total_price += price
-                print(f"    ✅ Added to cart: {product_id}")
+                # Added to cart
             else:
                 print(f"    ❌ Skipped (invalid ID): {product_id}")
         
