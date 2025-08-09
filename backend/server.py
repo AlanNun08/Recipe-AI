@@ -2712,18 +2712,45 @@ async def get_recipe_detail(recipe_id: str):
         logging.error(f"Error fetching recipe detail for {recipe_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch recipe detail")
 
-# Add cart options endpoint for generated recipes
 @api_router.post("/recipes/{recipe_id}/cart-options")
 async def get_recipe_cart_options(recipe_id: str):
-    """Get Walmart cart options for a generated recipe"""
+    """Get Walmart cart options for a generated recipe - searches multiple collections"""
     try:
-        # Get the recipe first
-        recipe = await db.recipes.find_one({"id": recipe_id})
+        recipe = None
+        collection_found = None
+        
+        # Search in different collections (same as detail endpoint)
+        collections_to_search = [
+            ("recipes", "regular"),
+            ("starbucks_recipes", "starbucks"), 
+            ("curated_starbucks_recipes", "starbucks"),
+            ("user_shared_recipes", "shared")
+        ]
+        
+        for collection_name, recipe_type in collections_to_search:
+            recipe = await db[collection_name].find_one({"id": recipe_id})
+            if recipe:
+                collection_found = collection_name
+                logging.info(f"Recipe {recipe_id} found in {collection_name} for cart options")
+                break
+        
         if not recipe:
+            logging.warning(f"Recipe {recipe_id} not found in any collection for cart options")
             raise HTTPException(status_code=404, detail="Recipe not found")
         
         # Extract ingredients from the recipe
         ingredients = recipe.get('ingredients', [])
+        
+        # For Starbucks recipes, they might not have traditional ingredients
+        if collection_found in ["starbucks_recipes", "curated_starbucks_recipes"]:
+            # Starbucks recipes don't typically have shopping ingredients
+            return {
+                "success": False,
+                "message": "Shopping cart not available for Starbucks recipes",
+                "recipe_type": "starbucks",
+                "recipe_title": recipe.get('drink_name') or recipe.get('name') or recipe.get('title', 'Unknown Drink')
+            }
+        
         if not ingredients:
             raise HTTPException(status_code=400, detail="No ingredients found in recipe")
         
