@@ -45,11 +45,6 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
   });
 
   const handleViewRecipe = (recipe) => {
-    console.log('🔍 handleViewRecipe called with recipe:', recipe);
-    console.log('🔍 Recipe ID:', recipe.id);
-    console.log('🔍 Recipe title:', recipe.title);
-    console.log('🔍 Recipe category:', recipe.category);
-    
     if (recipe.category === 'starbucks' || recipe.type === 'starbucks') {
       // Navigate to Starbucks generator screen for Starbucks recipes
       if (onViewStarbucksRecipe) {
