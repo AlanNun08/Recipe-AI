@@ -75,7 +75,8 @@ A complete AI-powered recipe generation and community sharing platform that comb
 ### **Backend**
 - **FastAPI** - Modern Python web framework
 - **MongoDB** - NoSQL database for scalable data storage
-- **OpenAI API** - GPT-3.5 for recipe generation
+- **OpenAI API** - GPT-3.5 for recipe generation with intelligent fallback
+- **Mock Recipe System** - Ensures 100% uptime with cuisine-specific recipes
 - **Walmart API** - Real product search and affiliate links
 - **Mailjet** - Email verification and notifications
 
