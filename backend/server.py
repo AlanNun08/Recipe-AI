@@ -5015,7 +5015,7 @@ async def get_weekly_recipe_detail(recipe_id: str):
             meals = plan.get('meals', [])
             # Checking plan with meals
             for meal in meals:
-                print(f"Checking meal ID: {meal.get('id')} vs target: {recipe_id}")  # Debug
+                # Checking meal ID vs target  # Debug
                 if meal.get('id') == recipe_id:
                     target_meal = meal
                     source_plan = plan
