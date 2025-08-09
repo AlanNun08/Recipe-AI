@@ -13,13 +13,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
   const [isGeneratingCart, setIsGeneratingCart] = useState(false);
 
   useEffect(() => {
-    console.log('🔍 RecipeDetailScreen useEffect triggered with:');
-    console.log('   - recipeId:', recipeId);
-    console.log('   - recipeSource:', recipeSource);
-    console.log('   - Type of recipeId:', typeof recipeId);
-    
     if (!recipeId) {
-      console.log('⚠️ No recipeId provided, setting loading to false');
       setIsLoading(false);
       return;
     }
