@@ -2646,28 +2646,70 @@ async def get_recipe_by_id(recipe_id: str):
         raise HTTPException(status_code=500, detail="Failed to fetch recipe")
 
 @api_router.get("/recipes/{recipe_id}/detail")
-async def get_recipe_detail_with_walmart(recipe_id: str):
-    """Get a specific recipe by ID with Walmart integration support"""
+async def get_recipe_detail(recipe_id: str):
+    """Get a specific recipe by ID with Walmart integration support - searches multiple collections"""
     try:
-        recipe = await db.recipes.find_one({"id": recipe_id})
+        recipe = None
+        collection_found = None
+        
+        # Search in different collections in order of priority
+        collections_to_search = [
+            ("recipes", "regular"),           # Regular generated recipes
+            ("starbucks_recipes", "starbucks"), # User-generated Starbucks recipes
+            ("curated_starbucks_recipes", "starbucks"), # Curated Starbucks recipes
+            ("user_shared_recipes", "shared") # User-shared community recipes
+        ]
+        
+        for collection_name, recipe_type in collections_to_search:
+            recipe = await db[collection_name].find_one({"id": recipe_id})
+            if recipe:
+                collection_found = collection_name
+                logging.info(f"Recipe {recipe_id} found in {collection_name} collection")
+                break
+        
         if not recipe:
+            logging.warning(f"Recipe {recipe_id} not found in any collection")
             raise HTTPException(status_code=404, detail="Recipe not found")
         
         # Convert MongoDB document to dict, handling _id field
         recipe_dict = mongo_to_dict(recipe)
         
-        # Add default values if missing
-        recipe_dict.update({
-            "prep_time": recipe_dict.get('prep_time', '30 minutes'),
-            "cook_time": recipe_dict.get('cook_time', '25 minutes'),
-            "servings": recipe_dict.get('servings', 2),
-            "cuisine": recipe_dict.get('cuisine', 'International'),
-            "calories": recipe_dict.get('calories', 400)
-        })
+        # Handle different recipe types with appropriate defaults
+        if collection_found in ["starbucks_recipes", "curated_starbucks_recipes"]:
+            # Starbucks recipes have different structure
+            recipe_dict.update({
+                "prep_time": recipe_dict.get('prep_time', '5 minutes'),
+                "cook_time": recipe_dict.get('cook_time', '0 minutes'), 
+                "servings": recipe_dict.get('servings', 1),
+                "cuisine": "Starbucks",
+                "calories": recipe_dict.get('calories', 300),
+                "type": "starbucks"
+            })
+            
+            # Ensure we have the right title field for Starbucks recipes
+            if not recipe_dict.get('title') and recipe_dict.get('drink_name'):
+                recipe_dict['title'] = recipe_dict['drink_name']
+            elif not recipe_dict.get('title') and recipe_dict.get('name'):
+                recipe_dict['title'] = recipe_dict['name']
+                
+        else:
+            # Regular recipes
+            recipe_dict.update({
+                "prep_time": recipe_dict.get('prep_time', '30 minutes'),
+                "cook_time": recipe_dict.get('cook_time', '25 minutes'),
+                "servings": recipe_dict.get('servings', 2),
+                "cuisine": recipe_dict.get('cuisine_type', recipe_dict.get('cuisine', 'International')),
+                "calories": recipe_dict.get('calories_per_serving', recipe_dict.get('calories', 400)),
+                "type": "regular"
+            })
         
+        logging.info(f"Successfully returning recipe {recipe_id} from {collection_found}")
         return recipe_dict
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logging.error(f"Error fetching recipe detail: {str(e)}")
+        logging.error(f"Error fetching recipe detail for {recipe_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch recipe detail")
 
 # Add cart options endpoint for generated recipes
