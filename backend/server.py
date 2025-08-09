@@ -3785,7 +3785,7 @@ async def get_grocery_cart_options(
         if not recipe_doc:
             # Recipe still not found after all searches
             if weekly_plans and len(weekly_plans) > 0 and weekly_plans[0].get('meals'):
-                print("Available recipe IDs:")
+                # Available recipe IDs:
                 for meal in weekly_plans[0]['meals'][:3]:
                     print(f"  - {meal.get('id')}: {meal.get('name')}")
             raise HTTPException(status_code=404, detail=f"Recipe not found with ID: {recipe_id}")
