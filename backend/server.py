@@ -3794,16 +3794,28 @@ async def generate_cart_url_v2(cart_data: Dict[str, Any]):
         if not selected_products:
             raise HTTPException(status_code=400, detail="No products selected")
         
-        # Generate clean cart URL
-        product_ids = [p.get('id', '') for p in selected_products if p.get('id')]
-        total_price = sum(float(p.get('price', 0)) for p in selected_products)
+        # Generate proper Walmart affiliate cart URL
+        product_items = []
+        total_price = 0.0
         
-        # Clean affiliate URL format
-        cart_url = f"https://walmart.com/cart/add?items={','.join(product_ids)}"
+        for product in selected_products:
+            product_id = product.get('id', '')
+            quantity = product.get('quantity', 1)
+            price = float(product.get('price', 0))
+            
+            if product_id:
+                # Format: product_id_quantity for Walmart affiliate URL
+                product_items.append(f"{product_id}_{quantity}")
+                total_price += price * quantity
+        
+        # Correct Walmart affiliate cart URL format
+        cart_url = f"https://affil.walmart.com/cart/addToCart?items={','.join(product_items)}"
         
         return {
+            "success": True,
             "cart_url": cart_url,
             "total_price": round(total_price, 2),
+            "total_items": sum(p.get('quantity', 1) for p in selected_products),
             "product_count": len(selected_products),
             "version": "v2.1.0",
             "timestamp": datetime.utcnow().isoformat()
