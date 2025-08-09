@@ -24,8 +24,14 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
     setIsLoading(true);
     try {
       console.log('🔍 Loading recipe detail for ID:', recipeId);
+      console.log('🔍 API URL:', `${API}/api/weekly-recipes/recipe/${recipeId}`);
       
-      const response = await axios.get(`${API}/api/weekly-recipes/recipe/${recipeId}`);
+      const response = await axios.get(`${API}/api/weekly-recipes/recipe/${recipeId}`, {
+        timeout: 10000, // 10 second timeout
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       console.log('✅ Recipe loaded:', response.data);
       
       setRecipe(response.data);
@@ -37,6 +43,8 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
       
     } catch (error) {
       console.error('❌ Failed to load recipe detail:', error);
+      console.error('❌ Error details:', error.response?.data || error.message);
+      console.error('❌ Error status:', error.response?.status);
       showNotification('❌ Failed to load recipe details', 'error');
     } finally {
       setIsLoading(false);
