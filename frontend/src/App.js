@@ -2284,7 +2284,7 @@ function App() {
           onBack={() => {
             // Navigate back to appropriate screen based on source
             if (currentRecipeSource === 'generated') {
-              setCurrentScreen('generator');
+              setCurrentScreen('recipe-generation');
             } else if (currentRecipeSource === 'history') {
               setCurrentScreen('recipe-history');
             } else {
