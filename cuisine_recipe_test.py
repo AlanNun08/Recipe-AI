@@ -28,7 +28,7 @@ print(f"Using backend URL: {BACKEND_URL}")
 class CuisineRecipeTester:
     def __init__(self):
         self.client = httpx.AsyncClient(timeout=30.0)
-        self.test_user_id = "test-user-123"
+        self.test_user_id = "f99be98f-c1d5-4ccc-a3ad-9b62e01f4731"  # Demo user ID
         
     async def cleanup(self):
         await self.client.aclose()
