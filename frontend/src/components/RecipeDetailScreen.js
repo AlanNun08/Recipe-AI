@@ -121,17 +121,28 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
 
       console.log('🔍 Generating cart URL with products:', products);
 
-      const response = await axios.post(`${API}/api/grocery/generate-cart-url`, {
-        products: products
+      const response = await fetch(`${API}/api/grocery/generate-cart-url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          products: products
+        })
       });
 
-      console.log('✅ Cart URL generated:', response.data);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      setCartUrl(response.data.cart_url);
-      showNotification(`🛒 Cart created with ${response.data.total_items} items! Total: $${response.data.total_price}`, 'success');
+      const data = await response.json();
+      console.log('✅ Cart URL generated:', data);
+
+      setCartUrl(data.cart_url);
+      showNotification(`🛒 Cart created with ${data.total_items} items! Total: $${data.total_price}`, 'success');
     } catch (error) {
       console.error('❌ Failed to generate cart URL:', error);
-      console.log('Request failed with:', error.response?.data || error.message);
+      console.log('Request failed with:', error.message);
       showNotification('❌ Failed to create cart URL. Please try again.', 'error');
     } finally {
       setIsGeneratingCart(false);
