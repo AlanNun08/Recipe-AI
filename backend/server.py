@@ -2204,7 +2204,154 @@ async def _get_walmart_product_options(ingredient: str, max_options: int = 3) ->
     
     return products
 
+# Add recipe generation endpoint that accepts frontend format
 @api_router.post("/recipes/generate")
+async def generate_recipe_frontend_compatible(data: dict):
+    """Generate a recipe using frontend data format - PREMIUM FEATURE"""
+    try:
+        # Extract user_id and check subscription access
+        user_id = data.get('user_id')
+        if not user_id:
+            raise HTTPException(status_code=400, detail="User ID is required")
+        
+        await check_subscription_access(user_id)
+        
+        # Map frontend data to backend format
+        dietary_preferences = []
+        if data.get('dietary_restrictions'):
+            # Split comma-separated string into list
+            dietary_preferences = [pref.strip() for pref in data.get('dietary_restrictions').split(',') if pref.strip()]
+        
+        ingredients_on_hand = []
+        if data.get('ingredients'):
+            # Split comma-separated string into list
+            ingredients_on_hand = [ing.strip() for ing in data.get('ingredients').split(',') if ing.strip()]
+        
+        # Extract prep time as number (remove "minutes" text)
+        prep_time_max = None
+        if data.get('prep_time'):
+            try:
+                prep_time_str = data.get('prep_time').replace('minutes', '').replace('hour', '60').replace('hours', '60').replace('+', '').strip()
+                if prep_time_str.isdigit():
+                    prep_time_max = int(prep_time_str)
+                elif prep_time_str == '1':
+                    prep_time_max = 60
+            except:
+                prep_time_max = 30  # default
+        
+        # Create standardized request
+        recipe_request = RecipeGenRequest(
+            user_id=user_id,
+            recipe_category='cuisine',  # Default to cuisine
+            cuisine_type=data.get('cuisine', 'Italian'),
+            dietary_preferences=dietary_preferences,
+            ingredients_on_hand=ingredients_on_hand,
+            prep_time_max=prep_time_max,
+            servings=4,  # default
+            difficulty=data.get('difficulty', 'medium').lower()
+        )
+        
+        # Use the existing generate_mock_recipe function or OpenAI logic
+        return await generate_recipe_with_fallback(recipe_request)
+        
+    except Exception as e:
+        logging.error(f"Frontend recipe generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to generate recipe")
+
+async def generate_recipe_with_fallback(request: RecipeGenRequest):
+    """Generate recipe with OpenAI or fallback to mock data"""
+    try:
+        # Check if OpenAI API key is available
+        openai_key = os.environ.get('OPENAI_API_KEY', '')
+        if not openai_key or 'placeholder' in openai_key.lower() or 'your-' in openai_key.lower():
+            logging.info("OpenAI API key not configured. Using mock data fallback.")
+            return await generate_mock_recipe(request)
+        
+        # Build the prompt for OpenAI
+        prompt = f"""Create a {request.cuisine_type or 'delicious'} recipe for {request.servings} people.
+Difficulty level: {request.difficulty}.
+"""
+        
+        if request.dietary_preferences:
+            prompt += f"Dietary preferences: {', '.join(request.dietary_preferences)}.\n"
+        
+        if request.ingredients_on_hand:
+            prompt += f"Try to use these ingredients: {', '.join(request.ingredients_on_hand)}.\n"
+        
+        if request.prep_time_max:
+            prompt += f"Maximum prep time: {request.prep_time_max} minutes.\n"
+        
+        prompt += """
+Return ONLY a valid JSON object with this exact structure:
+
+{
+    "title": "Recipe Name",
+    "description": "Brief description",
+    "ingredients": ["ingredient 1", "ingredient 2"],
+    "instructions": ["step 1", "step 2"],
+    "prep_time": 15,
+    "cook_time": 30,
+    "calories_per_serving": 350,
+    "shopping_list": ["ingredient_name_1", "ingredient_name_2"]
+}
+
+The shopping_list should contain only ingredient names without quantities or measurements.
+"""
+        
+        # Call OpenAI
+        response = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a professional chef. Always respond with valid JSON only."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1000,
+            temperature=0.7
+        )
+        
+        # Parse the response
+        recipe_json = response.choices[0].message.content.strip()
+        
+        # Clean up the JSON (remove markdown formatting if present)
+        if recipe_json.startswith("```json"):
+            recipe_json = recipe_json[7:]
+        if recipe_json.endswith("```"):
+            recipe_json = recipe_json[:-3]
+        
+        recipe_data = json.loads(recipe_json)
+        
+        # Create regular recipe
+        recipe = Recipe(
+            title=recipe_data['title'],
+            description=recipe_data['description'],
+            ingredients=recipe_data['ingredients'],
+            instructions=recipe_data['instructions'],
+            prep_time=recipe_data['prep_time'],
+            cook_time=recipe_data['cook_time'],
+            servings=request.servings,
+            cuisine_type=request.cuisine_type or "general",
+            dietary_tags=request.dietary_preferences,
+            difficulty=request.difficulty,
+            calories_per_serving=recipe_data.get('calories_per_serving'),
+            is_healthy=request.is_healthy,
+            user_id=request.user_id,
+            shopping_list=recipe_data.get('shopping_list', [])
+        )
+        
+        # Save to database
+        recipe_dict = recipe.dict()
+        result = await db.recipes.insert_one(recipe_dict)
+        
+        # Get the inserted document and return it
+        if result.inserted_id:
+            inserted_recipe = await db.recipes.find_one({"_id": result.inserted_id})
+            return mongo_to_dict(inserted_recipe)
+        
+        return recipe_dict
+        
+    except Exception as e:
+        logging.error(f"OpenAI recipe generation failed: {str(e)}, falling back to mock data")
+        return await generate_mock_recipe(request)
 async def generate_recipe(request: RecipeGenRequest):
     """Generate a recipe using OpenAI - PREMIUM FEATURE"""
     try:
