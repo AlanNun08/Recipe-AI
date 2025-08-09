@@ -67,7 +67,6 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
   }, [recipeId, recipeSource]);
 
   const loadCartOptionsForRecipe = async (currentRecipeId, currentRecipeSource = 'weekly') => {
-    console.log('🔍 Starting loadCartOptionsForRecipe for recipe:', currentRecipeId, 'source:', currentRecipeSource);
     setIsLoadingCart(true);
     
     try {
