@@ -4583,7 +4583,6 @@ async def generate_mock_recipe(request: RecipeGenRequest) -> dict:
         )
     else:
         # Generate diverse recipes based on cuisine type using the new diverse recipe database
-        import random
         recipe_variations = get_diverse_recipe_for_cuisine(cuisine_type, request.dietary_preferences)
         
         # Select a random recipe from the variations
