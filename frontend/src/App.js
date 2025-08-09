@@ -2230,14 +2230,16 @@ function App() {
           user={user}
           onBack={() => setCurrentScreen('dashboard')}
           showNotification={showNotification}
-          onViewRecipe={(recipeId) => {
-            console.log('onViewRecipe called with recipeId:', recipeId);
+          onViewRecipe={(recipeId, source = 'weekly') => {
+            console.log('onViewRecipe called with recipeId:', recipeId, 'source:', source);
             if (!recipeId) {
               showNotification('❌ Recipe ID is missing', 'error');
               return;
             }
             console.log('Setting currentRecipeId to:', recipeId);
+            console.log('Setting currentRecipeSource to:', source);
             setCurrentRecipeId(recipeId);
+            setCurrentRecipeSource(source);
             console.log('Setting currentScreen to recipe-detail');
             setCurrentScreen('recipe-detail');
           }}
