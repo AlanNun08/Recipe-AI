@@ -17,45 +17,46 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
       setIsLoading(false);
       return;
     }
+    
+    const loadRecipeDetail = async () => {
+      setIsLoading(true);
+      try {
+        console.log('🔍 Loading recipe detail for ID:', recipeId);
+        console.log('🔍 API URL:', `${API}/api/weekly-recipes/recipe/${recipeId}`);
+        
+        // Use native fetch instead of axios
+        const response = await fetch(`${API}/api/weekly-recipes/recipe/${recipeId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('✅ Recipe loaded:', data);
+        
+        setRecipe(data);
+        
+        // Load cart options in the background (non-blocking) 
+        setTimeout(() => {
+          loadCartOptions();
+        }, 500);
+        
+      } catch (error) {
+        console.error('❌ Failed to load recipe detail:', error);
+        console.error('❌ Error details:', error.message);
+        showNotification('❌ Failed to load recipe details', 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
     loadRecipeDetail();
   }, [recipeId]);
-
-  const loadRecipeDetail = async () => {
-    setIsLoading(true);
-    try {
-      console.log('🔍 Loading recipe detail for ID:', recipeId);
-      console.log('🔍 API URL:', `${API}/api/weekly-recipes/recipe/${recipeId}`);
-      
-      // Use native fetch instead of axios
-      const response = await fetch(`${API}/api/weekly-recipes/recipe/${recipeId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('✅ Recipe loaded:', data);
-      
-      setRecipe(data);
-      
-      // Load cart options in the background (non-blocking)
-      setTimeout(() => {
-        loadCartOptions();
-      }, 500);
-      
-    } catch (error) {
-      console.error('❌ Failed to load recipe detail:', error);
-      console.error('❌ Error details:', error.message);
-      showNotification('❌ Failed to load recipe details', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const loadCartOptions = async () => {
     setIsLoadingCart(true);
