@@ -81,7 +81,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
         apiUrl = `${API}/api/v2/walmart/weekly-cart-options?recipe_id=${currentRecipeId}`;
       }
       
-      console.log('🔍 Loading cart options for', currentRecipeSource, 'recipe:', currentRecipeId);
+
       console.log('🔍 API URL:', apiUrl);
       console.log('⏰ This may take 8-10 seconds - fetching real Walmart products...');
       
