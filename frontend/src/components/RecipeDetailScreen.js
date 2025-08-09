@@ -219,42 +219,56 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Enhanced Header */}
         <div className="mb-8">
           <button
             onClick={onBack}
-            className="flex items-center text-blue-700 hover:text-blue-800 font-medium mb-4 transition-colors"
+            className="group flex items-center text-blue-700 hover:text-blue-800 font-medium mb-6 transition-all duration-200 hover:transform hover:-translate-x-1"
           >
-            <span className="mr-2">←</span>
+            <span className="mr-2 group-hover:mr-3 transition-all duration-200">←</span>
             Back to Weekly Plan
           </button>
           
-          <div className="text-center">
-            <div className="text-8xl mb-4">🍽️</div>
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">{recipe.name}</h1>
-            <div className="flex items-center justify-center space-x-6 text-gray-600 flex-wrap">
-              <div className="flex items-center">
-                <span className="text-xl mr-2">⏱️</span>
-                <span>{recipe.prep_time}</span>
+          <div className="text-center bg-white rounded-3xl shadow-lg p-8 mb-8">
+            <div className="text-8xl mb-6 animate-bounce">🍽️</div>
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+              {recipe.name}
+            </h1>
+            {recipe.description && (
+              <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto mb-6">
+                {recipe.description}
+              </p>
+            )}
+            
+            {/* Enhanced Recipe Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 max-w-4xl mx-auto">
+              <div className="bg-gradient-to-br from-orange-100 to-orange-200 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-2">⏱️</div>
+                <div className="text-sm text-gray-600 font-medium">Prep Time</div>
+                <div className="font-bold text-gray-800">{recipe.prep_time}</div>
               </div>
-              <div className="flex items-center">
-                <span className="text-xl mr-2">🔥</span>
-                <span>{recipe.cook_time}</span>
+              <div className="bg-gradient-to-br from-red-100 to-red-200 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-2">🔥</div>
+                <div className="text-sm text-gray-600 font-medium">Cook Time</div>
+                <div className="font-bold text-gray-800">{recipe.cook_time}</div>
               </div>
-              <div className="flex items-center">
-                <span className="text-xl mr-2">👥</span>
-                <span>Serves {recipe.servings}</span>
+              <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-2">👥</div>
+                <div className="text-sm text-gray-600 font-medium">Servings</div>
+                <div className="font-bold text-gray-800">{recipe.servings}</div>
               </div>
-              <div className="flex items-center">
-                <span className="text-xl mr-2">🏷️</span>
-                <span>{recipe.cuisine}</span>
+              <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-2">🏷️</div>
+                <div className="text-sm text-gray-600 font-medium">Cuisine</div>
+                <div className="font-bold text-gray-800">{recipe.cuisine}</div>
               </div>
               {recipe.calories && (
-                <div className="flex items-center">
-                  <span className="text-xl mr-2">🔥</span>
-                  <span>{recipe.calories} cal</span>
+                <div className="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
+                  <div className="text-3xl mb-2">⚡</div>
+                  <div className="text-sm text-gray-600 font-medium">Calories</div>
+                  <div className="font-bold text-gray-800">{recipe.calories}</div>
                 </div>
               )}
             </div>
@@ -263,88 +277,111 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column - Recipe Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Description */}
-            {recipe.description && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                  <span className="mr-2">📝</span>
-                  About This Recipe
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* Enhanced Walmart Shopping Section */}
+            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent flex items-center">
+                  <span className="mr-3 text-4xl">🛒</span>
+                  Smart Walmart Shopping
                 </h2>
-                <p className="text-gray-700 leading-relaxed text-lg">{recipe.description}</p>
-              </div>
-            )}
-
-            {/* Interactive Walmart Shopping */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <span className="mr-2">🛒</span>
-                Smart Shopping with Real Walmart Products
                 {isLoadingCart && (
-                  <div className="ml-3 flex items-center">
-                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
-                    <span className="text-sm text-blue-600">Fetching real Walmart products... (8-10 seconds)</span>
+                  <div className="flex items-center bg-blue-50 rounded-full px-4 py-2">
+                    <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-3"></div>
+                    <span className="text-sm text-blue-700 font-medium">Finding best prices...</span>
                   </div>
                 )}
-              </h2>
+              </div>
               
               {cartOptions?.ingredient_matches ? (
-                <div className="space-y-6">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div className="space-y-8">
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
                     <div className="flex items-center">
-                      <span className="text-green-600 text-xl mr-2">✅</span>
-                      <span className="text-green-800 font-medium">
-                        Found {cartOptions.ingredient_matches.length} ingredients with real Walmart products!
-                      </span>
+                      <div className="bg-green-500 rounded-full p-2 mr-4">
+                        <span className="text-white text-2xl">✨</span>
+                      </div>
+                      <div>
+                        <div className="font-bold text-green-800 text-lg">
+                          Found {cartOptions.ingredient_matches.length} ingredients with real Walmart products!
+                        </div>
+                        <div className="text-green-700 text-sm">
+                          {cartOptions.total_products} products available • Real-time pricing
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   {cartOptions.ingredient_matches.map((ingredientMatch, index) => (
-                    <div key={index} className="border border-gray-200 rounded-xl p-5 bg-gray-50">
-                      <div className="flex items-center mb-4">
-                        <div className="text-2xl mr-3">🥕</div>
-                        <h3 className="text-lg font-bold text-gray-800">{ingredientMatch.ingredient}</h3>
-                        <span className="ml-auto text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
-                          {ingredientMatch.products.length} options available
-                        </span>
+                    <div key={index} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl p-8 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
+                      <div className="flex items-center mb-6">
+                        <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-full p-3 mr-4">
+                          <span className="text-white text-2xl">🥕</span>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-2xl font-bold text-gray-800 mb-1">{ingredientMatch.ingredient}</h3>
+                          <div className="flex items-center space-x-2">
+                            <span className="bg-blue-100 text-blue-700 text-sm font-medium px-3 py-1 rounded-full">
+                              {ingredientMatch.products.length} options
+                            </span>
+                            <span className="bg-green-100 text-green-700 text-sm font-medium px-3 py-1 rounded-full">
+                              Best price: ${Math.min(...ingredientMatch.products.map(p => p.price)).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                       
-                      <div className="grid gap-3">
+                      <div className="grid gap-4">
                         {ingredientMatch.products.map((product, productIndex) => {
                           const isSelected = selectedProducts[ingredientMatch.ingredient]?.id === product.id;
+                          const isLowestPrice = product.price === Math.min(...ingredientMatch.products.map(p => p.price));
+                          
                           return (
                             <div
                               key={productIndex}
                               onClick={() => handleProductSelection(ingredientMatch.ingredient, product)}
-                              className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                              className={`relative p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 transform hover:scale-[1.02] ${
                                 isSelected 
-                                  ? 'border-blue-500 bg-blue-50 shadow-md' 
-                                  : 'border-gray-200 bg-white hover:border-gray-300'
+                                  ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg' 
+                                  : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
                               }`}
                             >
+                              {isLowestPrice && !isSelected && (
+                                <div className="absolute -top-2 -right-2 bg-gradient-to-r from-orange-400 to-red-400 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                                  Best Price!
+                                </div>
+                              )}
+                              
                               <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                  <h4 className="font-semibold text-gray-800 mb-1">{product.name}</h4>
-                                  <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                    <span className="font-medium">${product.price.toFixed(2)}</span>
-                                    <span>{product.brand}</span>
+                                <div className="flex-1 mr-4">
+                                  <h4 className="font-bold text-gray-800 mb-2 text-lg leading-tight">{product.name}</h4>
+                                  <div className="flex items-center flex-wrap gap-3 text-sm">
+                                    <span className="bg-gradient-to-r from-green-500 to-green-600 text-white font-bold px-3 py-1 rounded-full text-lg">
+                                      ${product.price.toFixed(2)}
+                                    </span>
+                                    <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium">
+                                      {product.brand}
+                                    </span>
                                     {product.rating && product.rating > 0 && (
-                                      <div className="flex items-center">
-                                        <span className="text-yellow-500">⭐</span>
-                                        <span className="ml-1">{product.rating}</span>
+                                      <div className="flex items-center bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full">
+                                        <span className="text-yellow-500 mr-1">⭐</span>
+                                        <span className="font-medium">{product.rating}</span>
                                       </div>
                                     )}
-                                    <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">
+                                    <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded font-mono">
                                       ID: {product.id}
                                     </span>
                                   </div>
                                 </div>
-                                <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 ${
-                                  isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
+                                
+                                <div className={`w-8 h-8 rounded-full border-2 flex-shrink-0 transition-all duration-300 ${
+                                  isSelected 
+                                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 border-blue-500 shadow-lg' 
+                                    : 'border-gray-300 hover:border-gray-400'
                                 }`}>
                                   {isSelected && (
                                     <div className="w-full h-full flex items-center justify-center">
-                                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                                      <span className="text-white text-lg">✓</span>
                                     </div>
                                   )}
                                 </div>
@@ -355,6 +392,7 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
                       </div>
                     </div>
                   ))}
+                </div>
                 </div>
               ) : (
                 <div className="text-center py-8">
