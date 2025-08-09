@@ -47,17 +47,30 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
           setIsLoadingCart(true);
           try {
             console.log('🔍 Loading cart options for weekly recipe:', recipeId);
+            console.log('🔍 API URL:', `${API}/api/v2/walmart/weekly-cart-options?recipe_id=${recipeId}`);
+            
+            // Add timeout to fetch call to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
             
             // Use native fetch instead of axios for V2 endpoint
             const response = await fetch(`${API}/api/v2/walmart/weekly-cart-options?recipe_id=${recipeId}`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
-              }
+              },
+              signal: controller.signal
             });
             
+            clearTimeout(timeoutId);
+            
+            console.log('📥 Response status:', response.status);
+            console.log('📥 Response ok:', response.ok);
+            
             if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
+              const errorText = await response.text();
+              console.log('❌ Error response body:', errorText);
+              throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
             }
             
             const data = await response.json();
@@ -79,6 +92,12 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
             showNotification('✅ Found real Walmart products!', 'success');
           } catch (error) {
             console.error('❌ Failed to load cart options:', error);
+            console.error('❌ Error name:', error.name);
+            console.error('❌ Error message:', error.message);
+            if (error.name === 'AbortError') {
+              console.log('⚠️ Request timed out after 15 seconds');
+              showNotification('⚠️ Loading products is taking longer than expected. Showing basic ingredients.', 'warning');
+            }
             console.log('⚠️ Will show basic ingredients instead of Walmart products');
             // Don't show error notification - just continue without cart options
             // showNotification('⚠️ Using recipe ingredients without Walmart integration', 'warning');
