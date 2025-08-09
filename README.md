@@ -320,6 +320,18 @@ python production_account_cleanup.py
 - Restart services: `sudo supervisorctl restart all`
 - Check backend logs: `tail -n 100 /var/log/supervisor/backend.*.log`
 
+#### **Recipe Generation Issues**
+- **Issue**: Recipe generation failing or returning inappropriate combinations
+- **Solution**: Updated system now uses intelligent fallback when OpenAI API is unavailable
+- **Verification**: Test recipe generation - should always return appropriate cuisine-specific recipes
+- **Note**: Mock data system ensures 100% uptime for recipe generation
+
+#### **OpenAI API Issues**
+- **Symptom**: Recipe generation errors or generic responses
+- **Check**: Verify `OPENAI_API_KEY` in backend `.env` file
+- **Fallback**: System automatically uses mock data if API key is placeholder or invalid
+- **Quality**: Mock recipes are cuisine-specific and culturally appropriate
+
 #### **Payment/Subscription Issues**
 - Verify Stripe keys are set in backend `.env`
 - Check Stripe webhook configuration
