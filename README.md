@@ -47,6 +47,8 @@ A complete AI-powered recipe generation and community sharing platform that comb
 - **Smart Ingredients**: AI generates recipes from your available ingredients
 - **Dietary Restrictions**: Supports gluten-free, vegan, keto, and more
 - **Difficulty Levels**: Easy, medium, hard recipes with time estimates
+- **🔄 Reliable Fallback System**: Mock data ensures recipes are always available
+- **🌍 Cuisine-Specific Recipes**: Proper cultural authenticity (Chinese → Fried Rice, Mexican → Tacos, Indian → Curry)
 
 ### **Starbucks Secret Menu Generator**
 - **5 Drink Types**: Frappuccino, Refresher, Lemonade, Iced Matcha, Mystery drinks
