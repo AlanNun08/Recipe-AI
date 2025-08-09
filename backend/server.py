@@ -4582,100 +4582,54 @@ async def generate_mock_recipe(request: RecipeGenRequest) -> dict:
             shopping_list=["fruit juice", "sparkling water", "honey", "lime", "mint"]
         )
     else:
-        # Cuisine-specific recipes based on cuisine type
-        if cuisine_type.lower() == "chinese":
+        # Generate diverse recipes based on cuisine type using the new diverse recipe database
+        import random
+        recipe_variations = get_diverse_recipe_for_cuisine(cuisine_type, request.dietary_preferences)
+        
+        # Select a random recipe from the variations
+        if recipe_variations:
+            variation = random.choice(recipe_variations) 
             mock_recipe = Recipe(
-                title=f"Classic {cuisine_type} Fried Rice",
-                description=f"A traditional {cuisine_type.lower()} fried rice dish with vegetables and savory flavors",
+                title=variation["title"],
+                description=variation["description"],
+                ingredients=variation["ingredients"],
+                instructions=variation["instructions"],
+                prep_time=variation["prep_time"],
+                cook_time=variation["cook_time"],
+                servings=request.servings,
+                cuisine_type=cuisine_type,
+                dietary_tags=request.dietary_preferences,
+                difficulty=request.difficulty,
+                calories_per_serving=variation.get("calories", 420) if request.max_calories_per_serving else None,
+                is_healthy=request.is_healthy,
+                user_id=request.user_id,
+                shopping_list=variation["shopping_list"]
+            )
+        else:
+            # Fallback to default Italian pasta if no variations found
+            mock_recipe = Recipe(
+                title=f"Classic {cuisine_type} Pasta",
+                description=f"A traditional {cuisine_type.lower()} pasta dish with rich flavors and fresh ingredients",
                 ingredients=[
-                    "2 cups cooked rice",
-                    "3 tbsp vegetable oil",
-                    "2 eggs, beaten",
-                    "2 green onions, chopped",
-                    "1 cup mixed vegetables",
-                    "3 tbsp soy sauce",
-                    "1 tsp sesame oil",
+                    "1 lb pasta",
+                    "2 tbsp olive oil", 
+                    "3 cloves garlic, minced",
+                    "1 can diced tomatoes",
+                    "1/2 cup fresh basil",
+                    "1/2 cup parmesan cheese",
                     "Salt and pepper to taste"
                 ],
                 instructions=[
-                    "Heat oil in a large wok or pan",
-                    "Add beaten eggs and scramble, remove and set aside",
-                    "Add more oil and stir-fry vegetables until tender",
-                    "Add rice and break up any clumps",
-                    "Stir in soy sauce and sesame oil",
-                    "Add scrambled eggs back in",
-                    "Garnish with green onions"
+                    "Cook pasta according to package directions",
+                    "Heat olive oil in large pan",
+                    "Add garlic and cook until fragrant", 
+                    "Add tomatoes and simmer for 10 minutes",
+                    "Toss with cooked pasta",
+                    "Add basil and cheese",
+                    "Season with salt and pepper"
                 ],
                 prep_time=15,
-                cook_time=15,
-                servings=request.servings,
-                cuisine_type=cuisine_type,
-                dietary_tags=request.dietary_preferences,
-                difficulty=request.difficulty,
-                calories_per_serving=320 if request.max_calories_per_serving else None,
-                is_healthy=request.is_healthy,
-                user_id=request.user_id,
-                shopping_list=["rice", "vegetable oil", "eggs", "green onions", "mixed vegetables", "soy sauce", "sesame oil"]
-            )
-        elif cuisine_type.lower() == "mexican":
-            mock_recipe = Recipe(
-                title=f"Classic {cuisine_type} Tacos",
-                description=f"Traditional {cuisine_type.lower()} tacos with fresh ingredients and authentic flavors",
-                ingredients=[
-                    "8 corn tortillas",
-                    "1 lb ground beef or chicken",
-                    "1 onion, diced",
-                    "2 cloves garlic, minced",
-                    "1 tsp cumin",
-                    "1 tsp chili powder",
-                    "1/2 cup salsa",
-                    "1/4 cup cilantro, chopped"
-                ],
-                instructions=[
-                    "Cook ground meat in a large pan",
-                    "Add onion and garlic, cook until soft",
-                    "Add spices and cook for 1 minute",
-                    "Add salsa and simmer for 5 minutes",
-                    "Warm tortillas in a dry pan",
-                    "Fill tortillas with meat mixture",
-                    "Top with cilantro and serve"
-                ],
-                prep_time=15,
-                cook_time=20,
-                servings=request.servings,
-                cuisine_type=cuisine_type,
-                dietary_tags=request.dietary_preferences,
-                difficulty=request.difficulty,
-                calories_per_serving=380 if request.max_calories_per_serving else None,
-                is_healthy=request.is_healthy,
-                user_id=request.user_id,
-                shopping_list=["tortillas", "ground beef", "onion", "garlic", "cumin", "chili powder", "salsa", "cilantro"]
-            )
-        elif cuisine_type.lower() == "indian":
-            mock_recipe = Recipe(
-                title=f"Classic {cuisine_type} Curry",
-                description=f"A flavorful {cuisine_type.lower()} curry with aromatic spices and creamy sauce",
-                ingredients=[
-                    "1 lb chicken or vegetables",
-                    "1 onion, diced",
-                    "3 cloves garlic, minced",
-                    "1 tbsp fresh ginger",
-                    "2 tsp curry powder",
-                    "1 can coconut milk",
-                    "1 can diced tomatoes",
-                    "2 cups basmati rice"
-                ],
-                instructions=[
-                    "Cook rice according to package directions",
-                    "Sauté onion, garlic, and ginger until fragrant",
-                    "Add curry powder and cook for 1 minute",
-                    "Add protein/vegetables and cook until done",
-                    "Add tomatoes and coconut milk",
-                    "Simmer for 15-20 minutes",
-                    "Serve over rice"
-                ],
-                prep_time=15,
-                cook_time=30,
+                cook_time=25,
                 servings=request.servings,
                 cuisine_type=cuisine_type,
                 dietary_tags=request.dietary_preferences,
@@ -4683,66 +4637,8 @@ async def generate_mock_recipe(request: RecipeGenRequest) -> dict:
                 calories_per_serving=420 if request.max_calories_per_serving else None,
                 is_healthy=request.is_healthy,
                 user_id=request.user_id,
-                shopping_list=["chicken", "onion", "garlic", "ginger", "curry powder", "coconut milk", "diced tomatoes", "basmati rice"]
+                shopping_list=["pasta", "olive oil", "garlic", "diced tomatoes", "basil", "parmesan cheese"]
             )
-        else:
-            # Generate diverse recipes based on cuisine type and add randomization
-            import random
-            recipe_variations = get_diverse_recipe_for_cuisine(cuisine_type, request.dietary_preferences)
-            
-            # Select a random recipe from the variations
-            if recipe_variations:
-                variation = random.choice(recipe_variations) 
-                mock_recipe = Recipe(
-                    title=variation["title"],
-                    description=variation["description"],
-                    ingredients=variation["ingredients"],
-                    instructions=variation["instructions"],
-                    prep_time=variation["prep_time"],
-                    cook_time=variation["cook_time"],
-                    servings=request.servings,
-                    cuisine_type=cuisine_type,
-                    dietary_tags=request.dietary_preferences,
-                    difficulty=request.difficulty,
-                    calories_per_serving=variation.get("calories", 420) if request.max_calories_per_serving else None,
-                    is_healthy=request.is_healthy,
-                    user_id=request.user_id,
-                    shopping_list=variation["shopping_list"]
-                )
-            else:
-                # Fallback to default Italian pasta if no variations found
-                mock_recipe = Recipe(
-                    title=f"Classic {cuisine_type} Pasta",
-                    description=f"A traditional {cuisine_type.lower()} pasta dish with rich flavors and fresh ingredients",
-                    ingredients=[
-                        "1 lb pasta",
-                        "2 tbsp olive oil", 
-                        "3 cloves garlic, minced",
-                        "1 can diced tomatoes",
-                        "1/2 cup fresh basil",
-                        "1/2 cup parmesan cheese",
-                        "Salt and pepper to taste"
-                    ],
-                    instructions=[
-                        "Cook pasta according to package directions",
-                        "Heat olive oil in large pan",
-                        "Add garlic and cook until fragrant", 
-                        "Add tomatoes and simmer for 10 minutes",
-                        "Toss with cooked pasta",
-                        "Add basil and cheese",
-                        "Season with salt and pepper"
-                    ],
-                    prep_time=15,
-                    cook_time=25,
-                    servings=request.servings,
-                    cuisine_type=cuisine_type,
-                    dietary_tags=request.dietary_preferences,
-                    difficulty=request.difficulty,
-                    calories_per_serving=420 if request.max_calories_per_serving else None,
-                    is_healthy=request.is_healthy,
-                    user_id=request.user_id,
-                    shopping_list=["pasta", "olive oil", "garlic", "diced tomatoes", "basil", "parmesan cheese"]
-                )
     
     # Save to database
     recipe_dict = mock_recipe.dict()
