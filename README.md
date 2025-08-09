@@ -145,10 +145,12 @@ WDS_SOCKET_PORT=443
 ```
 
 ### **Required API Keys**
-- `OPENAI_API_KEY` - OpenAI GPT-3.5 access
+- `OPENAI_API_KEY` - OpenAI GPT-3.5 access (graceful fallback if unavailable)
 - `WALMART_CONSUMER_ID` + `WALMART_PRIVATE_KEY` - Walmart affiliate API
 - `MAILJET_API_KEY` + `MAILJET_SECRET_KEY` - Email service
 - `STRIPE_PUBLISHABLE_KEY` + `STRIPE_SECRET_KEY` - Payment processing
+
+**Note**: Recipe generation works with or without OpenAI API key through intelligent mock data fallback system.
 
 ---
 
