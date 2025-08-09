@@ -2295,7 +2295,7 @@ function App() {
             if (currentRecipeSource === 'generated') {
               setCurrentScreen('recipe-generation');
             } else if (currentRecipeSource === 'history') {
-              setCurrentScreen('recipe-history');
+              setCurrentScreen('all-recipes');
             } else {
               setCurrentScreen('weekly-recipes');
             }
