@@ -218,6 +218,19 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     }, 0);
   };
 
+  const getBackButtonText = () => {
+    switch (recipeSource) {
+      case 'weekly':
+        return 'Back to Weekly Plan';
+      case 'generated':
+        return 'Back to Recipe Generator';
+      case 'history':
+        return 'Back to Recipe History';
+      default:
+        return 'Back to Dashboard';
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
