@@ -13,17 +13,18 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
   const [isGeneratingCart, setIsGeneratingCart] = useState(false);
 
   useEffect(() => {
+    console.log('🔍 useEffect triggered with recipeId:', recipeId);
+    
     if (!recipeId) {
+      console.log('⚠️ No recipeId provided, setting loading to false');
       setIsLoading(false);
       return;
     }
     
-    let isCancelled = false; // Prevent state updates if component unmounts
-    
     const loadRecipeDetail = async () => {
-      if (isCancelled) return;
-      
+      console.log('🔍 Starting loadRecipeDetail...');
       setIsLoading(true);
+      
       try {
         console.log('🔍 Loading recipe detail for ID:', recipeId);
         console.log('🔍 API URL:', `${API}/api/weekly-recipes/recipe/${recipeId}`);
@@ -41,105 +42,96 @@ function RecipeDetailScreen({ recipeId, onBack, showNotification }) {
         }
         
         const data = await response.json();
-        console.log('✅ Recipe loaded:', data);
+        console.log('✅ Recipe loaded successfully:', data);
         
-        if (!isCancelled) {
-          setRecipe(data);
-          setIsLoading(false); // Set loading to false immediately after recipe loads
-          
-          // Load cart options in the background (non-blocking) 
-          setTimeout(async () => {
-            if (isCancelled) return;
-            
-            // Load cart options for this specific recipe
-            setIsLoadingCart(true);
-            try {
-              console.log('🔍 Loading cart options for weekly recipe:', recipeId);
-              console.log('🔍 API URL:', `${API}/api/v2/walmart/weekly-cart-options?recipe_id=${recipeId}`);
-              console.log('⏰ This may take 8-10 seconds - fetching real Walmart products...');
-              
-              // Add longer timeout for slow Walmart API (backend takes ~8 seconds)
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
-              
-              // Use native fetch instead of axios for V2 endpoint
-              const cartResponse = await fetch(`${API}/api/v2/walmart/weekly-cart-options?recipe_id=${recipeId}`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                signal: controller.signal
-              });
-              
-              clearTimeout(timeoutId);
-              
-              console.log('📥 Response status:', cartResponse.status);
-              console.log('📥 Response ok:', cartResponse.ok);
-              
-              if (!cartResponse.ok) {
-                const errorText = await cartResponse.text();
-                console.log('❌ Error response body:', errorText);
-                throw new Error(`HTTP error! status: ${cartResponse.status}, body: ${errorText}`);
-              }
-              
-              const cartData = await cartResponse.json();
-              console.log('✅ Cart options loaded:', cartData);
-              console.log(`📊 Found ${cartData.total_products} total products across ${cartData.ingredient_matches?.length} ingredients`);
-              
-              if (!isCancelled) {
-                setCartOptions(cartData);
-                
-                // Initialize selected products with first product for each ingredient
-                const initialSelections = {};
-                cartData.ingredient_matches?.forEach(ingredientMatch => {
-                  if (ingredientMatch.products && ingredientMatch.products.length > 0) {
-                    // Use 'id' field instead of 'product_id' for WalmartProductV2
-                    initialSelections[ingredientMatch.ingredient] = ingredientMatch.products[0];
-                  }
-                });
-                setSelectedProducts(initialSelections);
-                
-                console.log('✅ Selected products initialized:', initialSelections);
-                showNotification(`✅ Found ${cartData.total_products} real Walmart products!`, 'success');
-              }
-            } catch (error) {
-              if (isCancelled) return;
-              
-              console.error('❌ Failed to load cart options:', error);
-              console.error('❌ Error name:', error.name);
-              console.error('❌ Error message:', error.message);
-              if (error.name === 'AbortError') {
-                console.log('⚠️ Request timed out after 25 seconds');
-                showNotification('⚠️ Walmart product search is taking longer than expected. Showing basic ingredients.', 'warning');
-              } else {
-                console.log('⚠️ Error loading Walmart products, showing basic ingredients instead');
-                showNotification('⚠️ Could not load Walmart products. Showing basic ingredients.', 'warning');  
-              }
-            } finally {
-              if (!isCancelled) {
-                setIsLoadingCart(false);
-              }
-            }
-          }, 1000); // Slightly longer delay to ensure recipe is fully loaded
-        }
+        console.log('🔍 About to set recipe data and disable loading...');
+        setRecipe(data);
+        setIsLoading(false);
+        console.log('✅ Recipe state set and loading disabled');
+        
+        // Load cart options in the background (non-blocking) 
+        console.log('🔍 Starting cart options loading in 2 seconds...');
+        setTimeout(() => {
+          loadCartOptions(recipeId);
+        }, 2000);
         
       } catch (error) {
-        if (!isCancelled) {
-          console.error('❌ Failed to load recipe detail:', error);
-          console.error('❌ Error details:', error.message);
-          showNotification('❌ Failed to load recipe details', 'error');
-          setIsLoading(false);
-        }
+        console.error('❌ Failed to load recipe detail:', error);
+        showNotification('❌ Failed to load recipe details', 'error');
+        setIsLoading(false);
       }
     };
     
     loadRecipeDetail();
+  }, [recipeId]);
+
+  const loadCartOptions = async (currentRecipeId) => {
+    console.log('🔍 Starting loadCartOptions for recipe:', currentRecipeId);
+    setIsLoadingCart(true);
     
-    // Cleanup function to prevent memory leaks
-    return () => {
-      isCancelled = true;
-    };
-  }, [recipeId, showNotification]);
+    try {
+      console.log('🔍 Loading cart options for weekly recipe:', currentRecipeId);
+      console.log('🔍 API URL:', `${API}/api/v2/walmart/weekly-cart-options?recipe_id=${currentRecipeId}`);
+      console.log('⏰ This may take 8-10 seconds - fetching real Walmart products...');
+      
+      // Add longer timeout for slow Walmart API (backend takes ~8 seconds)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+      
+      // Use native fetch instead of axios for V2 endpoint
+      const response = await fetch(`${API}/api/v2/walmart/weekly-cart-options?recipe_id=${currentRecipeId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      console.log('📥 Cart options response status:', response.status);
+      console.log('📥 Cart options response ok:', response.ok);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('❌ Cart options error response body:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Cart options loaded successfully:', data);
+      console.log(`📊 Found ${data.total_products} total products across ${data.ingredient_matches?.length} ingredients`);
+      
+      setCartOptions(data);
+      
+      // Initialize selected products with first product for each ingredient
+      const initialSelections = {};
+      data.ingredient_matches?.forEach(ingredientMatch => {
+        if (ingredientMatch.products && ingredientMatch.products.length > 0) {
+          // Use 'id' field instead of 'product_id' for WalmartProductV2
+          initialSelections[ingredientMatch.ingredient] = ingredientMatch.products[0];
+        }
+      });
+      setSelectedProducts(initialSelections);
+      
+      console.log('✅ Selected products initialized:', initialSelections);
+      showNotification(`✅ Found ${data.total_products} real Walmart products!`, 'success');
+      
+    } catch (error) {
+      console.error('❌ Failed to load cart options:', error);
+      console.error('❌ Error name:', error.name);
+      console.error('❌ Error message:', error.message);
+      if (error.name === 'AbortError') {
+        console.log('⚠️ Request timed out after 25 seconds');
+        showNotification('⚠️ Walmart product search is taking longer than expected. Showing basic ingredients.', 'warning');
+      } else {
+        console.log('⚠️ Error loading Walmart products, showing basic ingredients instead');
+        showNotification('⚠️ Could not load Walmart products. Showing basic ingredients.', 'warning');  
+      }
+    } finally {
+      setIsLoadingCart(false);
+    }
+  };
 
   // Remove the external loadCartOptions function since it's now inline
   
