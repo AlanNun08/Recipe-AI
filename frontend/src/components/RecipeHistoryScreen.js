@@ -41,9 +41,15 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
   });
 
   const handleViewRecipe = (recipe) => {
-    if (recipe.type === 'starbucks') {
-      // Handle Starbucks recipes differently if needed
-      showNotification('Starbucks recipes cannot be opened in detail view yet', 'info');
+    if (recipe.category === 'starbucks' || recipe.type === 'starbucks') {
+      // Navigate to Starbucks generator screen for Starbucks recipes
+      if (onViewStarbucksRecipe) {
+        onViewStarbucksRecipe(recipe);
+      } else {
+        showNotification('🌟 Opening Starbucks recipe in generator...', 'info');
+        // Fallback: navigate to starbucks screen
+        window.location.hash = 'starbucks-generator';
+      }
       return;
     }
     
