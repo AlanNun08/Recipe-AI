@@ -172,12 +172,41 @@ REACT_APP_BACKEND_URL=https://buildyoursmartcart.com
 WDS_SOCKET_PORT=443
 ```
 
-### **Security Requirements**
-- ✅ **ALL API keys accessed via `os.environ.get()`** - No hardcoded credentials
-- ✅ **Environment file protection** - `.env` files excluded from version control
-- ✅ **Graceful fallback handling** - Application continues if optional APIs are unavailable
-- ✅ **Key validation** - System detects placeholder values and activates fallback modes
-- ✅ **Secure key storage** - Private keys stored as separate files, accessed via environment paths
+### **API Access Implementation**
+All external API access is implemented using Python's `os.environ.get()` method with secure fallback handling:
+
+```python
+# OpenAI API Access (with fallback)
+openai_key = os.environ.get('OPENAI_API_KEY', '')
+if not openai_key or 'placeholder' in openai_key.lower():
+    # Activates intelligent mock data fallback
+    
+# Walmart API Access
+walmart_consumer_id = os.environ.get('WALMART_CONSUMER_ID')
+walmart_private_key_path = os.environ.get('WALMART_PRIVATE_KEY_PATH')
+
+# MongoDB Connection
+mongo_url = os.environ.get('MONGO_URL')
+
+# Email Service
+mailjet_api_key = os.environ.get('MAILJET_API_KEY')
+mailjet_secret_key = os.environ.get('MAILJET_SECRET_KEY')
+
+# Payment Processing
+stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY')
+stripe_publishable_key = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+```
+
+### **Frontend Environment Access**
+Frontend uses React environment variable access:
+
+```javascript
+// Backend URL (required)
+const API = process.env.REACT_APP_BACKEND_URL;
+
+// Stripe public key (for payments)
+const stripePublishableKey = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
+```
 
 ---
 
