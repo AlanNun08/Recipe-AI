@@ -3874,7 +3874,7 @@ async def get_grocery_cart_options(
         
         estimated_total = sum([opt["options"][0]["price"] for opt in ingredient_options if opt["options"]])
         
-        print(f"✅ Successfully processed cart options for {len(ingredient_options)} ingredients")
+        logger.info(f"✅ Successfully processed cart options for {len(ingredient_options)} ingredients")
         
         return {
             "recipe_id": recipe_id,
