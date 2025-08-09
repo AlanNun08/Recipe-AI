@@ -2984,7 +2984,7 @@ async def get_grocery_cart_options_test(
 ):
     """Test endpoint for cart options without user validation"""
     try:
-        print(f"🔍 TEST: Looking for recipe_id: {recipe_id} for user: {user_id}")
+        logger.info(f"Looking for recipe_id: {recipe_id} for user: {user_id}")
         
         # Test with hardcoded ingredients from a real recipe
         test_ingredients = ["12 oz penne pasta", "1 lb ground beef", "24 oz marinara sauce", "1 cup shredded mozzarella", "2 tbsp olive oil"]
