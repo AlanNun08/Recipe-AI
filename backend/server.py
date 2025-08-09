@@ -3901,7 +3901,7 @@ async def generate_grocery_cart_url_v2(request: Request):
     try:
         # Parse JSON request body
         body = await request.json()
-        print(f"🔍 Received cart URL request: {body}")
+        logger.info(f"🔍 Received cart URL request: {body}")
         
         selected_products = body.get('selected_products', []) or body.get('products', [])
         
