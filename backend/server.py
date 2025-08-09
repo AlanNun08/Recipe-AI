@@ -4265,6 +4265,253 @@ Format as JSON array with 7 meal objects, each containing:
         # Fallback to mock data on any other error
         return await generate_mock_weekly_meals(family_size, dietary_preferences, cuisines)
 
+def get_diverse_recipe_for_cuisine(cuisine_type: str, dietary_preferences: List[str]) -> List[dict]:
+    """Get diverse recipe variations for different cuisine types"""
+    
+    # Define recipe variations for different cuisines
+    recipe_database = {
+        "Italian": [
+            {
+                "title": "Creamy Mushroom Risotto",
+                "description": "Rich and creamy Arborio rice cooked with wild mushrooms and parmesan",
+                "ingredients": [
+                    "1½ cups Arborio rice",
+                    "4 cups warm vegetable broth",
+                    "8 oz mixed mushrooms, sliced",
+                    "1 medium onion, diced",
+                    "3 cloves garlic, minced",
+                    "½ cup white wine",
+                    "½ cup grated Parmesan cheese",
+                    "2 tbsp butter",
+                    "2 tbsp olive oil",
+                    "Fresh thyme and parsley"
+                ],
+                "instructions": [
+                    "Heat broth in a separate pot and keep warm",
+                    "Sauté mushrooms in olive oil until golden, set aside",
+                    "In same pan, cook onion until translucent",
+                    "Add garlic and rice, stir for 2 minutes",
+                    "Add wine and stir until absorbed",
+                    "Add warm broth one ladle at a time, stirring constantly",
+                    "Continue until rice is creamy and tender (18-20 minutes)",
+                    "Stir in mushrooms, butter, and Parmesan",
+                    "Season and garnish with fresh herbs"
+                ],
+                "prep_time": 10,
+                "cook_time": 25,
+                "calories": 380,
+                "shopping_list": ["Arborio rice", "mushrooms", "vegetable broth", "onion", "garlic", "white wine", "Parmesan cheese", "butter", "olive oil", "thyme", "parsley"]
+            },
+            {
+                "title": "Classic Margherita Pizza",
+                "description": "Traditional Neapolitan pizza with fresh mozzarella, basil, and tomato sauce",
+                "ingredients": [
+                    "1 lb pizza dough",
+                    "½ cup pizza sauce",
+                    "8 oz fresh mozzarella, sliced",
+                    "¼ cup fresh basil leaves",
+                    "2 tbsp olive oil",
+                    "Salt and pepper to taste",
+                    "Cornmeal for dusting"
+                ],
+                "instructions": [
+                    "Preheat oven to 475°F (245°C)",
+                    "Roll out pizza dough on floured surface",
+                    "Transfer to pizza stone or baking sheet dusted with cornmeal",
+                    "Spread sauce evenly, leaving 1-inch border",
+                    "Add mozzarella slices and drizzle with olive oil",
+                    "Bake for 12-15 minutes until crust is golden",
+                    "Top with fresh basil leaves",
+                    "Season with salt and pepper, slice and serve"
+                ],
+                "prep_time": 15,
+                "cook_time": 15,
+                "calories": 320,
+                "shopping_list": ["pizza dough", "pizza sauce", "fresh mozzarella", "fresh basil", "olive oil", "cornmeal"]
+            }
+        ],
+        "Mexican": [
+            {
+                "title": "Chicken Enchiladas Verde",
+                "description": "Tender chicken wrapped in corn tortillas with tangy green salsa and cheese",
+                "ingredients": [
+                    "2 lbs chicken breast",
+                    "12 corn tortillas",
+                    "2 cups green salsa (salsa verde)",
+                    "2 cups shredded Mexican cheese blend",
+                    "1 medium onion, diced",
+                    "3 cloves garlic, minced",
+                    "1 cup sour cream",
+                    "¼ cup fresh cilantro",
+                    "2 tbsp olive oil",
+                    "Salt and cumin to taste"
+                ],
+                "instructions": [
+                    "Cook chicken breast until tender, then shred",
+                    "Preheat oven to 375°F (190°C)",
+                    "Warm tortillas to make them pliable",
+                    "Mix shredded chicken with half the cheese and onion",
+                    "Fill each tortilla with chicken mixture and roll tightly",
+                    "Place seam-side down in baking dish",
+                    "Pour salsa verde over enchiladas",
+                    "Top with remaining cheese and bake 20-25 minutes",
+                    "Garnish with sour cream and cilantro"
+                ],
+                "prep_time": 20,
+                "cook_time": 45,
+                "calories": 420,
+                "shopping_list": ["chicken breast", "corn tortillas", "green salsa", "Mexican cheese", "onion", "garlic", "sour cream", "cilantro", "olive oil", "cumin"]
+            },
+            {
+                "title": "Street-Style Tacos al Pastor",
+                "description": "Marinated pork with pineapple, onions, and cilantro on soft corn tortillas",
+                "ingredients": [
+                    "2 lbs pork shoulder, thinly sliced",
+                    "16 small corn tortillas",
+                    "1 cup diced pineapple",
+                    "1 large white onion, diced",
+                    "½ cup fresh cilantro, chopped",
+                    "3 dried guajillo chiles",
+                    "2 chipotle chiles in adobo",
+                    "3 cloves garlic",
+                    "2 tbsp achiote paste",
+                    "Lime wedges for serving"
+                ],
+                "instructions": [
+                    "Soak guajillo chiles in hot water for 15 minutes",
+                    "Blend soaked chiles, chipotle, garlic, and achiote into marinade",
+                    "Marinate pork slices for at least 2 hours",
+                    "Cook marinated pork on hot griddle until charred",
+                    "Warm tortillas on same griddle",
+                    "Chop cooked pork into small pieces",
+                    "Fill tortillas with pork, pineapple, onion, and cilantro",
+                    "Serve with lime wedges"
+                ],
+                "prep_time": 30,
+                "cook_time": 15,
+                "calories": 350,
+                "shopping_list": ["pork shoulder", "corn tortillas", "pineapple", "white onion", "cilantro", "guajillo chiles", "chipotle chiles", "garlic", "achiote paste", "limes"]
+            }
+        ],
+        "Asian": [
+            {
+                "title": "Pad Thai with Shrimp",
+                "description": "Classic Thai stir-fried noodles with shrimp, tofu, and tangy tamarind sauce",
+                "ingredients": [
+                    "8 oz rice noodles",
+                    "1 lb large shrimp, peeled",
+                    "4 oz firm tofu, cubed",
+                    "3 eggs, beaten",
+                    "2 cups bean sprouts",
+                    "4 green onions, chopped",
+                    "¼ cup tamarind paste",
+                    "3 tbsp fish sauce",
+                    "2 tbsp brown sugar",
+                    "2 tbsp vegetable oil",
+                    "Crushed peanuts and lime wedges"
+                ],
+                "instructions": [
+                    "Soak rice noodles in warm water until soft",
+                    "Mix tamarind paste, fish sauce, and brown sugar for sauce",
+                    "Heat oil in large wok or skillet",
+                    "Cook shrimp until pink, remove and set aside",
+                    "Add tofu and cook until golden",
+                    "Push tofu to one side, scramble eggs",
+                    "Add drained noodles and sauce, toss to combine",
+                    "Add shrimp back, then bean sprouts and green onions",
+                    "Serve with peanuts and lime wedges"
+                ],
+                "prep_time": 15,
+                "cook_time": 12,
+                "calories": 390,
+                "shopping_list": ["rice noodles", "shrimp", "firm tofu", "eggs", "bean sprouts", "green onions", "tamarind paste", "fish sauce", "brown sugar", "vegetable oil", "peanuts", "limes"]
+            },
+            {
+                "title": "Korean Bibimbap Bowl",
+                "description": "Mixed rice bowl with seasoned vegetables, meat, and gochujang sauce",
+                "ingredients": [
+                    "2 cups cooked white rice",
+                    "8 oz beef bulgogi or ground beef",
+                    "1 cup spinach",
+                    "1 cup bean sprouts",
+                    "1 large carrot, julienned",
+                    "4 shiitake mushrooms, sliced",
+                    "2 eggs",
+                    "3 tbsp gochujang (Korean chili paste)",
+                    "2 tbsp sesame oil",
+                    "2 tbsp soy sauce",
+                    "1 tbsp rice vinegar"
+                ],
+                "instructions": [
+                    "Cook beef with soy sauce until browned",
+                    "Blanch spinach and bean sprouts separately, season with sesame oil",
+                    "Sauté carrots and mushrooms until tender",
+                    "Fry eggs sunny-side up",
+                    "Mix gochujang with sesame oil and vinegar for sauce",
+                    "Divide rice among bowls",
+                    "Arrange vegetables and beef over rice",
+                    "Top each bowl with fried egg",
+                    "Serve with gochujang sauce on the side"
+                ],
+                "prep_time": 20,
+                "cook_time": 20,
+                "calories": 450,
+                "shopping_list": ["white rice", "beef bulgogi", "spinach", "bean sprouts", "carrot", "shiitake mushrooms", "eggs", "gochujang", "sesame oil", "soy sauce", "rice vinegar"]
+            }
+        ],
+        "Indian": [
+            {
+                "title": "Butter Chicken (Murgh Makhani)",
+                "description": "Creamy tomato-based curry with tender chicken in aromatic spices",
+                "ingredients": [
+                    "2 lbs chicken thighs, cut into pieces",
+                    "1 cup heavy cream",
+                    "1 can (14 oz) crushed tomatoes",
+                    "1 large onion, diced",
+                    "4 cloves garlic, minced",
+                    "1 inch ginger, grated",
+                    "2 tbsp butter",
+                    "2 tbsp tomato paste",
+                    "1 tbsp garam masala",
+                    "1 tsp cumin",
+                    "1 tsp paprika",
+                    "½ tsp turmeric",
+                    "Fresh cilantro for garnish"
+                ],
+                "instructions": [
+                    "Season chicken with salt, turmeric, and half the garam masala",
+                    "Cook chicken in butter until browned, remove and set aside",
+                    "Sauté onion until golden, add garlic and ginger",
+                    "Add tomato paste and remaining spices, cook 1 minute",
+                    "Add crushed tomatoes, simmer 10 minutes",
+                    "Blend sauce until smooth, return to pan",
+                    "Add chicken back to sauce",
+                    "Stir in cream and simmer 15 minutes",
+                    "Garnish with cilantro, serve with rice or naan"
+                ],
+                "prep_time": 15,
+                "cook_time": 35,
+                "calories": 480,
+                "shopping_list": ["chicken thighs", "heavy cream", "crushed tomatoes", "onion", "garlic", "ginger", "butter", "tomato paste", "garam masala", "cumin", "paprika", "turmeric", "cilantro"]
+            }
+        ]
+    }
+    
+    # Get recipes for the specified cuisine, fallback to Italian if not found
+    cuisine_recipes = recipe_database.get(cuisine_type, recipe_database["Italian"])
+    
+    # Filter recipes based on dietary preferences if needed
+    if dietary_preferences:
+        # This is a simple implementation - in a real app you'd have more sophisticated filtering
+        if "vegetarian" in dietary_preferences:
+            # Filter out meat-based recipes (this is a simplified approach)
+            cuisine_recipes = [recipe for recipe in cuisine_recipes if not any(
+                meat in " ".join(recipe["ingredients"]).lower() 
+                for meat in ["chicken", "beef", "pork", "shrimp", "fish"]
+            )]
+    
+    return cuisine_recipes if cuisine_recipes else recipe_database["Italian"]
+
 async def generate_mock_recipe(request: RecipeGenRequest) -> dict:
     """Generate mock recipe for testing when OpenAI is not available"""
     logger.info(f"Generating mock recipe for user {request.user_id} with preferences: {request.dietary_preferences}")
