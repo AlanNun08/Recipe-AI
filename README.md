@@ -17,6 +17,55 @@
 
 ---
 
+## 💻 **API Access & Security Implementation**
+
+### **Environment Variable Usage**
+All external API access is implemented using secure environment variable access with NO hardcoded credentials:
+
+#### **Backend (Python/FastAPI)**
+```python
+import os
+
+# OpenAI API Access (with intelligent fallback)
+openai_key = os.environ.get('OPENAI_API_KEY', '')
+if not openai_key or 'placeholder' in openai_key.lower():
+    # Automatically activates mock data fallback system
+    
+# Walmart API Access  
+walmart_consumer_id = os.environ.get('WALMART_CONSUMER_ID')
+walmart_private_key_path = os.environ.get('WALMART_PRIVATE_KEY_PATH')
+
+# Database Connection
+mongo_url = os.environ.get('MONGO_URL')
+client = AsyncIOMotorClient(mongo_url)
+
+# Email Service
+mailjet_api_key = os.environ.get('MAILJET_API_KEY')
+mailjet_secret_key = os.environ.get('MAILJET_SECRET_KEY')
+
+# Payment Processing
+stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY')
+stripe_publishable_key = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+```
+
+#### **Frontend (React)**
+```javascript
+// Backend URL (critical for API communication)
+const API = process.env.REACT_APP_BACKEND_URL;
+
+// All API calls use environment variable
+axios.post(`${API}/api/recipes/generate`, data)
+```
+
+### **Security Best Practices**
+- ✅ **Zero Hardcoded Secrets** - All sensitive data via `os.environ.get()`
+- ✅ **Fallback Systems** - App continues even if optional APIs are unavailable  
+- ✅ **Environment Validation** - Runtime checking of required variables
+- ✅ **Key Detection** - System identifies placeholder values and enables fallback modes
+- ✅ **Secure File Access** - Private keys stored as files, paths via environment variables
+
+---
+
 ## 📱 **What This App Does**
 
 A complete AI-powered recipe generation and community sharing platform that combines:
