@@ -5013,7 +5013,7 @@ async def get_weekly_recipe_detail(recipe_id: str):
         # Find the specific meal with this recipe ID (meals are at root level)
         for plan in plans:
             meals = plan.get('meals', [])
-            print(f"Checking plan with {len(meals)} meals")  # Debug
+            # Checking plan with meals
             for meal in meals:
                 print(f"Checking meal ID: {meal.get('id')} vs target: {recipe_id}")  # Debug
                 if meal.get('id') == recipe_id:
