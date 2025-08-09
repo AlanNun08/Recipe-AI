@@ -3888,7 +3888,7 @@ async def get_grocery_cart_options(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ ERROR in cart-options: {str(e)}")
+        logger.error(f"❌ ERROR in cart-options: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get cart options: {str(e)}")
 
 
