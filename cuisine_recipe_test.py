@@ -218,19 +218,19 @@ class CuisineRecipeTester:
                 "cuisine": "Chinese",
                 "meal_type": "Dinner", 
                 "difficulty": "Easy",
-                "user_id": "test-user-123"
+                "user_id": "f99be98f-c1d5-4ccc-a3ad-9b62e01f4731"
             },
             {
                 "cuisine": "Mexican",
                 "meal_type": "Lunch",
                 "difficulty": "Medium", 
-                "user_id": "test-user-123"
+                "user_id": "f99be98f-c1d5-4ccc-a3ad-9b62e01f4731"
             },
             {
                 "cuisine": "Indian",
                 "meal_type": "Dinner",
                 "difficulty": "Medium",
-                "user_id": "test-user-123"
+                "user_id": "f99be98f-c1d5-4ccc-a3ad-9b62e01f4731"
             }
         ]
         
