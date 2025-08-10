@@ -2282,7 +2282,7 @@ function App() {
           }}
         />;
       case 'recipe-detail':
-        console.log('Rendering RecipeDetailScreen with currentRecipeId:', currentRecipeId, 'source:', currentRecipeSource);
+
         return <RecipeDetailScreen 
           key={`${currentRecipeId}-${currentRecipeSource}`} // Force re-render when recipe ID or source changes
           recipeId={currentRecipeId}
