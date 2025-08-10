@@ -4721,7 +4721,7 @@ async def generate_mock_recipe(request: RecipeGenRequest) -> dict:
     
     return recipe_dict
 
-async def generate_mock_weekly_meals(family_size: int = 2, dietary_preferences: List[str] = [], cuisines: List[str] = []) -> List[WeeklyMeal]:
+async def generate_mock_weekly_meals(family_size: int = 2, dietary_preferences: List[str] = [], allergies: List[str] = [], cuisines: List[str] = []) -> List[WeeklyMeal]:
     """Generate mock weekly meals for testing when OpenAI is not available"""
     logger.info(f"Generating mock weekly meals for {family_size} people with preferences: {dietary_preferences}, cuisines: {cuisines}")
     
