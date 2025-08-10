@@ -78,27 +78,19 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     loadRecipeDetail();
   }, [recipeId, recipeSource, showNotification]);
 
-  const loadCartOptionsForRecipe = async (currentRecipeId, currentRecipeSource = 'weekly') => {
+  const loadCartOptionsForRecipe = async (currentRecipeId) => {
     setIsLoadingCart(true);
     
     try {
-      // Use different endpoints based on recipe source
-      let apiUrl;
-      if (currentRecipeSource === 'weekly') {
-        apiUrl = `${API}/api/v2/walmart/weekly-cart-options?recipe_id=${currentRecipeId}`;
-      } else if (currentRecipeSource === 'generated' || currentRecipeSource === 'history') {
-        apiUrl = `${API}/api/recipes/${currentRecipeId}/cart-options`;
-      } else {
-        // Default to weekly
-        apiUrl = `${API}/api/v2/walmart/weekly-cart-options?recipe_id=${currentRecipeId}`;
-      }
+      console.log('🔍 Loading cart options for recipe:', currentRecipeId);
       
-
+      // SIMPLIFIED APPROACH - Try the weekly endpoint first, fallback to regular
+      let apiUrl = `${API}/api/v2/walmart/weekly-cart-options?recipe_id=${currentRecipeId}`;
+      
       // Add longer timeout for slow Walmart API (backend takes ~8 seconds)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
       
-      // Use native fetch instead of axios for V2 endpoint
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -110,36 +102,49 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log('❌ Cart options error response body:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+        // If weekly endpoint fails, try regular endpoint
+        console.log('⚠️ Weekly cart endpoint failed, trying regular cart endpoint');
+        
+        const fallbackUrl = `${API}/api/recipes/${currentRecipeId}/cart-options`;
+        const fallbackResponse = await fetch(fallbackUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!fallbackResponse.ok) {
+          throw new Error(`Both cart endpoints failed: ${response.status} and ${fallbackResponse.status}`);
+        }
+        
+        const fallbackData = await fallbackResponse.json();
+        setCartOptions(fallbackData);
+      } else {
+        const data = await response.json();
+        setCartOptions(data);
       }
       
-      const data = await response.json();
-      setCartOptions(data);
-      
       // Initialize selected products with first product for each ingredient
-      const initialSelections = {};
-      data.ingredient_matches?.forEach(ingredientMatch => {
-        if (ingredientMatch.products && ingredientMatch.products.length > 0) {
-          // Use 'id' field instead of 'product_id' for WalmartProductV2
-          initialSelections[ingredientMatch.ingredient] = ingredientMatch.products[0];
-        }
-      });
-      setSelectedProducts(initialSelections);
-      
-      showNotification(`✅ Found ${data.total_products} real Walmart products!`, 'success');
+      if (cartOptions?.ingredient_matches) {
+        const initialSelections = {};
+        cartOptions.ingredient_matches.forEach(ingredientMatch => {
+          if (ingredientMatch.products && ingredientMatch.products.length > 0) {
+            initialSelections[ingredientMatch.ingredient] = ingredientMatch.products[0];
+          }
+        });
+        setSelectedProducts(initialSelections);
+        
+        showNotification(`✅ Found ${cartOptions.total_products || 'multiple'} real Walmart products!`, 'success');
+      }
       
     } catch (error) {
       console.error('❌ Failed to load cart options:', error);
-      console.error('❌ Error name:', error.name);
-      console.error('❌ Error message:', error.message);
       if (error.name === 'AbortError') {
-        console.log('⚠️ Request timed out after 25 seconds');
-        showNotification('⚠️ Walmart product search is taking longer than expected. Showing basic ingredients.', 'warning');
+        console.log('⚠️ Cart request timed out after 25 seconds');
+        showNotification('⚠️ Walmart product search is taking longer than expected. Recipe still available!', 'warning');
       } else {
-        console.log('⚠️ Error loading Walmart products, showing basic ingredients instead');
-        showNotification('⚠️ Could not load Walmart products. Showing basic ingredients.', 'warning');  
+        console.log('⚠️ Error loading Walmart products, recipe still available');
+        showNotification('⚠️ Could not load Walmart products. Recipe details available.', 'warning');  
       }
     } finally {
       setIsLoadingCart(false);
