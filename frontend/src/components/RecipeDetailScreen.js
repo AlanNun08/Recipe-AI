@@ -554,12 +554,20 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
                             <div className="font-medium text-gray-800 text-sm leading-tight mb-1">{product.name}</div>
                             <div className="text-xs text-gray-500">{product.brand}</div>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right mr-3">
                             <div className="font-bold text-green-600 text-lg">${product.price.toFixed(2)}</div>
                             {product.rating && (
                               <div className="text-xs text-yellow-600">⭐ {product.rating}</div>
                             )}
                           </div>
+                          {/* Remove button */}
+                          <button
+                            onClick={() => removeProductFromCart(ingredient)}
+                            className="ml-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-full p-1 w-6 h-6 flex items-center justify-center transition-colors duration-200 text-xs"
+                            title="Remove from cart"
+                          >
+                            ✕
+                          </button>
                         </div>
                       ))}
                     </div>
