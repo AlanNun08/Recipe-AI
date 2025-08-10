@@ -79,7 +79,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     };
     
     loadRecipeDetail();
-  }, [recipeId, recipeSource, showNotification]);
+  }, [recipeId, recipeSource]); // Removed showNotification from dependency array to prevent infinite loops
 
   const loadCartOptionsForRecipe = async (currentRecipeId, currentRecipeSource = 'weekly') => {
     setIsLoadingCart(true);
