@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """
-Backend Testing Script for Recipe History Navigation Issue
-Testing the specific issue where recipe navigation shows null currentRecipeId
+Comprehensive Backend Testing Script for AI Recipe + Grocery Delivery App
+Testing all major systems: Authentication, Recipe Generation, Weekly Recipes, 
+Starbucks Integration, Walmart Integration, Database Operations, and Subscription System
 """
 
 import requests
 import json
 import uuid
 import sys
+import time
+import random
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
