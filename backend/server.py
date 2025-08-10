@@ -4334,7 +4334,7 @@ Format as JSON array with 7 meal objects, each containing:
     except Exception as e:
         logger.error(f"Error generating weekly meals: {str(e)}")
         # Fallback to mock data on any other error
-        return await generate_mock_weekly_meals(family_size, dietary_preferences, cuisines)
+        return await generate_mock_weekly_meals(family_size, dietary_preferences, allergies, cuisines)
 
 def get_diverse_recipe_for_cuisine(cuisine_type: str, dietary_preferences: List[str]) -> List[dict]:
     """Get diverse recipe variations for different cuisine types"""
