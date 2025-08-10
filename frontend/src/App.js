@@ -2269,7 +2269,7 @@ function App() {
           onBack={() => setCurrentScreen('dashboard')}
           showNotification={showNotification}
           onViewRecipe={(recipeId, source = 'weekly') => {
-            console.log('onViewRecipe called with recipeId:', recipeId, 'source:', source);
+
             if (!recipeId) {
               showNotification('❌ Recipe ID is missing', 'error');
               return;
