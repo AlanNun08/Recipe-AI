@@ -1067,6 +1067,125 @@ class ComprehensiveBackendTester:
         except Exception as e:
             self.log_test("Preference Integration Verification", False, f"Exception: {str(e)}", system="weekly_recipes")
 
+    def test_debug_dietary_filtering_system(self) -> None:
+        """Test the dietary filtering system with debug logging enabled - SPECIFIC REVIEW REQUEST"""
+        try:
+            print("\n🔍 TESTING DIETARY FILTERING SYSTEM WITH DEBUG LOGGING")
+            print("=" * 70)
+            
+            # Test 1: Vegetarian dietary preference with debug logging
+            print("\n📋 TEST 1: Vegetarian Dietary Preference")
+            weekly_data = {
+                "user_id": DEMO_USER_ID,
+                "family_size": 2,
+                "dietary_preferences": ["vegetarian"],
+                "allergies": [],
+                "cuisines": ["italian", "mexican"]
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/weekly-recipes/generate", json=weekly_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                meals = data.get("meals", [])
+                
+                print(f"✅ Generated {len(meals)} meals with vegetarian preference")
+                
+                # Check for meat violations
+                meat_violations = []
+                meat_keywords = ['chicken', 'beef', 'pork', 'fish', 'meat', 'turkey', 'lamb', 'bacon', 'ham', 'sausage', 'salmon', 'tuna']
+                
+                for meal in meals:
+                    meal_name = meal.get("name", "")
+                    ingredients = meal.get("ingredients", [])
+                    print(f"  📝 {meal_name}: {len(ingredients)} ingredients")
+                    
+                    for ingredient in ingredients:
+                        ingredient_lower = ingredient.lower()
+                        for meat in meat_keywords:
+                            if meat in ingredient_lower:
+                                meat_violations.append(f"{meal_name}: {ingredient}")
+                
+                if len(meat_violations) == 0:
+                    self.log_test("Debug Dietary Filtering - Vegetarian", True, 
+                                f"✅ VEGETARIAN FILTERING SUCCESS: Generated {len(meals)} meals with ZERO meat ingredients. Debug logging should show filtering process.",
+                                {"meals_checked": len(meals), "meat_violations": 0}, 
+                                system="weekly_recipes")
+                else:
+                    self.log_test("Debug Dietary Filtering - Vegetarian", False, 
+                                f"🚨 VEGETARIAN FILTERING FAILURE: Found {len(meat_violations)} meat violations: {meat_violations}",
+                                system="weekly_recipes")
+            else:
+                self.log_test("Debug Dietary Filtering - Vegetarian", False, 
+                            f"Failed with status {response.status_code}: {response.text}",
+                            system="weekly_recipes")
+            
+            # Test 2: Specific safety test as requested in review
+            print("\n📋 TEST 2: Specific Safety Test - Vegetarian + Dairy Allergy")
+            weekly_data_safety = {
+                "user_id": DEMO_USER_ID,
+                "family_size": 2,
+                "dietary_preferences": ["vegetarian"],
+                "allergies": ["dairy"],
+                "cuisines": ["italian", "mexican"]
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/weekly-recipes/generate", json=weekly_data_safety)
+            
+            if response.status_code == 200:
+                data = response.json()
+                meals = data.get("meals", [])
+                
+                print(f"✅ Generated {len(meals)} meals with vegetarian + dairy allergy restrictions")
+                
+                # Check for both meat and dairy violations
+                meat_violations = []
+                dairy_violations = []
+                meat_keywords = ['chicken', 'beef', 'pork', 'fish', 'meat', 'turkey', 'lamb', 'bacon', 'ham', 'sausage', 'salmon', 'tuna']
+                dairy_keywords = ['cheese', 'milk', 'butter', 'cream', 'yogurt', 'parmesan', 'feta', 'mozzarella', 'cheddar']
+                
+                for meal in meals:
+                    meal_name = meal.get("name", "")
+                    ingredients = meal.get("ingredients", [])
+                    print(f"  📝 {meal_name}: {len(ingredients)} ingredients")
+                    
+                    for ingredient in ingredients:
+                        ingredient_lower = ingredient.lower()
+                        
+                        # Check for meat
+                        for meat in meat_keywords:
+                            if meat in ingredient_lower:
+                                meat_violations.append(f"{meal_name}: {ingredient}")
+                        
+                        # Check for dairy
+                        for dairy in dairy_keywords:
+                            if dairy in ingredient_lower:
+                                dairy_violations.append(f"{meal_name}: {ingredient}")
+                
+                total_violations = len(meat_violations) + len(dairy_violations)
+                
+                if total_violations == 0:
+                    self.log_test("Debug Dietary Filtering - Safety Test", True, 
+                                f"✅ SAFETY TEST SUCCESS: Generated {len(meals)} meals with ZERO meat or dairy violations. Filtering system working correctly.",
+                                {"meals_checked": len(meals), "meat_violations": 0, "dairy_violations": 0}, 
+                                system="weekly_recipes")
+                else:
+                    self.log_test("Debug Dietary Filtering - Safety Test", False, 
+                                f"🚨 SAFETY TEST FAILURE: Found {total_violations} violations - meat: {meat_violations}, dairy: {dairy_violations}",
+                                system="weekly_recipes")
+            else:
+                self.log_test("Debug Dietary Filtering - Safety Test", False, 
+                            f"Failed with status {response.status_code}: {response.text}",
+                            system="weekly_recipes")
+            
+            print("\n📋 IMPORTANT: Check backend logs for debug messages like:")
+            print("   'Filtering meal [meal_name]: X → Y ingredients'")
+            print("   This shows the filtering function is being called and working")
+            print("=" * 70)
+                
+        except Exception as e:
+            self.log_test("Debug Dietary Filtering System", False, f"Exception: {str(e)}", system="weekly_recipes")
+
     def test_current_weekly_recipes(self) -> Optional[List[Dict]]:
         """Test current weekly recipes retrieval"""
         try:
