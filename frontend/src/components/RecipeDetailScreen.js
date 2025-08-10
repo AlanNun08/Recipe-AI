@@ -362,6 +362,42 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
                     </div>
                   </div>
 
+                  {/* Bulk Actions */}
+                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-4 border border-purple-100 mb-6">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-gray-800">Ingredient Selection</h4>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => {
+                            // Select all ingredients
+                            setExcludedIngredients(new Set());
+                            // Auto-select best price products
+                            const newSelected = {};
+                            cartOptions.ingredient_matches.forEach(match => {
+                              const bestPriceProduct = match.products.reduce((min, product) => 
+                                product.price < min.price ? product : min
+                              );
+                              newSelected[match.ingredient] = bestPriceProduct;
+                            });
+                            setSelectedProducts(newSelected);
+                          }}
+                          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors duration-200"
+                        >
+                          Select All
+                        </button>
+                        <button
+                          onClick={() => {
+                            setExcludedIngredients(new Set(cartOptions.ingredient_matches.map(match => match.ingredient)));
+                            setSelectedProducts({});
+                          }}
+                          className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors duration-200"
+                        >
+                          Deselect All
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   {cartOptions.ingredient_matches.map((ingredientMatch, index) => {
                     const isIncluded = !excludedIngredients.has(ingredientMatch.ingredient);
                     
