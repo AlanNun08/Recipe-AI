@@ -4293,7 +4293,7 @@ Format as JSON array with 7 meal objects, each containing:
         response = openai_client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a professional meal planning chef. Create balanced, delicious weekly meal plans. Always respond with valid JSON only."},
+                {"role": "system", "content": "You are a professional meal planning chef specializing in dietary restrictions and allergy-safe cooking. Create balanced, delicious weekly meal plans that STRICTLY follow all dietary requirements and avoid ALL allergens. User safety is paramount - never include restricted ingredients. Always respond with valid JSON only."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=2000,
