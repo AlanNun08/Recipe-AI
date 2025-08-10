@@ -4232,6 +4232,11 @@ async def generate_weekly_meals(family_size: int = 2, dietary_preferences: List[
         if dietary_preferences:
             dietary_info = f"Dietary restrictions: {', '.join(dietary_preferences)}. "
         
+        # Build allergy information
+        allergy_info = ""
+        if allergies:
+            allergy_info = f"CRITICAL ALLERGIES TO AVOID: {', '.join(allergies)}. Do not include any ingredients containing these allergens. "
+        
         # Build cuisine preferences
         cuisine_info = ""
         if cuisines:
