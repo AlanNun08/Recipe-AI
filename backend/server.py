@@ -4958,7 +4958,9 @@ async def generate_mock_weekly_meals(family_size: int = 2, dietary_preferences: 
     weekly_meals = []
     for i, meal_data in enumerate(safe_meals_data):
         # Get safe ingredients using the filtering system
-        safe_ingredients = filter_safe_ingredients(meal_data["ingredients"])
+        original_ingredients = meal_data["ingredients"]
+        safe_ingredients = filter_safe_ingredients(original_ingredients)
+        logger.info(f"Filtering meal {meal_data['name']}: {len(original_ingredients)} → {len(safe_ingredients)} ingredients")
         
         # Adjust ingredients for family size (simple multiplication approach)
         adjusted_ingredients = []
