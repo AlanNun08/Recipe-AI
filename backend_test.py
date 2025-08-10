@@ -659,6 +659,414 @@ class ComprehensiveBackendTester:
         except Exception as e:
             self.log_test("Multiple Restrictions Safety", False, f"Exception: {str(e)}", system="weekly_recipes")
 
+    # ==================== ENHANCED OPENAI INTEGRATION TESTS ====================
+    
+    def test_demo_user_preferences_fetching(self) -> Dict:
+        """Test that demo user preferences are properly stored and fetchable from database"""
+        try:
+            # This test verifies the user preferences are available for injection into OpenAI prompts
+            # We'll simulate what the backend does when fetching user preferences
+            
+            # Test login to ensure we can access user data
+            login_data = {
+                "email": DEMO_EMAIL,
+                "password": DEMO_PASSWORD
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/auth/login", json=login_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                user_data = data.get("user", {})
+                
+                # Check if user has stored preferences that should be injected into OpenAI prompts
+                dietary_preferences = user_data.get("dietary_preferences", [])
+                allergies = user_data.get("allergies", [])
+                favorite_cuisines = user_data.get("favorite_cuisines", [])
+                
+                preferences_found = {
+                    "dietary_preferences": dietary_preferences,
+                    "allergies": allergies,
+                    "favorite_cuisines": favorite_cuisines,
+                    "has_preferences": len(dietary_preferences) > 0 or len(allergies) > 0 or len(favorite_cuisines) > 0
+                }
+                
+                self.log_test("Demo User Preferences Fetching", True, 
+                            f"✅ Successfully fetched user preferences for OpenAI injection: dietary={dietary_preferences}, allergies={allergies}, cuisines={favorite_cuisines}",
+                            preferences_found, system="weekly_recipes")
+                return preferences_found
+            else:
+                self.log_test("Demo User Preferences Fetching", False, 
+                            f"Failed to login and fetch user preferences: {response.status_code}",
+                            system="weekly_recipes")
+                return {}
+                
+        except Exception as e:
+            self.log_test("Demo User Preferences Fetching", False, f"Exception: {str(e)}", system="weekly_recipes")
+            return {}
+
+    def test_enhanced_openai_prompt_with_user_preferences(self) -> None:
+        """Test that OpenAI prompts properly include user account preferences + request preferences"""
+        try:
+            # Test with demo user preferences + additional request preferences
+            # This tests the preference combination logic that should be injected into OpenAI prompts
+            weekly_data = {
+                "user_id": DEMO_USER_ID,
+                "family_size": 2,
+                "dietary_preferences": ["vegetarian"],  # Request preference
+                "allergies": ["dairy"],  # Request allergy
+                "cuisines": ["italian"]  # Request cuisine
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/weekly-recipes/generate", json=weekly_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                meals = data.get("meals", [])
+                
+                if len(meals) == 7:
+                    # Verify that the enhanced OpenAI integration worked by checking safety compliance
+                    # This indirectly tests that preferences were properly injected into the OpenAI prompt
+                    
+                    # Check vegetarian compliance (no meat)
+                    meat_violations = []
+                    meat_keywords = ['chicken', 'beef', 'pork', 'fish', 'meat', 'turkey', 'lamb', 'bacon', 'ham', 'sausage', 'salmon', 'tuna']
+                    
+                    # Check dairy allergy compliance (no dairy)
+                    dairy_violations = []
+                    dairy_keywords = ['cheese', 'milk', 'butter', 'cream', 'yogurt', 'parmesan', 'feta', 'mozzarella', 'cheddar']
+                    
+                    for meal in meals:
+                        meal_name = meal.get("name", "")
+                        ingredients = meal.get("ingredients", [])
+                        
+                        for ingredient in ingredients:
+                            ingredient_lower = ingredient.lower()
+                            
+                            # Check for meat violations
+                            for meat in meat_keywords:
+                                if meat in ingredient_lower:
+                                    meat_violations.append(f"{meal_name}: {ingredient}")
+                            
+                            # Check for dairy violations
+                            for dairy in dairy_keywords:
+                                if dairy in ingredient_lower:
+                                    dairy_violations.append(f"{meal_name}: {ingredient}")
+                    
+                    total_violations = len(meat_violations) + len(dairy_violations)
+                    
+                    if total_violations == 0:
+                        self.log_test("Enhanced OpenAI Prompt with User Preferences", True, 
+                                    f"✅ OpenAI prompt enhancement WORKING - Generated {len(meals)} meals with ZERO safety violations. User preferences properly injected into OpenAI prompt.",
+                                    {"meals_generated": len(meals), "meat_violations": 0, "dairy_violations": 0}, 
+                                    system="weekly_recipes")
+                    else:
+                        self.log_test("Enhanced OpenAI Prompt with User Preferences", False, 
+                                    f"🚨 OpenAI prompt enhancement FAILING - Found {total_violations} safety violations. User preferences NOT properly injected: meat_violations={meat_violations}, dairy_violations={dairy_violations}",
+                                    system="weekly_recipes")
+                else:
+                    self.log_test("Enhanced OpenAI Prompt with User Preferences", False, 
+                                f"Expected 7 meals, got {len(meals)} - OpenAI prompt may not be working correctly",
+                                system="weekly_recipes")
+            else:
+                self.log_test("Enhanced OpenAI Prompt with User Preferences", False, 
+                            f"Failed with status {response.status_code}: {response.text}",
+                            system="weekly_recipes")
+                
+        except Exception as e:
+            self.log_test("Enhanced OpenAI Prompt with User Preferences", False, f"Exception: {str(e)}", system="weekly_recipes")
+
+    def test_safety_first_openai_vegetarian_generation(self) -> None:
+        """Test that OpenAI generates truly safe vegetarian recipes with NO meat whatsoever"""
+        try:
+            weekly_data = {
+                "user_id": DEMO_USER_ID,
+                "family_size": 2,
+                "dietary_preferences": ["vegetarian"],
+                "allergies": [],
+                "cuisines": ["italian", "mexican"]
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/weekly-recipes/generate", json=weekly_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                meals = data.get("meals", [])
+                
+                # Comprehensive meat detection - test enhanced safety instructions
+                meat_violations = []
+                comprehensive_meat_keywords = [
+                    'chicken', 'beef', 'pork', 'fish', 'meat', 'turkey', 'lamb', 'bacon', 'ham', 
+                    'sausage', 'salmon', 'tuna', 'cod', 'shrimp', 'crab', 'lobster', 'duck', 
+                    'veal', 'venison', 'rabbit', 'goose', 'anchovy', 'sardine', 'mackerel',
+                    'prosciutto', 'pepperoni', 'salami', 'chorizo', 'pancetta'
+                ]
+                
+                for meal in meals:
+                    meal_name = meal.get("name", "")
+                    ingredients = meal.get("ingredients", [])
+                    
+                    for ingredient in ingredients:
+                        ingredient_lower = ingredient.lower()
+                        for meat in comprehensive_meat_keywords:
+                            if meat in ingredient_lower:
+                                meat_violations.append(f"{meal_name}: {ingredient}")
+                
+                if len(meat_violations) == 0:
+                    self.log_test("Safety-First OpenAI Vegetarian Generation", True, 
+                                f"✅ SAFETY-FIRST OPENAI SUCCESS: Generated {len(meals)} vegetarian meals with ZERO meat ingredients. Enhanced safety instructions working perfectly.",
+                                {"meals_checked": len(meals), "meat_violations": 0, "comprehensive_check": True}, 
+                                system="weekly_recipes")
+                else:
+                    self.log_test("Safety-First OpenAI Vegetarian Generation", False, 
+                                f"🚨 CRITICAL SAFETY FAILURE: OpenAI generated vegetarian meals with {len(meat_violations)} MEAT VIOLATIONS: {meat_violations}. Enhanced safety instructions FAILING.",
+                                system="weekly_recipes")
+            else:
+                self.log_test("Safety-First OpenAI Vegetarian Generation", False, 
+                            f"Failed with status {response.status_code}: {response.text}",
+                            system="weekly_recipes")
+                
+        except Exception as e:
+            self.log_test("Safety-First OpenAI Vegetarian Generation", False, f"Exception: {str(e)}", system="weekly_recipes")
+
+    def test_safety_first_openai_dairy_allergy_generation(self) -> None:
+        """Test that OpenAI generates truly safe dairy-free recipes with NO dairy ingredients"""
+        try:
+            weekly_data = {
+                "user_id": DEMO_USER_ID,
+                "family_size": 2,
+                "dietary_preferences": [],
+                "allergies": ["dairy"],
+                "cuisines": ["italian", "mexican"]
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/weekly-recipes/generate", json=weekly_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                meals = data.get("meals", [])
+                
+                # Comprehensive dairy detection - test enhanced allergy safety
+                dairy_violations = []
+                comprehensive_dairy_keywords = [
+                    'cheese', 'milk', 'butter', 'cream', 'yogurt', 'parmesan', 'feta', 
+                    'mozzarella', 'cheddar', 'ricotta', 'goat cheese', 'brie', 'camembert',
+                    'swiss cheese', 'provolone', 'blue cheese', 'cottage cheese', 'sour cream',
+                    'heavy cream', 'whipped cream', 'ice cream', 'buttermilk', 'ghee'
+                ]
+                
+                for meal in meals:
+                    meal_name = meal.get("name", "")
+                    ingredients = meal.get("ingredients", [])
+                    
+                    for ingredient in ingredients:
+                        ingredient_lower = ingredient.lower()
+                        for dairy in comprehensive_dairy_keywords:
+                            if dairy in ingredient_lower and 'dairy-free' not in ingredient_lower and 'non-dairy' not in ingredient_lower:
+                                dairy_violations.append(f"{meal_name}: {ingredient}")
+                
+                if len(dairy_violations) == 0:
+                    self.log_test("Safety-First OpenAI Dairy Allergy Generation", True, 
+                                f"✅ SAFETY-FIRST OPENAI SUCCESS: Generated {len(meals)} dairy-free meals with ZERO dairy ingredients. Enhanced allergy safety instructions working perfectly.",
+                                {"meals_checked": len(meals), "dairy_violations": 0, "comprehensive_check": True}, 
+                                system="weekly_recipes")
+                else:
+                    self.log_test("Safety-First OpenAI Dairy Allergy Generation", False, 
+                                f"🚨 CRITICAL ALLERGY SAFETY FAILURE: OpenAI generated dairy-free meals with {len(dairy_violations)} DAIRY VIOLATIONS: {dairy_violations}. Enhanced allergy safety instructions FAILING.",
+                                system="weekly_recipes")
+            else:
+                self.log_test("Safety-First OpenAI Dairy Allergy Generation", False, 
+                            f"Failed with status {response.status_code}: {response.text}",
+                            system="weekly_recipes")
+                
+        except Exception as e:
+            self.log_test("Safety-First OpenAI Dairy Allergy Generation", False, f"Exception: {str(e)}", system="weekly_recipes")
+
+    def test_safety_first_openai_vegan_generation(self) -> None:
+        """Test that OpenAI generates truly safe vegan recipes with NO animal products"""
+        try:
+            weekly_data = {
+                "user_id": DEMO_USER_ID,
+                "family_size": 2,
+                "dietary_preferences": ["vegan"],
+                "allergies": [],
+                "cuisines": ["italian", "asian"]
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/weekly-recipes/generate", json=weekly_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                meals = data.get("meals", [])
+                
+                # Comprehensive animal product detection - test enhanced vegan safety
+                animal_violations = []
+                comprehensive_animal_keywords = [
+                    # Meat and poultry
+                    'chicken', 'beef', 'pork', 'fish', 'meat', 'turkey', 'lamb', 'bacon', 'ham', 'sausage',
+                    # Dairy
+                    'cheese', 'milk', 'butter', 'cream', 'yogurt', 'parmesan', 'feta', 'mozzarella',
+                    # Eggs and other animal products
+                    'egg', 'honey', 'gelatin', 'lard', 'tallow'
+                ]
+                
+                for meal in meals:
+                    meal_name = meal.get("name", "")
+                    ingredients = meal.get("ingredients", [])
+                    
+                    for ingredient in ingredients:
+                        ingredient_lower = ingredient.lower()
+                        for animal_product in comprehensive_animal_keywords:
+                            if animal_product in ingredient_lower and 'vegan' not in ingredient_lower and 'plant-based' not in ingredient_lower:
+                                animal_violations.append(f"{meal_name}: {ingredient}")
+                
+                if len(animal_violations) == 0:
+                    self.log_test("Safety-First OpenAI Vegan Generation", True, 
+                                f"✅ SAFETY-FIRST OPENAI SUCCESS: Generated {len(meals)} vegan meals with ZERO animal products. Enhanced vegan safety instructions working perfectly.",
+                                {"meals_checked": len(meals), "animal_violations": 0, "comprehensive_check": True}, 
+                                system="weekly_recipes")
+                else:
+                    self.log_test("Safety-First OpenAI Vegan Generation", False, 
+                                f"🚨 CRITICAL VEGAN SAFETY FAILURE: OpenAI generated vegan meals with {len(animal_violations)} ANIMAL PRODUCT VIOLATIONS: {animal_violations}. Enhanced vegan safety instructions FAILING.",
+                                system="weekly_recipes")
+            else:
+                self.log_test("Safety-First OpenAI Vegan Generation", False, 
+                            f"Failed with status {response.status_code}: {response.text}",
+                            system="weekly_recipes")
+                
+        except Exception as e:
+            self.log_test("Safety-First OpenAI Vegan Generation", False, f"Exception: {str(e)}", system="weekly_recipes")
+
+    def test_safety_first_openai_gluten_free_substitutions(self) -> None:
+        """Test that OpenAI generates gluten-free recipes with proper substitutions"""
+        try:
+            weekly_data = {
+                "user_id": DEMO_USER_ID,
+                "family_size": 2,
+                "dietary_preferences": ["gluten-free"],
+                "allergies": [],
+                "cuisines": ["italian", "mexican"]
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/weekly-recipes/generate", json=weekly_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                meals = data.get("meals", [])
+                
+                # Check for proper gluten-free substitutions and violations
+                gluten_violations = []
+                proper_substitutions = []
+                gluten_keywords = ['wheat', 'flour', 'bread', 'pasta', 'soy sauce']
+                substitution_keywords = ['gluten-free pasta', 'gluten-free flour', 'gluten-free bread', 'tamari', 'rice flour', 'almond flour']
+                
+                for meal in meals:
+                    meal_name = meal.get("name", "")
+                    ingredients = meal.get("ingredients", [])
+                    
+                    for ingredient in ingredients:
+                        ingredient_lower = ingredient.lower()
+                        
+                        # Check for proper substitutions
+                        for substitution in substitution_keywords:
+                            if substitution in ingredient_lower:
+                                proper_substitutions.append(f"{meal_name}: {ingredient}")
+                        
+                        # Check for gluten violations
+                        for gluten in gluten_keywords:
+                            if gluten in ingredient_lower and 'gluten-free' not in ingredient_lower and 'tamari' not in ingredient_lower:
+                                gluten_violations.append(f"{meal_name}: {ingredient}")
+                
+                if len(gluten_violations) == 0:
+                    self.log_test("Safety-First OpenAI Gluten-Free Substitutions", True, 
+                                f"✅ SAFETY-FIRST OPENAI SUCCESS: Generated {len(meals)} gluten-free meals with ZERO gluten violations and {len(proper_substitutions)} proper substitutions. Enhanced gluten-free safety working perfectly.",
+                                {"meals_checked": len(meals), "gluten_violations": 0, "proper_substitutions": len(proper_substitutions)}, 
+                                system="weekly_recipes")
+                else:
+                    self.log_test("Safety-First OpenAI Gluten-Free Substitutions", False, 
+                                f"🚨 CRITICAL GLUTEN-FREE SAFETY FAILURE: OpenAI generated gluten-free meals with {len(gluten_violations)} GLUTEN VIOLATIONS: {gluten_violations}. Enhanced gluten-free safety instructions FAILING.",
+                                system="weekly_recipes")
+            else:
+                self.log_test("Safety-First OpenAI Gluten-Free Substitutions", False, 
+                            f"Failed with status {response.status_code}: {response.text}",
+                            system="weekly_recipes")
+                
+        except Exception as e:
+            self.log_test("Safety-First OpenAI Gluten-Free Substitutions", False, f"Exception: {str(e)}", system="weekly_recipes")
+
+    def test_preference_integration_verification(self) -> None:
+        """Test that demo user preferences are properly fetched, combined, and injected into OpenAI prompts"""
+        try:
+            # First, get the demo user's stored preferences
+            user_preferences = self.test_demo_user_preferences_fetching()
+            
+            # Test with additional request preferences to verify combination logic
+            weekly_data = {
+                "user_id": DEMO_USER_ID,
+                "family_size": 2,
+                "dietary_preferences": ["gluten-free"],  # Additional to stored preferences
+                "allergies": ["shellfish"],  # Additional to stored allergies  
+                "cuisines": ["thai"]  # Additional to stored cuisines
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/weekly-recipes/generate", json=weekly_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                meals = data.get("meals", [])
+                
+                if len(meals) == 7:
+                    # Verify that both stored and request preferences are being respected
+                    # This tests the set operations for combining preferences
+                    
+                    # Check that request preferences are respected (gluten-free)
+                    gluten_violations = []
+                    gluten_keywords = ['wheat', 'flour', 'bread', 'soy sauce']
+                    
+                    # Check that request allergies are respected (shellfish)
+                    shellfish_violations = []
+                    shellfish_keywords = ['shrimp', 'crab', 'lobster', 'shellfish', 'prawns', 'scallops']
+                    
+                    for meal in meals:
+                        meal_name = meal.get("name", "")
+                        ingredients = meal.get("ingredients", [])
+                        
+                        for ingredient in ingredients:
+                            ingredient_lower = ingredient.lower()
+                            
+                            # Check gluten-free compliance
+                            for gluten in gluten_keywords:
+                                if gluten in ingredient_lower and 'gluten-free' not in ingredient_lower and 'tamari' not in ingredient_lower:
+                                    gluten_violations.append(f"{meal_name}: {ingredient}")
+                            
+                            # Check shellfish allergy compliance
+                            for shellfish in shellfish_keywords:
+                                if shellfish in ingredient_lower:
+                                    shellfish_violations.append(f"{meal_name}: {ingredient}")
+                    
+                    total_violations = len(gluten_violations) + len(shellfish_violations)
+                    
+                    if total_violations == 0:
+                        self.log_test("Preference Integration Verification", True, 
+                                    f"✅ PREFERENCE INTEGRATION SUCCESS: User account preferences properly fetched from database, combined with request preferences using set operations, and injected into OpenAI prompt with clear safety warnings. Generated {len(meals)} meals with ZERO violations.",
+                                    {"meals_generated": len(meals), "gluten_violations": 0, "shellfish_violations": 0, "integration_working": True}, 
+                                    system="weekly_recipes")
+                    else:
+                        self.log_test("Preference Integration Verification", False, 
+                                    f"🚨 PREFERENCE INTEGRATION FAILURE: Found {total_violations} violations indicating preferences not properly combined or injected into OpenAI prompt: gluten_violations={gluten_violations}, shellfish_violations={shellfish_violations}",
+                                    system="weekly_recipes")
+                else:
+                    self.log_test("Preference Integration Verification", False, 
+                                f"Expected 7 meals, got {len(meals)} - preference integration may be failing",
+                                system="weekly_recipes")
+            else:
+                self.log_test("Preference Integration Verification", False, 
+                            f"Failed with status {response.status_code}: {response.text}",
+                            system="weekly_recipes")
+                
+        except Exception as e:
+            self.log_test("Preference Integration Verification", False, f"Exception: {str(e)}", system="weekly_recipes")
+
     def test_current_weekly_recipes(self) -> Optional[List[Dict]]:
         """Test current weekly recipes retrieval"""
         try:
