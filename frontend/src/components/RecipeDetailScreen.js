@@ -9,6 +9,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
   const [cartOptions, setCartOptions] = useState(null);
   const [isLoadingCart, setIsLoadingCart] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState({});
+  const [excludedIngredients, setExcludedIngredients] = useState(new Set()); // Track ingredients user wants to exclude from cart
   const [cartUrl, setCartUrl] = useState('');
   const [isGeneratingCart, setIsGeneratingCart] = useState(false);
 
