@@ -4248,20 +4248,27 @@ async def generate_weekly_meals(family_size: int = 2, dietary_preferences: List[
 
 {dietary_info}{allergy_info}{cuisine_info}
 
+CRITICAL SAFETY REQUIREMENTS:
+- If VEGETARIAN: NO meat, poultry, fish, or seafood in any recipe
+- If VEGAN: NO animal products whatsoever (no meat, dairy, eggs, honey, etc.)  
+- If GLUTEN-FREE: Use only gluten-free grains and substitute regular pasta with gluten-free pasta
+- ALLERGIES: Completely avoid ALL listed allergens - this is life-threatening serious
+- Double-check every single ingredient against dietary restrictions and allergies
+
 Requirements:
 - Balanced nutrition across the week
 - Easy-to-cook ingredients
 - Budget-friendly options
 - Variety in cooking methods and flavors
 - Each recipe should serve {family_size} people
-- STRICTLY avoid all mentioned allergens in ingredients
-- Follow all dietary restrictions carefully
+- STRICTLY avoid all mentioned allergens in ingredients - NO EXCEPTIONS
+- Follow all dietary restrictions carefully - this affects user health and safety
 
 For each day, provide:
 1. Day of the week
 2. Recipe name 
 3. Brief description
-4. Complete ingredients list
+4. Complete ingredients list (verified safe for dietary restrictions)
 5. Step-by-step cooking instructions
 6. Prep time and cook time in minutes
 7. Cuisine type
