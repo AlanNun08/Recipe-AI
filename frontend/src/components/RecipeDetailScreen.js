@@ -86,6 +86,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
       
       // SIMPLIFIED APPROACH - Try the weekly endpoint first, fallback to regular
       let apiUrl = `${API}/api/v2/walmart/weekly-cart-options?recipe_id=${currentRecipeId}`;
+      let cartData = null;
       
       // Add longer timeout for slow Walmart API (backend takes ~8 seconds)
       const controller = new AbortController();
@@ -117,24 +118,25 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
           throw new Error(`Both cart endpoints failed: ${response.status} and ${fallbackResponse.status}`);
         }
         
-        const fallbackData = await fallbackResponse.json();
-        setCartOptions(fallbackData);
+        cartData = await fallbackResponse.json();
       } else {
-        const data = await response.json();
-        setCartOptions(data);
+        cartData = await response.json();
       }
       
+      // Set cart options first
+      setCartOptions(cartData);
+      
       // Initialize selected products with first product for each ingredient
-      if (cartOptions?.ingredient_matches) {
+      if (cartData?.ingredient_matches) {
         const initialSelections = {};
-        cartOptions.ingredient_matches.forEach(ingredientMatch => {
+        cartData.ingredient_matches.forEach(ingredientMatch => {
           if (ingredientMatch.products && ingredientMatch.products.length > 0) {
             initialSelections[ingredientMatch.ingredient] = ingredientMatch.products[0];
           }
         });
         setSelectedProducts(initialSelections);
         
-        showNotification(`✅ Found ${cartOptions.total_products || 'multiple'} real Walmart products!`, 'success');
+        showNotification(`✅ Found ${cartData.total_products || cartData.ingredient_matches.length} real Walmart products!`, 'success');
       }
       
     } catch (error) {
