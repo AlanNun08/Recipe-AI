@@ -4219,7 +4219,7 @@ def get_week_days() -> List[str]:
     """Get days of the week for meal planning"""
     return ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
-async def generate_weekly_meals(family_size: int = 2, dietary_preferences: List[str] = [], cuisines: List[str] = []) -> List[WeeklyMeal]:
+async def generate_weekly_meals(family_size: int = 2, dietary_preferences: List[str] = [], allergies: List[str] = [], cuisines: List[str] = []) -> List[WeeklyMeal]:
     """Generate 7 dinner meals for the week using OpenAI"""
     try:
         # Check if OpenAI API key is properly configured
