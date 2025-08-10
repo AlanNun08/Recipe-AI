@@ -393,6 +393,7 @@ class WeeklyRecipeRequest(BaseModel):
     user_id: str
     family_size: int = 2
     dietary_preferences: List[str] = []
+    allergies: List[str] = []  # Allow clients to add additional allergies
     budget: Optional[float] = None
     cuisines: List[str] = []
 
