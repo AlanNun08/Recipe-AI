@@ -2320,7 +2320,7 @@ function App() {
           onBack={() => setCurrentScreen('dashboard')}
           showNotification={showNotification}
           onViewRecipe={(recipeId, source = 'generated') => {
-            console.log('onViewRecipe called from generator with recipeId:', recipeId, 'source:', source);
+
             setCurrentRecipeId(recipeId);
             setCurrentRecipeSource(source);
             setCurrentScreen('recipe-detail');
