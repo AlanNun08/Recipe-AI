@@ -2692,7 +2692,6 @@ async def get_recipe_detail(recipe_id: str):
         # Search in different collections in order of priority
         collections_to_search = [
             ("recipes", "regular"),           # Regular generated recipes
-            ("weekly_recipes", "weekly"),     # Weekly meal plan recipes  
             ("starbucks_recipes", "starbucks"), # User-generated Starbucks recipes
             ("curated_starbucks_recipes", "starbucks"), # Curated Starbucks recipes
             ("user_shared_recipes", "shared") # User-shared community recipes
