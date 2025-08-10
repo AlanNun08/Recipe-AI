@@ -25,17 +25,25 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
         console.log('🔍 Starting to load recipe:', recipeId, 'source:', recipeSource);
         setIsLoading(true);
         
-        // UNIFIED API ENDPOINT - Use the detail endpoint for ALL sources
-        // The backend detail endpoint already searches multiple collections
-        const apiUrl = `${API}/api/recipes/${recipeId}/detail`;
+        let apiUrl;
+        let fallbackUrl;
         
-        console.log('🔍 Loading recipe from unified endpoint:', apiUrl);
+        // Smart endpoint selection with fallback
+        if (recipeSource === 'weekly') {
+          apiUrl = `${API}/api/weekly-recipes/recipe/${recipeId}`;
+          fallbackUrl = `${API}/api/recipes/${recipeId}/detail`;
+        } else {
+          apiUrl = `${API}/api/recipes/${recipeId}/detail`;
+          fallbackUrl = `${API}/api/weekly-recipes/recipe/${recipeId}`;
+        }
+        
+        console.log('🔍 Loading recipe from primary endpoint:', apiUrl);
         
         // Add timeout to prevent hanging
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
         
-        const response = await fetch(apiUrl, {
+        let response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -45,8 +53,26 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
         
         clearTimeout(timeoutId);
         
+        // If primary endpoint fails, try fallback
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          console.log('⚠️ Primary endpoint failed, trying fallback:', fallbackUrl);
+          
+          const fallbackController = new AbortController();
+          const fallbackTimeoutId = setTimeout(() => fallbackController.abort(), 15000);
+          
+          response = await fetch(fallbackUrl, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            signal: fallbackController.signal
+          });
+          
+          clearTimeout(fallbackTimeoutId);
+          
+          if (!response.ok) {
+            throw new Error(`Both endpoints failed: primary ${apiUrl} and fallback ${fallbackUrl}`);
+          }
         }
         
         const data = await response.json();
