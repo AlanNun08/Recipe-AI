@@ -4947,14 +4947,17 @@ async def generate_mock_weekly_meals(family_size: int = 2, dietary_preferences: 
         }
     ]
     
-    # Convert to WeeklyMeal objects with adjusted servings
+    # Process safe meal templates
     weekly_meals = []
     for i, meal_data in enumerate(mock_meals_data):
+        # Get safe ingredients using the filtering system
+        safe_ingredients = filter_safe_ingredients(meal_data["ingredients"])
+        
         # Adjust ingredients for family size (simple multiplication approach)
         adjusted_ingredients = []
         multiplier = max(1, family_size / 2)  # Base recipes serve 2
         
-        for ingredient in meal_data["ingredients"]:
+        for ingredient in safe_ingredients:
             # Simple ingredient adjustment - multiply quantities
             if any(num in ingredient for num in ['1 ', '2 ', '3 ', '4 ', '8 ', '12 ']):
                 # Try to find and multiply the first number
@@ -4972,12 +4975,21 @@ async def generate_mock_weekly_meals(family_size: int = 2, dietary_preferences: 
             else:
                 adjusted_ingredients.append(ingredient)
         
+        # Generate safe cooking instructions
+        instructions = [
+            f"Prepare ingredients according to dietary restrictions",
+            f"Cook base ingredients as directed", 
+            f"Combine ingredients carefully avoiding cross-contamination",
+            f"Season to taste with allowed seasonings",
+            f"Serve immediately for best flavor"
+        ]
+        
         meal = WeeklyMeal(
             day=meal_data["day"],
             name=meal_data["name"],
             description=meal_data["description"],
             ingredients=adjusted_ingredients,
-            instructions=meal_data["instructions"],
+            instructions=instructions,
             prep_time=20,
             cook_time=25,
             servings=family_size,
@@ -4987,6 +4999,7 @@ async def generate_mock_weekly_meals(family_size: int = 2, dietary_preferences: 
         )
         weekly_meals.append(meal)
     
+    logger.info(f"Generated {len(weekly_meals)} safe mock meals with proper dietary filtering")
     return weekly_meals
 
 async def generate_weekly_walmart_cart(meals: List[WeeklyMeal]) -> str:
