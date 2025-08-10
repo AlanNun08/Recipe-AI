@@ -4813,7 +4813,7 @@ async def generate_mock_weekly_meals(family_size: int = 2, dietary_preferences: 
         else:
             return "parmesan cheese"
     
-    # Sample meal templates that adapt to preferences
+    # Safe meal templates that adapt to all preferences and allergies
     mock_meals_data = [
         {
             "day": "Monday",
