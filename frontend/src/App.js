@@ -221,10 +221,10 @@ function App() {
   }, []);
 
   // Enhanced notification function with better error categorization
-  const showNotification = (message, type = 'success') => {
+  const showNotification = useCallback((message, type = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 4000);
-  };
+  }, []);
 
   // Landing Screen Component
   const LandingScreen = () => {
