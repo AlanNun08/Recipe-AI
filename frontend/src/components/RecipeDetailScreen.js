@@ -25,18 +25,11 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
         console.log('🔍 Starting to load recipe:', recipeId, 'source:', recipeSource);
         setIsLoading(true);
         
-        // Use different API endpoints based on recipe source
-        let apiUrl;
-        if (recipeSource === 'weekly') {
-          apiUrl = `${API}/api/weekly-recipes/recipe/${recipeId}`;
-        } else if (recipeSource === 'generated' || recipeSource === 'history') {
-          apiUrl = `${API}/api/recipes/${recipeId}/detail`;
-        } else {
-          // Default to weekly recipes
-          apiUrl = `${API}/api/weekly-recipes/recipe/${recipeId}`;
-        }
+        // UNIFIED API ENDPOINT - Use the detail endpoint for ALL sources
+        // The backend detail endpoint already searches multiple collections
+        const apiUrl = `${API}/api/recipes/${recipeId}/detail`;
         
-        console.log('🔍 Loading recipe from:', apiUrl);
+        console.log('🔍 Loading recipe from unified endpoint:', apiUrl);
         
         // Add timeout to prevent hanging
         const controller = new AbortController();
@@ -65,10 +58,10 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
         console.log('✅ Recipe state set, clearing loading...');
         setIsLoading(false);
         
-        // Load cart options in the background after a delay
+        // Load cart options in the background - simplified approach
         setTimeout(() => {
-          loadCartOptionsForRecipe(recipeId, recipeSource);
-        }, 2000);
+          loadCartOptionsForRecipe(recipeId);
+        }, 1000);
         
       } catch (error) {
         console.error('❌ Failed to load recipe detail:', error);
