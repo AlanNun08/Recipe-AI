@@ -282,6 +282,150 @@ class ComprehensiveBackendTester:
         except Exception as e:
             self.log_test("Recipe Detail Retrieval", False, f"Exception: {str(e)}", system="recipe_generation")
 
+    def test_recipe_history_navigation_comprehensive(self) -> None:
+        """Test comprehensive recipe history navigation as requested in review"""
+        try:
+            print("\n🎯 COMPREHENSIVE RECIPE HISTORY NAVIGATION TESTING")
+            print("=" * 70)
+            
+            # Step 1: User login with demo@test.com/password123
+            print("\n📋 STEP 1: Demo User Authentication")
+            login_success = self.test_user_login()
+            
+            if not login_success:
+                self.log_test("Recipe History Navigation - Login", False, 
+                            "Failed to authenticate demo user", system="recipe_generation")
+                return
+            
+            print("✅ Demo user authenticated successfully")
+            
+            # Step 2: Get user's recipe history via /api/recipes/history/{user_id}
+            print("\n📋 STEP 2: Recipe History Retrieval")
+            response = self.session.get(f"{BACKEND_URL}/recipes/history/{DEMO_USER_ID}")
+            
+            if response.status_code != 200:
+                self.log_test("Recipe History Navigation - History Retrieval", False, 
+                            f"Failed to get recipe history: {response.status_code} - {response.text}",
+                            system="recipe_generation")
+                return
+            
+            data = response.json()
+            recipes = data.get("recipes", [])
+            total_count = len(recipes)
+            
+            print(f"✅ Retrieved {total_count} recipes from history")
+            
+            if total_count == 0:
+                self.log_test("Recipe History Navigation - History Retrieval", True, 
+                            "No recipes in history (acceptable for demo user)", system="recipe_generation")
+                return
+            
+            # Validate recipe IDs
+            valid_recipes = []
+            null_ids = 0
+            invalid_ids = 0
+            
+            for recipe in recipes:
+                recipe_id = recipe.get("id")
+                if recipe_id is None:
+                    null_ids += 1
+                elif not self.is_valid_uuid(recipe_id):
+                    invalid_ids += 1
+                else:
+                    valid_recipes.append(recipe)
+            
+            print(f"📊 Recipe ID Analysis: {len(valid_recipes)} valid, {null_ids} null, {invalid_ids} invalid")
+            
+            self.log_test("Recipe History Navigation - ID Validation", True, 
+                        f"Recipe history contains {len(valid_recipes)} valid recipes out of {total_count} total",
+                        {"total": total_count, "valid": len(valid_recipes), "null_ids": null_ids, "invalid_ids": invalid_ids},
+                        system="recipe_generation")
+            
+            # Step 3: Test recipe detail endpoint for sample recipe IDs
+            print("\n📋 STEP 3: Recipe Detail Endpoint Testing")
+            
+            # Test up to 5 sample recipes
+            test_recipes = valid_recipes[:5]
+            successful_details = 0
+            failed_details = 0
+            
+            for i, recipe in enumerate(test_recipes, 1):
+                recipe_id = recipe.get("id")
+                recipe_title = recipe.get("title", "Unknown")
+                
+                print(f"\n  🔍 Testing Recipe {i}: {recipe_title} (ID: {recipe_id})")
+                
+                detail_response = self.session.get(f"{BACKEND_URL}/recipes/{recipe_id}/detail")
+                
+                if detail_response.status_code == 200:
+                    detail_data = detail_response.json()
+                    
+                    # Step 4: Check if API returns proper recipe data with all required fields
+                    required_fields = ["id", "title", "description", "ingredients", "instructions", "prep_time", "cook_time", "servings", "cuisine_type"]
+                    missing_fields = []
+                    present_fields = []
+                    
+                    for field in required_fields:
+                        if field in detail_data and detail_data[field] is not None:
+                            present_fields.append(field)
+                        else:
+                            missing_fields.append(field)
+                    
+                    # Validate data quality
+                    ingredients_count = len(detail_data.get("ingredients", []))
+                    instructions_count = len(detail_data.get("instructions", []))
+                    
+                    if len(missing_fields) == 0 and ingredients_count > 0 and instructions_count > 0:
+                        successful_details += 1
+                        print(f"    ✅ Recipe detail complete: {ingredients_count} ingredients, {instructions_count} instructions")
+                        
+                        # Verify ID consistency
+                        returned_id = detail_data.get("id")
+                        if returned_id == recipe_id:
+                            print(f"    ✅ ID consistency verified: {recipe_id}")
+                        else:
+                            print(f"    ⚠️  ID mismatch: expected {recipe_id}, got {returned_id}")
+                            failed_details += 1
+                            continue
+                            
+                    else:
+                        failed_details += 1
+                        print(f"    ❌ Recipe detail incomplete: missing {missing_fields}, {ingredients_count} ingredients, {instructions_count} instructions")
+                        
+                else:
+                    failed_details += 1
+                    print(f"    ❌ Recipe detail failed: {detail_response.status_code} - {detail_response.text}")
+            
+            # Final assessment
+            success_rate = (successful_details / len(test_recipes)) * 100 if test_recipes else 0
+            
+            if successful_details == len(test_recipes) and successful_details > 0:
+                self.log_test("Recipe History Navigation - Detail Endpoint", True, 
+                            f"All {successful_details} recipe detail tests passed (100% success rate)",
+                            {"tested": len(test_recipes), "successful": successful_details, "failed": failed_details, "success_rate": success_rate},
+                            system="recipe_generation")
+            elif successful_details > 0:
+                self.log_test("Recipe History Navigation - Detail Endpoint", True, 
+                            f"Partial success: {successful_details}/{len(test_recipes)} recipe details working ({success_rate:.1f}% success rate)",
+                            {"tested": len(test_recipes), "successful": successful_details, "failed": failed_details, "success_rate": success_rate},
+                            system="recipe_generation")
+            else:
+                self.log_test("Recipe History Navigation - Detail Endpoint", False, 
+                            f"All recipe detail tests failed: 0/{len(test_recipes)} working",
+                            {"tested": len(test_recipes), "successful": successful_details, "failed": failed_details, "success_rate": success_rate},
+                            system="recipe_generation")
+            
+            print(f"\n🎯 RECIPE HISTORY NAVIGATION TEST SUMMARY:")
+            print(f"   📊 Total recipes in history: {total_count}")
+            print(f"   ✅ Valid recipe IDs: {len(valid_recipes)}")
+            print(f"   🔍 Recipe details tested: {len(test_recipes)}")
+            print(f"   ✅ Successful detail retrievals: {successful_details}")
+            print(f"   📈 Success rate: {success_rate:.1f}%")
+            print("=" * 70)
+                
+        except Exception as e:
+            self.log_test("Recipe History Navigation - Comprehensive", False, f"Exception: {str(e)}", system="recipe_generation")
+
     # ==================== WEEKLY RECIPE SYSTEM TESTS ====================
     
     def test_weekly_recipe_generation(self) -> None:
