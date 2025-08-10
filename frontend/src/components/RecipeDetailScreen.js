@@ -144,6 +144,34 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     }));
   };
 
+  // Toggle ingredient inclusion in cart
+  const toggleIngredientInclusion = (ingredientName) => {
+    setExcludedIngredients(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(ingredientName)) {
+        newSet.delete(ingredientName);
+      } else {
+        newSet.add(ingredientName);
+        // Remove from selected products if excluding
+        setSelectedProducts(currentSelected => {
+          const updated = { ...currentSelected };
+          delete updated[ingredientName];
+          return updated;
+        });
+      }
+      return newSet;
+    });
+  };
+
+  // Remove specific product from cart
+  const removeProductFromCart = (ingredientName) => {
+    setSelectedProducts(prev => {
+      const updated = { ...prev };
+      delete updated[ingredientName];
+      return updated;
+    });
+  };
+
   const generateCartUrl = async () => {
     setIsGeneratingCart(true);
     try {
