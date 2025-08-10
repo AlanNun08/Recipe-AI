@@ -362,25 +362,60 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
                     </div>
                   </div>
 
-                  {cartOptions.ingredient_matches.map((ingredientMatch, index) => (
-                    <div key={index} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl p-8 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
+                  {cartOptions.ingredient_matches.map((ingredientMatch, index) => {
+                    const isIncluded = !excludedIngredients.has(ingredientMatch.ingredient);
+                    
+                    return (
+                    <div key={index} className={`bg-gradient-to-br rounded-3xl p-8 border shadow-sm hover:shadow-md transition-all duration-300 ${
+                      isIncluded 
+                        ? 'from-gray-50 to-gray-100 border-gray-200' 
+                        : 'from-red-50 to-red-100 border-red-200 opacity-75'
+                    }`}>
                       <div className="flex items-center mb-6">
+                        {/* Ingredient Inclusion Checkbox */}
+                        <div className="mr-4">
+                          <label className="flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isIncluded}
+                              onChange={() => toggleIngredientInclusion(ingredientMatch.ingredient)}
+                              className="w-6 h-6 text-blue-500 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                            />
+                            <span className="ml-2 text-sm font-medium text-gray-700">
+                              {isIncluded ? 'Include' : 'Exclude'}
+                            </span>
+                          </label>
+                        </div>
+                        
                         <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-full p-3 mr-4">
                           <span className="text-white text-2xl">🥕</span>
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-2xl font-bold text-gray-800 mb-1">{ingredientMatch.ingredient}</h3>
+                          <h3 className={`text-2xl font-bold mb-1 ${isIncluded ? 'text-gray-800' : 'text-gray-500'}`}>
+                            {ingredientMatch.ingredient}
+                            {!isIncluded && <span className="ml-2 text-sm text-red-600">(Excluded from cart)</span>}
+                          </h3>
                           <div className="flex items-center space-x-2">
-                            <span className="bg-blue-100 text-blue-700 text-sm font-medium px-3 py-1 rounded-full">
+                            <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+                              isIncluded 
+                                ? 'bg-blue-100 text-blue-700' 
+                                : 'bg-gray-100 text-gray-500'
+                            }`}>
                               {ingredientMatch.products.length} options
                             </span>
-                            <span className="bg-green-100 text-green-700 text-sm font-medium px-3 py-1 rounded-full">
+                            <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+                              isIncluded 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'bg-gray-100 text-gray-500'
+                            }`}>
                               Best price: ${Math.min(...ingredientMatch.products.map(p => p.price)).toFixed(2)}
                             </span>
                           </div>
                         </div>
                       </div>
                       
+                      {/* Show products only if ingredient is included */}
+                      {isIncluded && (
                       <div className="grid gap-4">
                         {ingredientMatch.products.map((product, productIndex) => {
                           const isSelected = selectedProducts[ingredientMatch.ingredient]?.id === product.id;
