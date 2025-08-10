@@ -4330,7 +4330,7 @@ Format as JSON array with 7 meal objects, each containing:
     except json.JSONDecodeError as e:
         logger.error(f"JSON decode error in weekly meal generation: {str(e)}")
         # Fallback to mock data on JSON parsing error
-        return await generate_mock_weekly_meals(family_size, dietary_preferences, cuisines)
+        return await generate_mock_weekly_meals(family_size, dietary_preferences, allergies, cuisines)
     except Exception as e:
         logger.error(f"Error generating weekly meals: {str(e)}")
         # Fallback to mock data on any other error
