@@ -5062,9 +5062,20 @@ async def generate_weekly_recipe_plan(request: WeeklyRecipeRequest):
             "is_active": True
         })
         
-        if existing_plan:
-            # Return existing plan
+        # Check if we need to force regeneration based on dietary preferences
+        force_regeneration = False
+        if request.dietary_preferences or request.allergies or request.cuisines:
+            logger.info(f"Dietary preferences provided - forcing regeneration for safety: dietary={request.dietary_preferences}, allergies={request.allergies}, cuisines={request.cuisines}")
+            force_regeneration = True
+        
+        if existing_plan and not force_regeneration:
+            # Return existing plan only if no dietary preferences specified
+            logger.info("Returning existing weekly plan - no dietary preferences specified")
             return mongo_to_dict(existing_plan)
+        elif existing_plan and force_regeneration:
+            # Delete existing plan to force regeneration with new preferences
+            logger.info("Deleting existing plan to regenerate with new dietary preferences")
+            await weekly_recipes_collection.delete_one({"_id": existing_plan["_id"]})
         
         # Fetch user preferences from database
         user = await users_collection.find_one({"id": request.user_id})
