@@ -2277,7 +2277,7 @@ function App() {
 
             setCurrentRecipeId(recipeId);
             setCurrentRecipeSource(source);
-            console.log('Setting currentScreen to recipe-detail');
+
             setCurrentScreen('recipe-detail');
           }}
         />;
