@@ -1621,6 +1621,7 @@ class ComprehensiveBackendTester:
         # 3.1 ENHANCED SAFETY FEATURES TESTS
         print("🛡️ TESTING ENHANCED WEEKLY RECIPE SAFETY FEATURES")
         print("-" * 50)
+        self.test_debug_dietary_filtering_system()  # NEW: Specific review request test
         self.test_enhanced_dietary_filtering_vegetarian()
         self.test_enhanced_dietary_filtering_vegan()
         self.test_enhanced_allergy_filtering_dairy()
