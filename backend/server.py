@@ -4225,7 +4225,7 @@ async def generate_weekly_meals(family_size: int = 2, dietary_preferences: List[
         # Check if OpenAI API key is properly configured
         if not OPENAI_API_KEY or OPENAI_API_KEY in ["your-openai-api-key-here", "your-ope****here"]:
             logger.warning("OpenAI API key not configured. Using fallback mock data for weekly meals.")
-            return await generate_mock_weekly_meals(family_size, dietary_preferences, cuisines)
+            return await generate_mock_weekly_meals(family_size, dietary_preferences, allergies, cuisines)
         
         # Build dietary preferences string
         dietary_info = ""
