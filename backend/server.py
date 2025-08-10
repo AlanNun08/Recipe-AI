@@ -4723,10 +4723,14 @@ async def generate_mock_recipe(request: RecipeGenRequest) -> dict:
 
 async def generate_mock_weekly_meals(family_size: int = 2, dietary_preferences: List[str] = [], allergies: List[str] = [], cuisines: List[str] = []) -> List[WeeklyMeal]:
     """Generate mock weekly meals for testing when OpenAI is not available"""
-    logger.info(f"Generating mock weekly meals for {family_size} people with preferences: {dietary_preferences}, cuisines: {cuisines}")
+    logger.info(f"Generating mock weekly meals for {family_size} people with preferences: {dietary_preferences}, allergies: {allergies}, cuisines: {cuisines}")
     
-    # Determine if vegetarian
+    # Determine dietary restrictions
     is_vegetarian = 'vegetarian' in dietary_preferences or 'vegan' in dietary_preferences
+    is_vegan = 'vegan' in dietary_preferences
+    is_gluten_free = 'gluten-free' in dietary_preferences
+    has_nut_allergy = 'nuts' in allergies
+    has_dairy_allergy = 'dairy' in allergies
     
     # Sample meal templates that adapt to preferences
     mock_meals_data = [
