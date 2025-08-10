@@ -1511,6 +1511,18 @@ class ComprehensiveBackendTester:
         self.test_multiple_restrictions_safety()
         print()
         
+        # 3.2 ENHANCED OPENAI INTEGRATION TESTS
+        print("🤖 TESTING ENHANCED OPENAI INTEGRATION FOR WEEKLY RECIPES")
+        print("-" * 60)
+        self.test_demo_user_preferences_fetching()
+        self.test_enhanced_openai_prompt_with_user_preferences()
+        self.test_safety_first_openai_vegetarian_generation()
+        self.test_safety_first_openai_dairy_allergy_generation()
+        self.test_safety_first_openai_vegan_generation()
+        self.test_safety_first_openai_gluten_free_substitutions()
+        self.test_preference_integration_verification()
+        print()
+        
         # 4. STARBUCKS INTEGRATION TESTS
         print("☕ TESTING STARBUCKS INTEGRATION")
         print("-" * 40)
