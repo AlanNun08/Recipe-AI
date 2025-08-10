@@ -4814,7 +4814,7 @@ async def generate_mock_weekly_meals(family_size: int = 2, dietary_preferences: 
             return "parmesan cheese"
     
     # Safe meal templates that adapt to all preferences and allergies
-    mock_meals_data = [
+    safe_meals_data = [
         {
             "day": "Monday",
             "name": "Italian Pasta Primavera" if not is_vegetarian else "Veggie Pasta Primavera",
@@ -4949,7 +4949,7 @@ async def generate_mock_weekly_meals(family_size: int = 2, dietary_preferences: 
     
     # Process safe meal templates
     weekly_meals = []
-    for i, meal_data in enumerate(mock_meals_data):
+    for i, meal_data in enumerate(safe_meals_data):
         # Get safe ingredients using the filtering system
         safe_ingredients = filter_safe_ingredients(meal_data["ingredients"])
         
