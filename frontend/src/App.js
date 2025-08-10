@@ -2344,7 +2344,6 @@ function App() {
             setCurrentScreen('recipe-detail');
           }}
           onViewStarbucksRecipe={(recipe) => {
-            console.log('onViewStarbucksRecipe called with recipe:', recipe);
             // Navigate to Starbucks generator screen for Starbucks recipes
             setCurrentScreen('starbucks-generator');
             showNotification('🌟 Opening Starbucks recipe generator', 'info');
