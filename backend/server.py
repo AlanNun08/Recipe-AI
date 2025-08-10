@@ -4245,7 +4245,7 @@ async def generate_weekly_meals(family_size: int = 2, dietary_preferences: List[
         # Create AI prompt for weekly meal generation
         prompt = f"""Generate a weekly meal plan with 7 unique dinner recipes for {family_size} adults.
 
-{dietary_info}{cuisine_info}
+{dietary_info}{allergy_info}{cuisine_info}
 
 Requirements:
 - Balanced nutrition across the week
@@ -4253,6 +4253,8 @@ Requirements:
 - Budget-friendly options
 - Variety in cooking methods and flavors
 - Each recipe should serve {family_size} people
+- STRICTLY avoid all mentioned allergens in ingredients
+- Follow all dietary restrictions carefully
 
 For each day, provide:
 1. Day of the week
