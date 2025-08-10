@@ -4952,11 +4952,25 @@ async def generate_weekly_recipe_plan(request: WeeklyRecipeRequest):
             # Return existing plan
             return mongo_to_dict(existing_plan)
         
-        # Generate new weekly meals
+        # Fetch user preferences from database
+        user = await users_collection.find_one({"id": request.user_id})
+        user_dietary_preferences = user.get("dietary_preferences", []) if user else []
+        user_allergies = user.get("allergies", []) if user else []
+        user_favorite_cuisines = user.get("favorite_cuisines", []) if user else []
+        
+        # Combine user account preferences with request preferences
+        combined_dietary_preferences = list(set(user_dietary_preferences + request.dietary_preferences))
+        combined_cuisines = list(set(user_favorite_cuisines + request.cuisines))
+        
+        logger.info(f"Weekly meal plan preferences - User dietary: {user_dietary_preferences}, allergies: {user_allergies}, cuisines: {user_favorite_cuisines}")
+        logger.info(f"Combined preferences - Dietary: {combined_dietary_preferences}, cuisines: {combined_cuisines}")
+        
+        # Generate new weekly meals with enhanced preferences
         meals = await generate_weekly_meals(
             family_size=request.family_size,
-            dietary_preferences=request.dietary_preferences,
-            cuisines=request.cuisines
+            dietary_preferences=combined_dietary_preferences,
+            allergies=user_allergies,
+            cuisines=combined_cuisines
         )
         
         # Generate weekly Walmart cart
