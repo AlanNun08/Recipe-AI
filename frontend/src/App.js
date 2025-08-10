@@ -2274,8 +2274,7 @@ function App() {
               showNotification('❌ Recipe ID is missing', 'error');
               return;
             }
-            console.log('Setting currentRecipeId to:', recipeId);
-            console.log('Setting currentRecipeSource to:', source);
+
             setCurrentRecipeId(recipeId);
             setCurrentRecipeSource(source);
             console.log('Setting currentScreen to recipe-detail');
