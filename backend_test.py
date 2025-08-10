@@ -1749,6 +1749,9 @@ class ComprehensiveBackendTester:
         recipes = self.test_recipe_history()
         if generated_recipe_id:
             self.test_recipe_detail_retrieval(generated_recipe_id)
+        
+        # 2.1 COMPREHENSIVE RECIPE HISTORY NAVIGATION TEST (REVIEW REQUEST)
+        self.test_recipe_history_navigation_comprehensive()
         print()
         
         # 3. WEEKLY RECIPE SYSTEM TESTS
