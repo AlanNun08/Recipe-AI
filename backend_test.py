@@ -1091,6 +1091,18 @@ class ComprehensiveBackendTester:
                 self.test_weekly_recipe_detail(first_meal_id)
         print()
         
+        # 3.1 ENHANCED SAFETY FEATURES TESTS
+        print("🛡️ TESTING ENHANCED WEEKLY RECIPE SAFETY FEATURES")
+        print("-" * 50)
+        self.test_enhanced_dietary_filtering_vegetarian()
+        self.test_enhanced_dietary_filtering_vegan()
+        self.test_enhanced_allergy_filtering_dairy()
+        self.test_enhanced_allergy_filtering_nuts()
+        self.test_gluten_free_substitutions()
+        self.test_user_preference_integration()
+        self.test_multiple_restrictions_safety()
+        print()
+        
         # 4. STARBUCKS INTEGRATION TESTS
         print("☕ TESTING STARBUCKS INTEGRATION")
         print("-" * 40)
