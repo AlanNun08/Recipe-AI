@@ -4736,6 +4736,82 @@ async def generate_mock_weekly_meals(family_size: int = 2, dietary_preferences: 
     has_shellfish_allergy = 'shellfish' in allergies
     has_egg_allergy = 'eggs' in allergies
     has_wheat_allergy = 'wheat' in allergies
+
+    def filter_safe_ingredients(ingredients: List[str]) -> List[str]:
+        """Filter ingredients based on dietary restrictions and allergies"""
+        safe_ingredients = []
+        
+        for ingredient in ingredients:
+            ingredient_lower = ingredient.lower()
+            is_safe = True
+            
+            # Check for meat if vegetarian/vegan
+            if is_vegetarian or is_vegan:
+                meat_keywords = ['chicken', 'beef', 'pork', 'fish', 'meat', 'turkey', 'lamb', 'bacon', 'ham', 'sausage', 'salmon', 'tuna']
+                if any(meat in ingredient_lower for meat in meat_keywords):
+                    is_safe = False
+            
+            # Check for dairy if vegan or dairy allergy
+            if is_vegan or has_dairy_allergy:
+                dairy_keywords = ['cheese', 'milk', 'butter', 'cream', 'yogurt', 'parmesan', 'feta', 'mozzarella', 'cheddar']
+                if any(dairy in ingredient_lower for dairy in dairy_keywords):
+                    is_safe = False
+            
+            # Check for eggs if vegan or egg allergy
+            if is_vegan or has_egg_allergy:
+                if 'egg' in ingredient_lower:
+                    is_safe = False
+            
+            # Check for nuts if nut allergy
+            if has_nut_allergy:
+                nut_keywords = ['nuts', 'almond', 'walnut', 'pecan', 'cashew', 'pistachio', 'peanut']
+                if any(nut in ingredient_lower for nut in nut_keywords):
+                    is_safe = False
+            
+            # Check for soy if soy allergy
+            if has_soy_allergy:
+                soy_keywords = ['soy', 'tofu', 'tempeh', 'edamame']
+                if any(soy in ingredient_lower for soy in soy_keywords):
+                    is_safe = False
+            
+            # Check for shellfish if shellfish allergy
+            if has_shellfish_allergy:
+                shellfish_keywords = ['shrimp', 'crab', 'lobster', 'shellfish', 'scallops']
+                if any(shellfish in ingredient_lower for shellfish in shellfish_keywords):
+                    is_safe = False
+            
+            # Check for gluten if gluten-free
+            if is_gluten_free:
+                gluten_keywords = ['wheat', 'flour', 'bread', 'pasta', 'soy sauce']
+                if any(gluten in ingredient_lower for gluten in gluten_keywords):
+                    # Replace with gluten-free alternatives
+                    if 'pasta' in ingredient_lower:
+                        ingredient = ingredient.replace('pasta', 'gluten-free pasta')
+                    elif 'soy sauce' in ingredient_lower:
+                        ingredient = ingredient.replace('soy sauce', 'tamari (gluten-free soy sauce)')
+                    elif 'flour' in ingredient_lower:
+                        ingredient = ingredient.replace('flour', 'gluten-free flour')
+            
+            if is_safe:
+                safe_ingredients.append(ingredient)
+        
+        return safe_ingredients
+
+    def get_safe_protein_substitute():
+        """Get appropriate protein substitute based on dietary restrictions"""
+        if is_vegan:
+            return "firm tofu"
+        elif is_vegetarian:
+            return "plant-based protein or extra beans"
+        else:
+            return "lean chicken breast"
+
+    def get_safe_dairy_substitute():
+        """Get appropriate dairy substitute"""
+        if is_vegan or has_dairy_allergy:
+            return "nutritional yeast"
+        else:
+            return "parmesan cheese"
     
     # Sample meal templates that adapt to preferences
     mock_meals_data = [
