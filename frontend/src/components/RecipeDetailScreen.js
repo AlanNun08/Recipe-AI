@@ -83,7 +83,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     };
     
     loadRecipeDetail();
-  }, [recipeId, recipeSource]);
+  }, [recipeId, recipeSource, showNotification]);
 
   const loadCartOptionsForRecipe = async (currentRecipeId, currentRecipeSource = 'weekly') => {
     setIsLoadingCart(true);
