@@ -34,21 +34,30 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
           apiUrl = `${API}/api/weekly-recipes/recipe/${recipeId}`;
         }
         
-
+        console.log('🔍 Loading recipe from:', apiUrl);
+        
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
         
         // Use native fetch instead of axios
         const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
-          }
+          },
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
+        console.log('✅ Recipe loaded successfully:', data.name || data.title);
+        
         setRecipe(data);
         setIsLoading(false);
 
@@ -59,13 +68,18 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
         
       } catch (error) {
         console.error('❌ Failed to load recipe detail:', error);
-        showNotification('❌ Failed to load recipe details', 'error');
+        if (error.name === 'AbortError') {
+          console.log('⚠️ Request timed out after 15 seconds');
+          showNotification('❌ Request timed out. Please try again.', 'error');
+        } else {
+          showNotification('❌ Failed to load recipe details', 'error');
+        }
         setIsLoading(false);
       }
     };
     
     loadRecipeDetail();
-  }, [recipeId, recipeSource]);
+  }, [recipeId, recipeSource, showNotification]);
 
   const loadCartOptionsForRecipe = async (currentRecipeId, currentRecipeSource = 'weekly') => {
     setIsLoadingCart(true);
