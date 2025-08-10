@@ -4732,6 +4732,10 @@ async def generate_mock_weekly_meals(family_size: int = 2, dietary_preferences: 
     is_gluten_free = 'gluten-free' in dietary_preferences
     has_nut_allergy = 'nuts' in allergies
     has_dairy_allergy = 'dairy' in allergies
+    has_soy_allergy = 'soy' in allergies
+    has_shellfish_allergy = 'shellfish' in allergies
+    has_egg_allergy = 'eggs' in allergies
+    has_wheat_allergy = 'wheat' in allergies
     
     # Sample meal templates that adapt to preferences
     mock_meals_data = [
