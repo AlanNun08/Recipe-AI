@@ -475,8 +475,10 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
                           );
                         })}
                       </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-12">
