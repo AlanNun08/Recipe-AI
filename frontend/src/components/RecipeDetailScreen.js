@@ -22,80 +22,61 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     
     const loadRecipeDetail = async () => {
       try {
-        console.log('🔍 Starting to load recipe:', recipeId, 'source:', recipeSource);
+        console.log('🔍 Loading recipe ID:', recipeId, 'from source:', recipeSource);
         setIsLoading(true);
         
+        // Determine the correct API endpoint based on source
         let apiUrl;
-        let fallbackUrl;
-        
-        // Smart endpoint selection with fallback
         if (recipeSource === 'weekly') {
           apiUrl = `${API}/api/weekly-recipes/recipe/${recipeId}`;
-          fallbackUrl = `${API}/api/recipes/${recipeId}/detail`;
         } else {
+          // For 'history' and 'generated' sources, use the detail endpoint
           apiUrl = `${API}/api/recipes/${recipeId}/detail`;
-          fallbackUrl = `${API}/api/weekly-recipes/recipe/${recipeId}`;
         }
         
-        console.log('🔍 Loading recipe from primary endpoint:', apiUrl);
+        console.log('🔍 Making API call to:', apiUrl);
         
-        // Add timeout to prevent hanging
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
-        let response = await fetch(apiUrl, {
+        const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
-          },
-          signal: controller.signal
+          }
         });
         
-        clearTimeout(timeoutId);
+        console.log('📡 API Response status:', response.status);
         
-        // If primary endpoint fails, try fallback
         if (!response.ok) {
-          console.log('⚠️ Primary endpoint failed, trying fallback:', fallbackUrl);
-          
-          const fallbackController = new AbortController();
-          const fallbackTimeoutId = setTimeout(() => fallbackController.abort(), 15000);
-          
-          response = await fetch(fallbackUrl, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            signal: fallbackController.signal
-          });
-          
-          clearTimeout(fallbackTimeoutId);
-          
-          if (!response.ok) {
-            throw new Error(`Both endpoints failed: primary ${apiUrl} and fallback ${fallbackUrl}`);
-          }
+          console.error(`❌ API call failed with status ${response.status}`);
+          const errorText = await response.text();
+          console.error('❌ Error response:', errorText);
+          throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
         }
         
         const data = await response.json();
-        console.log('✅ Recipe loaded successfully:', data.name || data.title);
-        console.log('🔍 Recipe data:', data);
+        console.log('✅ Recipe data received:', {
+          id: data.id,
+          name: data.name || data.title,
+          hasIngredients: !!data.ingredients,
+          hasInstructions: !!data.instructions
+        });
         
-        // Ensure we set both recipe and loading state
+        if (!data || (!data.name && !data.title)) {
+          throw new Error('Invalid recipe data received');
+        }
+        
         setRecipe(data);
-        console.log('✅ Recipe state set, clearing loading...');
         setIsLoading(false);
         
-        // Load cart options in the background - simplified approach
+        console.log('✅ Recipe state updated, loading cart options...');
+        
+        // Load cart options after a short delay
         setTimeout(() => {
           loadCartOptionsForRecipe(recipeId);
         }, 1000);
         
       } catch (error) {
-        console.error('❌ Failed to load recipe detail:', error);
-        if (error.name === 'AbortError') {
-          showNotification('❌ Request timed out. Please try again.', 'error');
-        } else {
-          showNotification('❌ Failed to load recipe details', 'error');
-        }
+        console.error('❌ Recipe loading failed:', error);
+        showNotification(`❌ Failed to load recipe: ${error.message}`, 'error');
         setRecipe(null);
         setIsLoading(false);
       }
