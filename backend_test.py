@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Improved OpenAI Recipe Generation & Shopping List Extraction
-Testing the improved OpenAI prompt for recipe generation as requested in review:
-1. Test Recipe Generation with /api/recipes/generate endpoint using different parameters
-2. Validate Shopping List Extraction - clean ingredient names without quantities
-3. Test Different Recipe Types and cuisines for consistency
-4. Compare extraction quality and validate new comprehensive prompt rules
-5. Verify shopping list format suitable for Walmart product searches
+Backend API Testing for Enhanced OpenAI Prompt with Comprehensive Cooking Instructions
+Testing the enhanced OpenAI prompt for comprehensive cooking instructions as requested in review:
+1. Test Recipe Generation with /api/recipes/generate to validate detailed cooking instructions
+2. Validate Instruction Quality - temperatures, times, techniques, visual cues, safety notes
+3. Test Different Recipe Types (Italian, Mexican, etc.) for consistency
+4. Compare instruction detail vs basic instructions like "cook the chicken"
+5. Verify both clean shopping list extraction AND comprehensive cooking instructions work together
 """
 
 import requests
