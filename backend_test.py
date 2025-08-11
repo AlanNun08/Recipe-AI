@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Stripe Subscription Payment Flow
-Testing the Stripe subscription payment flow to identify what's broken as requested in review:
-1. Test subscription status endpoint for demo user (demo@test.com) to see their current subscription status
-2. Test create-checkout endpoint with demo user to see if they can create a payment session during their trial
-3. Test edge cases like:
-   - User with trial status trying to subscribe
-   - User with expired trial trying to subscribe  
-   - User with active paid subscription trying to subscribe again
+Backend API Testing for Stripe Payment Fix
+Testing the immediate Stripe payment fix that was just applied as requested in review:
+
+1. Test the subscription status endpoint for demo user to confirm it still works
+2. Test the create-checkout endpoint with demo user to verify the new error handling
+3. Confirm that users now see "Payment system not configured. Please contact support." instead of generic 500 errors
+4. Verify that the API key validation is working properly
+5. Test with invalid user to ensure proper 404 error handling
+
+The goal is to confirm that:
+- The immediate fix is working (better error messages)
+- System is ready for API key configuration
+- Error handling has been improved
+- Users get clear guidance instead of confusing errors
 
 Focus on the endpoints:
 - GET /api/subscription/status/{user_id}
@@ -63,14 +69,14 @@ def test_login():
         if response.status_code == 200 and response_data:
             user_id = response_data.get('user', {}).get('id')
             print(f"\n✅ LOGIN SUCCESS - User ID: {user_id}")
-            return user_id
+            return user_id, response_data.get('user', {})
         else:
             print(f"\n❌ LOGIN FAILED - Status: {response.status_code}")
-            return None
+            return None, None
             
     except Exception as e:
         print(f"\n❌ LOGIN ERROR: {str(e)}")
-        return None
+        return None, None
 
 import requests
 import json
