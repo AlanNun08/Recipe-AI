@@ -3434,6 +3434,9 @@ async def create_subscription_checkout(request: SubscriptionCheckoutRequest):
             "session_id": session.session_id
         }
         
+    except HTTPException:
+        # Re-raise HTTPExceptions to preserve specific error messages
+        raise
     except Exception as e:
         logger.error(f"Error creating subscription checkout: {e}")
         raise HTTPException(status_code=500, detail="Failed to create checkout session")
