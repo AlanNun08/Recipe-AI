@@ -3369,9 +3369,9 @@ async def create_subscription_checkout(request: SubscriptionCheckoutRequest):
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        # Check if user already has active paid subscription
-        # Users with trial status should be allowed to upgrade
-        if is_subscription_active(user):
+        # Only prevent checkout if user already has active PAID subscription
+        # Users with trial status should be allowed to upgrade to paid subscription
+        if user.get('subscription_status') == 'active' and is_subscription_active(user):
             raise HTTPException(status_code=400, detail="User already has active subscription")
         
         # Get subscription package (server-side security)
