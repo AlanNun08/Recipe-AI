@@ -2308,7 +2308,37 @@ Return ONLY a valid JSON object with this exact structure:
     "shopping_list": ["ingredient_name_1", "ingredient_name_2"]
 }
 
-The shopping_list should contain only ingredient names without quantities or measurements.
+CRITICAL: The shopping_list must contain ONLY the core ingredient names without ANY quantities, measurements, preparations, or descriptions.
+
+Shopping List Extraction Rules:
+1. Remove ALL quantities: "2 cups flour" → "flour", "3 large eggs" → "eggs", "1/4 cup olive oil" → "olive oil"
+2. Remove ALL measurements: "1 tbsp salt" → "salt", "2 tsp vanilla extract" → "vanilla extract", "1/2 lb ground beef" → "ground beef"
+3. Remove preparations: "3 tomatoes diced" → "tomatoes", "1 onion chopped" → "onion", "2 garlic cloves minced" → "garlic"
+4. Remove descriptors: "large potatoes" → "potatoes", "fresh basil leaves" → "basil", "extra virgin olive oil" → "olive oil"
+5. Remove containers: "1 can diced tomatoes" → "diced tomatoes", "2 cups chicken broth" → "chicken broth", "1 jar marinara sauce" → "marinara sauce"
+6. Separate compound spices: "salt and pepper" → ["salt", "pepper"], "garlic powder and onion powder" → ["garlic powder", "onion powder"]
+7. Keep specific varieties: "cheddar cheese" stays "cheddar cheese", "brown sugar" stays "brown sugar", "soy sauce" stays "soy sauce"
+
+Examples:
+- "2 pounds boneless skinless chicken breasts" → "chicken breasts"
+- "1/4 cup extra virgin olive oil" → "olive oil" 
+- "3 medium tomatoes, diced" → "tomatoes"
+- "1 large yellow onion, chopped" → "yellow onion"
+- "4 cloves garlic, minced" → "garlic"
+- "2 cups low-sodium chicken broth" → "chicken broth"
+- "1 can (14 oz) diced tomatoes, drained" → "diced tomatoes"
+- "2 tablespoons fresh lemon juice" → "lemon juice"
+- "1 teaspoon dried oregano" → "oregano"
+- "Salt and black pepper to taste" → ["salt", "black pepper"]
+- "1/2 cup grated parmesan cheese" → "parmesan cheese"
+- "2 cups cooked white rice" → "white rice"
+- "1 package (8 oz) cream cheese, softened" → "cream cheese"
+- "3 cups whole milk" → "milk"
+- "1/2 stick unsalted butter" → "butter"
+- "2 bay leaves" → "bay leaves"
+- "1 bunch fresh cilantro" → "cilantro"
+
+Make sure every ingredient in the shopping_list follows these rules precisely.
 """
         
         # Call OpenAI
