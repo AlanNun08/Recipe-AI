@@ -1,27 +1,1657 @@
-  - task: "Starbucks Generator & Community Features Testing"
-## FRONTEND CODE CLEANUP COMPLETED
+# AI Recipe + Grocery Delivery App - Comprehensive Testing & Documentation Suite
 
-### Frontend Console.log Removal (Completed)
-- **Task**: Remove all remaining console.log statements from App.js
-- **Status**: ✅ COMPLETED
-- **Details**: Successfully removed 6 console.log statements from App.js including:
-  - onViewStarbucksRecipe debug logs (2 instances)
-  - onViewRecipe navigation logs (2 instances) 
-  - currentRecipeId/currentRecipeSource setting logs (2 instances)
-  - RecipeDetailScreen rendering logs (1 instance)
-- **Verification**: grep search confirms 0 console.log statements remain in App.js
-- **Impact**: Frontend codebase is now clean and production-ready
+## Testing Protocol & Guidelines
 
-    implemented: true
-    working: true
-    file: "backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-      - working: true
-        agent: "testing"
-        comment: "✅ COMPREHENSIVE STARBUCKS TESTING COMPLETED: All Starbucks generator functionality and Community tab features tested and verified working. DETAILED RESULTS: ✅ OpenAI API Configuration: Valid API key present, ✅ Starbucks Drink Generation: All 5 drink types (frappuccino, refresher, lemonade, iced_matcha_latte, random) generating successfully with creative names like 'Caramel Dreamscapes', 'Tropical Sunset Refresher', 'Tranquil Matcha Dream', ✅ Curated Starbucks Recipes: 30 curated recipes properly categorized and retrievable, ✅ Share Recipe Functionality: Community feature working - successfully shared test recipe 'Magical Unicorn Frappuccino', ✅ Shared Recipes Retrieval: Community tab backend working - proper filtering, pagination, and recipe display, ✅ Like/Unlike Recipe: Social features functional with proper count tracking, ✅ Recipe Statistics: Community stats endpoint providing proper analytics, ✅ Enhanced Prompts: Creative AI prompts working with flavor inspirations generating magical drink names. CRITICAL FINDING: ShareRecipeModal error mentioned in review request has been RESOLVED - all backend endpoints supporting Community tab are fully functional. The backend properly supports recipe sharing, community browsing, social features, and enhanced creative AI generation as requested."
+### Overview
+This document provides comprehensive testing infrastructure, documentation, and integration guidelines for the AI Recipe + Grocery Delivery App. It includes detailed testing protocols for both frontend (React) and backend (FastAPI), architectural documentation, and guidelines for future software engineers to maintain and improve the codebase.
+
+### Testing Infrastructure Architecture
+
+#### Technology Stack
+```json
+{
+  "frontend_testing": {
+    "unit_tests": "Jest + React Testing Library",
+    "integration_tests": "Jest with MSW (Mock Service Worker)",
+    "e2e_tests": "Playwright",
+    "visual_testing": "Playwright Screenshots",
+    "coverage": "Jest Coverage Reporter"
+  },
+  "backend_testing": {
+    "unit_tests": "pytest",
+    "integration_tests": "pytest + httpx",
+    "api_tests": "pytest + FastAPI TestClient",
+    "database_tests": "MongoDB Memory Server",
+    "coverage": "pytest-cov"
+  },
+  "shared_testing": {
+    "contract_testing": "Pact.io",
+    "performance_testing": "Artillery.js",
+    "security_testing": "OWASP ZAP",
+    "load_testing": "Artillery + K6"
+  }
+}
+```
+
+### System Architecture Documentation
+
+#### Frontend-Backend Connection Model
+```mermaid
+graph TB
+    subgraph "Frontend Layer - React Application"
+        A[App.js - Main Router & State Manager]
+        B[Component Layer]
+        C[API Service Layer]
+        D[State Management Layer]
+        E[UI/UX Layer]
+    end
+    
+    subgraph "API Gateway Layer"
+        F[Kubernetes Ingress]
+        G[CORS Handler]
+        H[Rate Limiting]
+    end
+    
+    subgraph "Backend Layer - FastAPI Application"
+        I[server.py - Main FastAPI App]
+        J[Authentication Module]
+        K[Recipe Management Module]
+        L[Walmart Integration Module]
+        M[Database Layer - MongoDB]
+    end
+    
+    subgraph "External Services"
+        N[OpenAI API]
+        O[Walmart API]
+        P[Stripe API]
+        Q[Email Service]
+    end
+    
+    A --> C
+    C --> F
+    F --> I
+    I --> J
+    I --> K
+    I --> L
+    J --> M
+    K --> M
+    L --> M
+    K --> N
+    L --> O
+    J --> P
+    J --> Q
+    
+    B --> A
+    D --> A
+    E --> B
+    G --> F
+    H --> F
+```
+
+#### Communication Patterns
+```javascript
+// Frontend API Communication Pattern
+const APIService = {
+  baseURL: process.env.REACT_APP_BACKEND_URL,
+  
+  // Standard API call pattern with error handling
+  async call(endpoint, options = {}) {
+    const url = `${this.baseURL}/api${endpoint}`;
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAuthToken()}`,
+        ...options.headers
+      },
+      ...options
+    };
+    
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      throw new APIError(response.status, await response.text());
+    }
+    
+    return response.json();
+  },
+  
+  // Specific service methods
+  auth: {
+    login: (credentials) => APIService.call('/auth/login', { 
+      method: 'POST', 
+      body: JSON.stringify(credentials) 
+    }),
+    register: (userData) => APIService.call('/auth/register', { 
+      method: 'POST', 
+      body: JSON.stringify(userData) 
+    })
+  },
+  
+  recipes: {
+    generate: (params) => APIService.call('/recipes/generate', { 
+      method: 'POST', 
+      body: JSON.stringify(params) 
+    }),
+    getHistory: (userId) => APIService.call(`/recipes/history/${userId}`),
+    getDetail: (recipeId) => APIService.call(`/recipes/${recipeId}/detail`),
+    delete: (recipeId) => APIService.call(`/recipes/${recipeId}`, { method: 'DELETE' })
+  },
+  
+  walmart: {
+    getCartOptions: (recipeId) => APIService.call('/v2/walmart/weekly-cart-options', {
+      method: 'POST',
+      body: JSON.stringify({ recipe_id: recipeId })
+    }),
+    generateCartUrl: (products) => APIService.call('/grocery/generate-cart-url', {
+      method: 'POST',
+      body: JSON.stringify({ products })
+    })
+  },
+  
+  weeklyRecipes: {
+    generate: (params) => APIService.call('/weekly-recipes/generate', { 
+      method: 'POST', 
+      body: JSON.stringify(params) 
+    }),
+    getCurrent: (userId) => APIService.call(`/weekly-recipes/current/${userId}`),
+    getRecipeDetail: (recipeId) => APIService.call(`/weekly-recipes/recipe/${recipeId}`)
+  }
+};
+```
+
+### Backend API Architecture
+```python
+# FastAPI Backend Structure
+from fastapi import FastAPI, APIRouter, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Optional
+import logging
+
+# Application setup
+app = FastAPI(title="AI Recipe + Grocery Delivery API", version="2.0.0")
+api_router = APIRouter(prefix="/api")
+
+# Middleware configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Database connection pattern
+from motor.motor_asyncio import AsyncIOMotorClient
+import os
+
+MONGO_URL = os.environ.get('MONGO_URL')
+client = AsyncIOMotorClient(MONGO_URL)
+db = client.buildyoursmartcart
+
+# Collections
+users_collection = db.users
+recipes_collection = db.recipes
+weekly_recipes_collection = db.weekly_recipes
+starbucks_recipes_collection = db.starbucks_recipes
+
+# Request/Response Models
+class RecipeGenerationRequest(BaseModel):
+    user_id: str
+    cuisine_type: str
+    difficulty: str
+    servings: int
+    dietary_preferences: Optional[List[str]] = []
+    ingredients: Optional[List[str]] = []
+
+class RecipeResponse(BaseModel):
+    id: str
+    name: str
+    description: str
+    ingredients: List[str]
+    instructions: List[str]
+    prep_time: str
+    cook_time: str
+    servings: int
+    difficulty: str
+    cuisine_type: str
+
+# Route patterns
+@api_router.post("/recipes/generate", response_model=RecipeResponse)
+async def generate_recipe(request: RecipeGenerationRequest):
+    """Generate AI-powered recipe with fallback to mock data."""
+    try:
+        # Validate user
+        user = await users_collection.find_one({"id": request.user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Check subscription access
+        if not has_premium_access(user):
+            raise HTTPException(status_code=402, detail="Premium subscription required")
+        
+        # Generate recipe using OpenAI or fallback
+        recipe_data = await generate_ai_recipe(request)
+        
+        # Save to database
+        await recipes_collection.insert_one(recipe_data)
+        
+        return RecipeResponse(**recipe_data)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Recipe generation failed: {e}")
+        raise HTTPException(status_code=500, detail="Recipe generation failed")
+
+# Include router
+app.include_router(api_router)
+```
+
+## Comprehensive Testing Suite
+
+### Frontend Testing Implementation
+
+#### 1. Component Unit Tests
+```javascript
+// tests/unit/components/RecipeHistoryScreen.test.js
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { jest } from '@jest/globals';
+import RecipeHistoryScreen from '../../../src/components/RecipeHistoryScreen';
+
+// Mock data
+const mockRecipes = [
+  {
+    id: 'recipe-1',
+    title: 'Classic Margherita Pizza',
+    description: 'Traditional Italian pizza',
+    created_at: '2025-01-10T12:00:00Z',
+    category: 'regular',
+    cuisine_type: 'italian',
+    prep_time: '30 minutes',
+    cook_time: '15 minutes',
+    servings: 4
+  },
+  {
+    id: 'recipe-2', 
+    title: 'Starbucks Caramel Frappuccino',
+    description: 'Homemade version of popular drink',
+    created_at: '2025-01-09T14:30:00Z',
+    category: 'starbucks',
+    type: 'starbucks'
+  }
+];
+
+const mockProps = {
+  user: { id: 'test-user-id', email: 'test@example.com' },
+  onBack: jest.fn(),
+  showNotification: jest.fn(),
+  onViewRecipe: jest.fn(),
+  onViewStarbucksRecipe: jest.fn()
+};
+
+// Global fetch mock
+global.fetch = jest.fn();
+
+describe('RecipeHistoryScreen Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  describe('Initial Rendering', () => {
+    test('renders loading state initially', () => {
+      render(<RecipeHistoryScreen {...mockProps} />);
+      
+      expect(screen.getByText(/Loading/)).toBeInTheDocument();
+      expect(screen.getByText(/NEW Recipe History/)).toBeInTheDocument();
+    });
+
+    test('displays correct header and branding', () => {
+      render(<RecipeHistoryScreen {...mockProps} />);
+      
+      expect(screen.getByText(/🆕 NEW Recipe History/)).toBeInTheDocument();
+      expect(screen.getByText(/Completely rebuilt from scratch/)).toBeInTheDocument();
+    });
+  });
+
+  describe('Data Loading', () => {
+    test('successfully loads and displays recipe data', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ 
+          recipes: mockRecipes, 
+          total_count: 2 
+        })
+      });
+
+      render(<RecipeHistoryScreen {...mockProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Classic Margherita Pizza')).toBeInTheDocument();
+        expect(screen.getByText('Starbucks Caramel Frappuccino')).toBeInTheDocument();
+        expect(screen.getByText('📊 Total: 2 | Shown: 2')).toBeInTheDocument();
+      });
+
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/recipes/history/test-user-id')
+      );
+    });
+
+    test('handles API errors gracefully', async () => {
+      fetch.mockRejectedValueOnce(new Error('Network error'));
+
+      render(<RecipeHistoryScreen {...mockProps} />);
+
+      await waitFor(() => {
+        expect(mockProps.showNotification).toHaveBeenCalledWith(
+          'Error loading recipes: Network error',
+          'error'
+        );
+      });
+    });
+
+    test('handles empty recipe list', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ 
+          recipes: [], 
+          total_count: 0 
+        })
+      });
+
+      render(<RecipeHistoryScreen {...mockProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/No recipes found/)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Recipe Filtering', () => {
+    beforeEach(async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ 
+          recipes: mockRecipes, 
+          total_count: 2 
+        })
+      });
+
+      render(<RecipeHistoryScreen {...mockProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Classic Margherita Pizza')).toBeInTheDocument();
+      });
+    });
+
+    test('filters regular recipes correctly', async () => {
+      fireEvent.click(screen.getByText('Cuisine'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Classic Margherita Pizza')).toBeInTheDocument();
+        expect(screen.queryByText('Starbucks Caramel Frappuccino')).not.toBeInTheDocument();
+      });
+    });
+
+    test('filters Starbucks recipes correctly', async () => {
+      fireEvent.click(screen.getByText('Starbucks'));
+
+      await waitFor(() => {
+        expect(screen.queryByText('Classic Margherita Pizza')).not.toBeInTheDocument();
+        expect(screen.getByText('Starbucks Caramel Frappuccino')).toBeInTheDocument();
+      });
+    });
+
+    test('shows all recipes when All filter selected', async () => {
+      // First filter to Cuisine
+      fireEvent.click(screen.getByText('Cuisine'));
+      
+      await waitFor(() => {
+        expect(screen.queryByText('Starbucks Caramel Frappuccino')).not.toBeInTheDocument();
+      });
+
+      // Then filter back to All
+      fireEvent.click(screen.getByText('All'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Classic Margherita Pizza')).toBeInTheDocument();
+        expect(screen.getByText('Starbucks Caramel Frappuccino')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Recipe Actions', () => {
+    beforeEach(async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ 
+          recipes: mockRecipes, 
+          total_count: 2 
+        })
+      });
+
+      render(<RecipeHistoryScreen {...mockProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Classic Margherita Pizza')).toBeInTheDocument();
+      });
+    });
+
+    test('handles recipe view action correctly', async () => {
+      const viewButtons = screen.getAllByText('👀 View');
+      fireEvent.click(viewButtons[0]);
+
+      expect(mockProps.onViewRecipe).toHaveBeenCalledWith('recipe-1', 'history');
+    });
+
+    test('handles Starbucks recipe view action correctly', async () => {
+      const viewButtons = screen.getAllByText('👀 View');
+      fireEvent.click(viewButtons[1]); // Starbucks recipe
+
+      expect(mockProps.onViewStarbucksRecipe).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'recipe-2',
+          title: 'Starbucks Caramel Frappuccino'
+        })
+      );
+    });
+
+    test('handles recipe deletion with confirmation', async () => {
+      // Mock window.confirm
+      window.confirm = jest.fn(() => true);
+
+      // Mock delete API call
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true })
+      });
+
+      const deleteButtons = screen.getAllByTitle('🗑️');
+      fireEvent.click(deleteButtons[0]);
+
+      expect(window.confirm).toHaveBeenCalledWith('Delete this recipe?');
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/recipes/recipe-1'),
+          expect.objectContaining({ method: 'DELETE' })
+        );
+        expect(mockProps.showNotification).toHaveBeenCalledWith(
+          'Recipe deleted',
+          'success'
+        );
+      });
+    });
+
+    test('cancels deletion when user declines confirmation', () => {
+      window.confirm = jest.fn(() => false);
+
+      const deleteButtons = screen.getAllByTitle('🗑️');
+      fireEvent.click(deleteButtons[0]);
+
+      expect(window.confirm).toHaveBeenCalledWith('Delete this recipe?');
+      expect(fetch).not.toHaveBeenCalledWith(
+        expect.stringContaining('/api/recipes/recipe-1'),
+        expect.objectContaining({ method: 'DELETE' })
+      );
+    });
+  });
+
+  describe('Navigation', () => {
+    test('handles back navigation correctly', () => {
+      render(<RecipeHistoryScreen {...mockProps} />);
+
+      const backButton = screen.getByText('← Back to Dashboard');
+      fireEvent.click(backButton);
+
+      expect(mockProps.onBack).toHaveBeenCalled();
+    });
+  });
+
+  describe('Error Handling', () => {
+    test('handles 404 error appropriately', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found'
+      });
+
+      render(<RecipeHistoryScreen {...mockProps} />);
+
+      await waitFor(() => {
+        expect(mockProps.showNotification).toHaveBeenCalledWith(
+          'Error loading recipes: HTTP error! status: 404',
+          'error'
+        );
+      });
+    });
+
+    test('handles network timeout gracefully', async () => {
+      fetch.mockImplementationOnce(() => 
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), 100)
+        )
+      );
+
+      render(<RecipeHistoryScreen {...mockProps} />);
+
+      await waitFor(() => {
+        expect(mockProps.showNotification).toHaveBeenCalledWith(
+          expect.stringContaining('Request timeout'),
+          'error'
+        );
+      });
+    });
+  });
+
+  describe('Accessibility', () => {
+    test('has proper ARIA labels and roles', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ 
+          recipes: mockRecipes, 
+          total_count: 2 
+        })
+      });
+
+      render(<RecipeHistoryScreen {...mockProps} />);
+
+      await waitFor(() => {
+        // Check for main content area
+        expect(screen.getByRole('main')).toBeInTheDocument();
+        
+        // Check for proper headings
+        const heading = screen.getByRole('heading', { level: 1 });
+        expect(heading).toHaveTextContent(/Recipe History/);
+        
+        // Check for list structure
+        expect(screen.getByRole('list')).toBeInTheDocument();
+      });
+    });
+
+    test('supports keyboard navigation', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ 
+          recipes: mockRecipes, 
+          total_count: 2 
+        })
+      });
+
+      render(<RecipeHistoryScreen {...mockProps} />);
+
+      await waitFor(() => {
+        const viewButtons = screen.getAllByText('👀 View');
+        
+        // Test keyboard activation
+        fireEvent.keyDown(viewButtons[0], { key: 'Enter' });
+        expect(mockProps.onViewRecipe).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Performance', () => {
+    test('renders efficiently with large recipe lists', async () => {
+      const largeRecipeList = Array.from({ length: 100 }, (_, index) => ({
+        id: `recipe-${index}`,
+        title: `Recipe ${index}`,
+        description: `Description ${index}`,
+        created_at: new Date().toISOString(),
+        category: 'regular'
+      }));
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ 
+          recipes: largeRecipeList, 
+          total_count: 100 
+        })
+      });
+
+      const startTime = performance.now();
+      render(<RecipeHistoryScreen {...mockProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Recipe 0')).toBeInTheDocument();
+      });
+
+      const renderTime = performance.now() - startTime;
+      expect(renderTime).toBeLessThan(1000); // Should render within 1 second
+    });
+  });
+});
+
+// Export test utilities for reuse
+export { mockRecipes, mockProps };
+```
+
+#### 2. Integration Tests
+```javascript
+// tests/integration/recipe-flow.test.js
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { setupServer } from 'msw/node';
+import { rest } from 'msw';
+import App from '../../src/App';
+
+// MSW server setup for API mocking
+const server = setupServer(
+  // Auth endpoints
+  rest.post('/api/auth/login', (req, res, ctx) => {
+    return res(ctx.json({
+      id: 'test-user-id',
+      email: 'test@example.com',
+      status: 'success'
+    }));
+  }),
+
+  // Recipe endpoints
+  rest.get('/api/recipes/history/:userId', (req, res, ctx) => {
+    return res(ctx.json({
+      recipes: [
+        {
+          id: 'recipe-1',
+          title: 'Integration Test Recipe',
+          description: 'Test recipe for integration testing',
+          created_at: '2025-01-10T12:00:00Z',
+          category: 'regular'
+        }
+      ],
+      total_count: 1
+    }));
+  }),
+
+  rest.get('/api/recipes/:recipeId/detail', (req, res, ctx) => {
+    return res(ctx.json({
+      id: req.params.recipeId,
+      name: 'Integration Test Recipe',
+      description: 'Detailed test recipe',
+      ingredients: ['Test ingredient 1', 'Test ingredient 2'],
+      instructions: ['Test instruction 1', 'Test instruction 2'],
+      prep_time: '15 minutes',
+      cook_time: '30 minutes',
+      servings: 4
+    }));
+  }),
+
+  rest.delete('/api/recipes/:recipeId', (req, res, ctx) => {
+    return res(ctx.json({ success: true }));
+  })
+);
+
+describe('Recipe Management Integration Tests', () => {
+  beforeAll(() => server.listen());
+  afterEach(() => server.resetHandlers());
+  afterAll(() => server.close());
+
+  test('complete recipe history workflow', async () => {
+    // Mock localStorage for user session
+    const mockUser = {
+      id: 'test-user-id',
+      email: 'test@example.com',
+      loginTime: Date.now(),
+      sessionExpiry: Date.now() + (7 * 24 * 60 * 60 * 1000)
+    };
+    localStorage.setItem('ai_chef_user', JSON.stringify(mockUser));
+
+    render(<App />);
+
+    // Should automatically navigate to dashboard with stored session
+    await waitFor(() => {
+      expect(screen.getByText(/Dashboard/)).toBeInTheDocument();
+    });
+
+    // Navigate to Recipe History
+    fireEvent.click(screen.getByText(/Recipe History/));
+
+    await waitFor(() => {
+      expect(screen.getByText(/NEW Recipe History/)).toBeInTheDocument();
+      expect(screen.getByText('Integration Test Recipe')).toBeInTheDocument();
+    });
+
+    // Test recipe detail navigation
+    fireEvent.click(screen.getByText('👀 View'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Integration Test Recipe')).toBeInTheDocument();
+      expect(screen.getByText('Test ingredient 1')).toBeInTheDocument();
+      expect(screen.getByText('Test instruction 1')).toBeInTheDocument();
+    });
+
+    // Test navigation back
+    fireEvent.click(screen.getByText(/← Back/));
+
+    await waitFor(() => {
+      expect(screen.getByText(/NEW Recipe History/)).toBeInTheDocument();
+    });
+  });
+
+  test('handles recipe deletion flow', async () => {
+    // Setup user session
+    const mockUser = {
+      id: 'test-user-id',
+      email: 'test@example.com',
+      loginTime: Date.now(),
+      sessionExpiry: Date.now() + (7 * 24 * 60 * 60 * 1000)
+    };
+    localStorage.setItem('ai_chef_user', JSON.stringify(mockUser));
+
+    render(<App />);
+
+    // Navigate to Recipe History
+    await waitFor(() => {
+      fireEvent.click(screen.getByText(/Recipe History/));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Integration Test Recipe')).toBeInTheDocument();
+    });
+
+    // Mock window.confirm for deletion
+    window.confirm = jest.fn(() => true);
+
+    // Click delete button
+    fireEvent.click(screen.getByTitle('🗑️'));
+
+    await waitFor(() => {
+      expect(window.confirm).toHaveBeenCalledWith('Delete this recipe?');
+    });
+
+    // Verify recipe is removed from UI
+    await waitFor(() => {
+      expect(screen.queryByText('Integration Test Recipe')).not.toBeInTheDocument();
+    });
+  });
+});
+```
+
+### Backend Testing Implementation
+
+#### 1. API Endpoint Tests
+```python
+# tests/backend/test_recipe_endpoints.py
+import pytest
+import json
+from httpx import AsyncClient
+from unittest.mock import patch, AsyncMock
+from server import app
+import uuid
+from datetime import datetime
+
+@pytest.fixture
+async def client():
+    """Create test client for API testing."""
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        yield ac
+
+@pytest.fixture
+def mock_user():
+    """Mock user data for testing."""
+    return {
+        "id": str(uuid.uuid4()),
+        "email": "test@example.com",
+        "subscription": {
+            "status": "active",
+            "trial_ends_at": datetime.utcnow().isoformat()
+        }
+    }
+
+@pytest.fixture
+def mock_recipe():
+    """Mock recipe data for testing."""
+    return {
+        "id": str(uuid.uuid4()),
+        "name": "Test Recipe",
+        "description": "A test recipe for unit testing",
+        "ingredients": ["2 cups flour", "1 cup sugar", "3 eggs"],
+        "instructions": ["Mix ingredients", "Bake at 350°F", "Cool and serve"],
+        "prep_time": "15 minutes",
+        "cook_time": "30 minutes",
+        "servings": 4,
+        "difficulty": "easy",
+        "cuisine_type": "american"
+    }
+
+class TestRecipeGeneration:
+    """Test suite for recipe generation endpoints."""
+
+    @patch('server.users_collection.find_one')
+    @patch('server.recipes_collection.insert_one')
+    @patch('server.generate_ai_recipe')
+    async def test_generate_recipe_success(
+        self, 
+        mock_generate, 
+        mock_insert, 
+        mock_find_user, 
+        client, 
+        mock_user, 
+        mock_recipe
+    ):
+        """Test successful recipe generation."""
+        # Setup mocks
+        mock_find_user.return_value = mock_user
+        mock_generate.return_value = mock_recipe
+        mock_insert.return_value = AsyncMock()
+        
+        request_data = {
+            "user_id": mock_user["id"],
+            "cuisine_type": "italian",
+            "difficulty": "easy",
+            "servings": 4,
+            "dietary_preferences": ["vegetarian"],
+            "ingredients": ["tomatoes", "basil"]
+        }
+        
+        response = await client.post("/api/recipes/generate", json=request_data)
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "Test Recipe"
+        assert data["cuisine_type"] == "american"
+        assert len(data["ingredients"]) == 3
+        assert len(data["instructions"]) == 3
+        
+        # Verify mocks were called correctly
+        mock_find_user.assert_called_once_with({"id": mock_user["id"]})
+        mock_generate.assert_called_once()
+        mock_insert.assert_called_once()
+
+    @patch('server.users_collection.find_one')
+    async def test_generate_recipe_user_not_found(self, mock_find_user, client):
+        """Test recipe generation with invalid user."""
+        mock_find_user.return_value = None
+        
+        request_data = {
+            "user_id": "invalid-user-id",
+            "cuisine_type": "italian",
+            "difficulty": "easy",
+            "servings": 4
+        }
+        
+        response = await client.post("/api/recipes/generate", json=request_data)
+        
+        assert response.status_code == 404
+        data = response.json()
+        assert data["detail"] == "User not found"
+
+    @patch('server.users_collection.find_one')
+    async def test_generate_recipe_no_premium_access(self, mock_find_user, client):
+        """Test recipe generation without premium access."""
+        expired_user = {
+            "id": "test-user",
+            "subscription": {
+                "status": "expired",
+                "trial_ends_at": "2024-01-01T00:00:00Z"
+            }
+        }
+        mock_find_user.return_value = expired_user
+        
+        with patch('server.has_premium_access', return_value=False):
+            request_data = {
+                "user_id": "test-user",
+                "cuisine_type": "italian",
+                "difficulty": "easy",
+                "servings": 4
+            }
+            
+            response = await client.post("/api/recipes/generate", json=request_data)
+            
+            assert response.status_code == 402
+            data = response.json()
+            assert data["detail"] == "Premium subscription required"
+
+    async def test_generate_recipe_invalid_request_data(self, client):
+        """Test recipe generation with invalid request data."""
+        invalid_request = {
+            "user_id": "",  # Empty user ID
+            "cuisine_type": "invalid_cuisine",
+            "servings": -1  # Invalid serving count
+        }
+        
+        response = await client.post("/api/recipes/generate", json=invalid_request)
+        
+        assert response.status_code == 422  # Validation error
+
+class TestRecipeHistory:
+    """Test suite for recipe history endpoints."""
+
+    @patch('server.recipes_collection.find')
+    @patch('server.starbucks_recipes_collection.find')
+    async def test_get_recipe_history_success(
+        self, 
+        mock_starbucks_find, 
+        mock_recipes_find, 
+        client, 
+        mock_user
+    ):
+        """Test successful recipe history retrieval."""
+        # Mock database responses
+        mock_recipes = [
+            {
+                "_id": "obj_id_1",
+                "id": "recipe-1",
+                "user_id": mock_user["id"],
+                "name": "Test Recipe 1",
+                "created_at": "2025-01-10T12:00:00Z"
+            }
+        ]
+        mock_starbucks = [
+            {
+                "_id": "obj_id_2", 
+                "id": "starbucks-1",
+                "user_id": mock_user["id"],
+                "name": "Test Starbucks Drink",
+                "created_at": "2025-01-09T14:00:00Z"
+            }
+        ]
+        
+        mock_recipes_find.return_value.sort.return_value.to_list = AsyncMock(return_value=mock_recipes)
+        mock_starbucks_find.return_value.sort.return_value.to_list = AsyncMock(return_value=mock_starbucks)
+        
+        response = await client.get(f"/api/recipes/history/{mock_user['id']}")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "recipes" in data
+        assert len(data["recipes"]) == 2
+        assert data["total_count"] == 2
+        
+        # Verify recipe data structure
+        recipe = data["recipes"][0]
+        assert "id" in recipe
+        assert "name" in recipe
+        assert "created_at" in recipe
+
+    async def test_get_recipe_history_empty(self, client):
+        """Test recipe history with no recipes."""
+        with patch('server.recipes_collection.find') as mock_find:
+            mock_find.return_value.sort.return_value.to_list = AsyncMock(return_value=[])
+            
+            with patch('server.starbucks_recipes_collection.find') as mock_starbucks_find:
+                mock_starbucks_find.return_value.sort.return_value.to_list = AsyncMock(return_value=[])
+                
+                response = await client.get("/api/recipes/history/test-user-id")
+                
+                assert response.status_code == 200
+                data = response.json()
+                assert data["recipes"] == []
+                assert data["total_count"] == 0
+
+class TestRecipeDetail:
+    """Test suite for recipe detail endpoints."""
+
+    @patch('server.recipes_collection.find_one')
+    async def test_get_recipe_detail_success(
+        self, 
+        mock_find_one, 
+        client, 
+        mock_recipe
+    ):
+        """Test successful recipe detail retrieval."""
+        mock_find_one.return_value = {**mock_recipe, "_id": "obj_id"}
+        
+        response = await client.get(f"/api/recipes/{mock_recipe['id']}/detail")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == mock_recipe["id"]
+        assert data["name"] == mock_recipe["name"]
+        assert len(data["ingredients"]) == 3
+        assert len(data["instructions"]) == 3
+
+    @patch('server.recipes_collection.find_one')
+    @patch('server.starbucks_recipes_collection.find_one')
+    @patch('server.curated_starbucks_recipes_collection.find_one')
+    async def test_get_recipe_detail_multi_collection_search(
+        self,
+        mock_curated_find,
+        mock_starbucks_find, 
+        mock_recipes_find,
+        client
+    ):
+        """Test recipe detail endpoint searches multiple collections."""
+        recipe_id = "test-recipe-id"
+        
+        # First collection returns None
+        mock_recipes_find.return_value = None
+        mock_starbucks_find.return_value = None
+        
+        # Found in curated collection
+        curated_recipe = {
+            "_id": "obj_id",
+            "id": recipe_id,
+            "name": "Curated Starbucks Drink",
+            "type": "starbucks"
+        }
+        mock_curated_find.return_value = curated_recipe
+        
+        response = await client.get(f"/api/recipes/{recipe_id}/detail")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == recipe_id
+        assert data["name"] == "Curated Starbucks Drink"
+        
+        # Verify search order
+        mock_recipes_find.assert_called_once()
+        mock_starbucks_find.assert_called_once()
+        mock_curated_find.assert_called_once()
+
+    @patch('server.recipes_collection.find_one')
+    async def test_get_recipe_detail_not_found(self, mock_find_one, client):
+        """Test recipe detail with non-existent recipe."""
+        mock_find_one.return_value = None
+        
+        with patch('server.starbucks_recipes_collection.find_one', return_value=None):
+            with patch('server.curated_starbucks_recipes_collection.find_one', return_value=None):
+                response = await client.get("/api/recipes/nonexistent-id/detail")
+                
+                assert response.status_code == 404
+                data = response.json()
+                assert data["detail"] == "Recipe not found"
+
+class TestRecipeDeletion:
+    """Test suite for recipe deletion endpoints."""
+
+    @patch('server.recipes_collection.find_one')
+    @patch('server.recipes_collection.delete_one')
+    async def test_delete_recipe_success(
+        self, 
+        mock_delete, 
+        mock_find_one, 
+        client, 
+        mock_recipe
+    ):
+        """Test successful recipe deletion."""
+        mock_find_one.return_value = {**mock_recipe, "_id": "obj_id"}
+        mock_delete.return_value = AsyncMock(deleted_count=1)
+        
+        response = await client.delete(f"/api/recipes/{mock_recipe['id']}")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert data["message"] == "Recipe deleted successfully"
+
+    @patch('server.recipes_collection.find_one')
+    async def test_delete_recipe_not_found(self, mock_find_one, client):
+        """Test deletion of non-existent recipe."""
+        mock_find_one.return_value = None
+        
+        response = await client.delete("/api/recipes/nonexistent-id")
+        
+        assert response.status_code == 404
+        data = response.json()
+        assert data["detail"] == "Recipe not found"
+
+    @patch('server.recipes_collection.find_one')
+    @patch('server.recipes_collection.delete_one')
+    async def test_delete_recipe_database_failure(
+        self, 
+        mock_delete, 
+        mock_find_one, 
+        client,
+        mock_recipe
+    ):
+        """Test recipe deletion with database failure."""
+        mock_find_one.return_value = {**mock_recipe, "_id": "obj_id"}
+        mock_delete.return_value = AsyncMock(deleted_count=0)  # Deletion failed
+        
+        response = await client.delete(f"/api/recipes/{mock_recipe['id']}")
+        
+        assert response.status_code == 500
+        data = response.json()
+        assert data["detail"] == "Failed to delete recipe"
+
+# Performance tests
+class TestRecipePerformance:
+    """Performance testing for recipe endpoints."""
+
+    async def test_recipe_generation_performance(self, client):
+        """Test recipe generation response time."""
+        import time
+        
+        with patch('server.users_collection.find_one') as mock_user:
+            with patch('server.generate_ai_recipe') as mock_generate:
+                with patch('server.recipes_collection.insert_one') as mock_insert:
+                    # Setup fast mocks
+                    mock_user.return_value = {"id": "test", "subscription": {"status": "active"}}
+                    mock_generate.return_value = {
+                        "id": "test",
+                        "name": "Fast Recipe",
+                        "description": "Quick test",
+                        "ingredients": ["item1"],
+                        "instructions": ["step1"],
+                        "prep_time": "5 min",
+                        "cook_time": "10 min",
+                        "servings": 2,
+                        "difficulty": "easy",
+                        "cuisine_type": "test"
+                    }
+                    mock_insert.return_value = AsyncMock()
+                    
+                    start_time = time.time()
+                    
+                    response = await client.post("/api/recipes/generate", json={
+                        "user_id": "test-user",
+                        "cuisine_type": "italian",
+                        "difficulty": "easy", 
+                        "servings": 4
+                    })
+                    
+                    end_time = time.time()
+                    response_time = end_time - start_time
+                    
+                    assert response.status_code == 200
+                    assert response_time < 2.0  # Should respond within 2 seconds
+
+# Export test fixtures for reuse
+__all__ = ['client', 'mock_user', 'mock_recipe']
+```
+
+#### 2. Database Integration Tests
+```python
+# tests/backend/test_database_integration.py
+import pytest
+from motor.motor_asyncio import AsyncIOMotorClient
+import uuid
+from datetime import datetime
+import asyncio
+
+@pytest.fixture(scope="function")
+async def test_db():
+    """Create isolated test database."""
+    client = AsyncIOMotorClient("mongodb://localhost:27017")
+    db_name = f"test_db_{uuid.uuid4().hex[:8]}"
+    db = client[db_name]
+    
+    yield db
+    
+    # Cleanup
+    await client.drop_database(db_name)
+    client.close()
+
+class TestRecipeDatabase:
+    """Database integration tests for recipe operations."""
+
+    async def test_recipe_crud_operations(self, test_db):
+        """Test complete CRUD cycle for recipes."""
+        recipes_collection = test_db.recipes
+        
+        # CREATE
+        recipe_data = {
+            "id": str(uuid.uuid4()),
+            "user_id": "test-user-id",
+            "name": "Database Test Recipe",
+            "description": "Testing database operations",
+            "ingredients": ["test ingredient 1", "test ingredient 2"],
+            "instructions": ["test step 1", "test step 2"],
+            "prep_time": "15 minutes",
+            "cook_time": "30 minutes",
+            "servings": 4,
+            "difficulty": "easy",
+            "cuisine_type": "test",
+            "created_at": datetime.utcnow().isoformat()
+        }
+        
+        result = await recipes_collection.insert_one(recipe_data)
+        assert result.inserted_id is not None
+        
+        # READ
+        saved_recipe = await recipes_collection.find_one({"id": recipe_data["id"]})
+        assert saved_recipe is not None
+        assert saved_recipe["name"] == "Database Test Recipe"
+        assert len(saved_recipe["ingredients"]) == 2
+        
+        # UPDATE
+        update_result = await recipes_collection.update_one(
+            {"id": recipe_data["id"]},
+            {"$set": {"name": "Updated Test Recipe"}}
+        )
+        assert update_result.modified_count == 1
+        
+        updated_recipe = await recipes_collection.find_one({"id": recipe_data["id"]})
+        assert updated_recipe["name"] == "Updated Test Recipe"
+        
+        # DELETE
+        delete_result = await recipes_collection.delete_one({"id": recipe_data["id"]})
+        assert delete_result.deleted_count == 1
+        
+        deleted_recipe = await recipes_collection.find_one({"id": recipe_data["id"]})
+        assert deleted_recipe is None
+
+    async def test_recipe_query_performance(self, test_db):
+        """Test query performance with multiple recipes."""
+        recipes_collection = test_db.recipes
+        
+        # Insert multiple test recipes
+        recipes = []
+        for i in range(100):
+            recipe = {
+                "id": str(uuid.uuid4()),
+                "user_id": "test-user-id",
+                "name": f"Recipe {i}",
+                "description": f"Test recipe number {i}",
+                "ingredients": [f"ingredient {j}" for j in range(5)],
+                "instructions": [f"step {j}" for j in range(3)],
+                "cuisine_type": ["italian", "mexican", "chinese"][i % 3],
+                "created_at": datetime.utcnow().isoformat()
+            }
+            recipes.append(recipe)
+        
+        await recipes_collection.insert_many(recipes)
+        
+        # Test query performance
+        import time
+        start_time = time.time()
+        
+        cursor = recipes_collection.find({"user_id": "test-user-id"}).sort("created_at", -1)
+        results = await cursor.to_list(50)
+        
+        query_time = time.time() - start_time
+        
+        assert len(results) == 50
+        assert query_time < 1.0  # Query should complete within 1 second
+        assert results[0]["name"] in [f"Recipe {i}" for i in range(100)]
+
+    async def test_recipe_aggregation(self, test_db):
+        """Test aggregation queries for recipe statistics."""
+        recipes_collection = test_db.recipes
+        
+        # Insert test data with different cuisines
+        cuisines = ["italian", "mexican", "chinese", "indian"]
+        for i, cuisine in enumerate(cuisines):
+            for j in range(5):  # 5 recipes per cuisine
+                recipe = {
+                    "id": str(uuid.uuid4()),
+                    "user_id": "test-user-id",
+                    "name": f"{cuisine.title()} Recipe {j}",
+                    "cuisine_type": cuisine,
+                    "created_at": datetime.utcnow().isoformat()
+                }
+                await recipes_collection.insert_one(recipe)
+        
+        # Test aggregation query
+        pipeline = [
+            {"$match": {"user_id": "test-user-id"}},
+            {"$group": {
+                "_id": "$cuisine_type",
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"count": -1}}
+        ]
+        
+        results = []
+        async for doc in recipes_collection.aggregate(pipeline):
+            results.append(doc)
+        
+        assert len(results) == 4
+        for result in results:
+            assert result["count"] == 5
+            assert result["_id"] in cuisines
+
+class TestUserDatabase:
+    """Database integration tests for user operations."""
+
+    async def test_user_subscription_updates(self, test_db):
+        """Test user subscription status updates."""
+        users_collection = test_db.users
+        
+        # Create test user
+        user_data = {
+            "id": str(uuid.uuid4()),
+            "email": "test@example.com",
+            "subscription": {
+                "status": "trialing",
+                "trial_starts_at": datetime.utcnow().isoformat(),
+                "trial_ends_at": datetime.utcnow().isoformat()
+            },
+            "created_at": datetime.utcnow().isoformat()
+        }
+        
+        await users_collection.insert_one(user_data)
+        
+        # Update subscription to active
+        update_result = await users_collection.update_one(
+            {"id": user_data["id"]},
+            {"$set": {
+                "subscription.status": "active",
+                "subscription.customer_id": "cus_test123"
+            }}
+        )
+        
+        assert update_result.modified_count == 1
+        
+        # Verify update
+        updated_user = await users_collection.find_one({"id": user_data["id"]})
+        assert updated_user["subscription"]["status"] == "active"
+        assert updated_user["subscription"]["customer_id"] == "cus_test123"
+
+# Concurrent operation tests
+class TestDatabaseConcurrency:
+    """Test database operations under concurrent load."""
+
+    async def test_concurrent_recipe_creation(self, test_db):
+        """Test concurrent recipe creation doesn't cause conflicts."""
+        recipes_collection = test_db.recipes
+        
+        async def create_recipe(index):
+            recipe = {
+                "id": str(uuid.uuid4()),
+                "user_id": f"user-{index % 3}",  # 3 different users
+                "name": f"Concurrent Recipe {index}",
+                "description": f"Recipe created concurrently {index}",
+                "ingredients": ["ingredient 1", "ingredient 2"],
+                "instructions": ["step 1", "step 2"],
+                "created_at": datetime.utcnow().isoformat()
+            }
+            return await recipes_collection.insert_one(recipe)
+        
+        # Create 50 recipes concurrently
+        tasks = [create_recipe(i) for i in range(50)]
+        results = await asyncio.gather(*tasks)
+        
+        # Verify all insertions succeeded
+        assert len(results) == 50
+        assert all(result.inserted_id for result in results)
+        
+        # Verify count
+        total_count = await recipes_collection.count_documents({})
+        assert total_count == 50
+
+# Export fixtures
+__all__ = ['test_db']
+```
+
+## Test Execution & CI/CD
+
+### Frontend Test Configuration
+```json
+// package.json (Frontend)
+{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "test:integration": "jest --config=jest.integration.config.js",
+    "test:e2e": "playwright test"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": ["<rootDir>/src/tests/setup.js"],
+    "moduleNameMapping": {
+      "\\.(css|less|scss)$": "identity-obj-proxy"
+    },
+    "collectCoverageFrom": [
+      "src/components/**/*.js",
+      "src/services/**/*.js",
+      "!src/**/*.test.js"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    }
+  }
+}
+```
+
+### Backend Test Configuration
+```python
+# pytest.ini
+[tool:pytest]
+testpaths = tests/backend
+python_files = test_*.py
+python_classes = Test*
+python_functions = test_*
+asyncio_mode = auto
+addopts = 
+    --verbose
+    --tb=short
+    --cov=server
+    --cov-report=html:coverage_html
+    --cov-report=term-missing
+    --cov-report=xml
+    --cov-fail-under=80
+
+# conftest.py
+import pytest
+import asyncio
+from motor.motor_asyncio import AsyncIOMotorClient
+from server import app
+from httpx import AsyncClient
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create event loop for async tests."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+@pytest.fixture
+async def test_client():
+    """Create test client for API testing."""
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        yield client
+
+@pytest.fixture
+async def test_database():
+    """Create isolated test database."""
+    client = AsyncIOMotorClient("mongodb://localhost:27017")
+    db_name = f"test_{uuid.uuid4().hex[:8]}"
+    db = client[db_name]
+    yield db
+    await client.drop_database(db_name)
+    client.close()
+```
+
+### CI/CD Pipeline Configuration
+```yaml
+# .github/workflows/comprehensive-testing.yml
+name: Comprehensive Test Suite
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  frontend-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'yarn'
+          cache-dependency-path: frontend/yarn.lock
+      
+      - name: Install dependencies
+        run: cd frontend && yarn install --frozen-lockfile
+      
+      - name: Run unit tests
+        run: cd frontend && yarn test:ci
+      
+      - name: Run integration tests
+        run: cd frontend && yarn test:integration
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+
+  backend-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+    
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd mongosh
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+      
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov httpx
+      
+      - name: Run backend tests
+        env:
+          MONGO_URL: mongodb://localhost:27017/test_db
+          OPENAI_API_KEY: test_key_for_testing
+        run: |
+          cd backend
+          pytest --cov=server --cov-report=xml --junitxml=pytest.xml
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    needs: [frontend-tests, backend-tests]
+    
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'yarn'
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      
+      - name: Install dependencies
+        run: |
+          yarn install
+          cd backend && pip install -r requirements.txt
+      
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      
+      - name: Start services
+        run: |
+          cd backend && python -m uvicorn server:app --host 0.0.0.0 --port 8001 &
+          cd frontend && yarn start &
+          sleep 30  # Wait for services to start
+        env:
+          MONGO_URL: mongodb://localhost:27017/test_db
+          REACT_APP_BACKEND_URL: http://localhost:8001
+          OPENAI_API_KEY: test_key_for_testing
+      
+      - name: Run E2E tests
+        run: npx playwright test
+      
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+  security-tests:
+    runs-on: ubuntu-latest
+    needs: [frontend-tests, backend-tests]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  performance-tests:
+    runs-on: ubuntu-latest
+    needs: [e2e-tests]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      
+      - name: Install Artillery
+        run: npm install -g artillery@latest
+      
+      - name: Run performance tests
+        run: |
+          artillery run tests/performance/load-test.yml
+          artillery run tests/performance/stress-test.yml
+      
+      - name: Upload performance reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-reports
+          path: reports/
+```
+
+This comprehensive testing and documentation suite provides:
 
   - task: "Cloud Run Deployment API Configuration"
     implemented: false
