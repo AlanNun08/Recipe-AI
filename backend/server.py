@@ -3373,7 +3373,7 @@ async def create_subscription_checkout(request: SubscriptionCheckoutRequest):
             raise HTTPException(status_code=404, detail="User not found")
         
         # Validate Stripe configuration first
-        if not STRIPE_API_KEY or STRIPE_API_KEY == "your-str************here":
+        if not STRIPE_API_KEY or STRIPE_API_KEY == "your-stripe-api-key-here":
             logger.error("Invalid Stripe API key configuration")
             raise HTTPException(
                 status_code=500, 
