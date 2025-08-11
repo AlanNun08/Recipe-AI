@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Enhanced OpenAI Prompt with Comprehensive Cooking Instructions
-Testing the enhanced OpenAI prompt for comprehensive cooking instructions as requested in review:
-1. Test Recipe Generation with /api/recipes/generate to validate detailed cooking instructions
-2. Validate Instruction Quality - temperatures, times, techniques, visual cues, safety notes
-3. Test Different Recipe Types (Italian, Mexican, etc.) for consistency
-4. Compare instruction detail vs basic instructions like "cook the chicken"
-5. Verify both clean shopping list extraction AND comprehensive cooking instructions work together
+Backend API Testing for Stripe Subscription Payment Flow
+Testing the Stripe subscription payment flow to identify what's broken as requested in review:
+1. Test subscription status endpoint for demo user (demo@test.com) to see their current subscription status
+2. Test create-checkout endpoint with demo user to see if they can create a payment session during their trial
+3. Test edge cases like:
+   - User with trial status trying to subscribe
+   - User with expired trial trying to subscribe  
+   - User with active paid subscription trying to subscribe again
+
+Focus on the endpoints:
+- GET /api/subscription/status/{user_id}
+- POST /api/subscription/create-checkout
 """
 
 import requests
