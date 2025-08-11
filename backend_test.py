@@ -346,235 +346,14 @@ def analyze_comprehensive_prompt_effectiveness(results):
         print("❌ NEEDS IMPROVEMENT - Comprehensive prompt requires optimization")
         return False
 
-def test_recipe_history_format(user_id):
-    """Test recipe history endpoint and verify response format for RecipeHistoryScreen"""
-    print_separator("TESTING RECIPE HISTORY FORMAT FOR NEW IMPLEMENTATION")
-    
-    try:
-        url = f"{API_BASE}/recipes/history/{user_id}"
-        print(f"Testing URL: {url}")
-        
-        response = requests.get(url, timeout=10)
-        response_data = print_response(response, "Recipe History Response")
-        
-        if response.status_code == 200 and response_data:
-            recipes = response_data.get('recipes', [])
-            total_count = response_data.get('total_count', len(recipes))
-            
-            print(f"\n✅ RECIPE HISTORY SUCCESS - Found {len(recipes)} recipes")
-            print(f"✅ TOTAL COUNT: {total_count}")
-            
-            # Verify response format matches RecipeHistoryScreen expectations
-            format_issues = []
-            
-            # Check if recipes array exists
-            if not isinstance(recipes, list):
-                format_issues.append("'recipes' should be an array")
-            
-            # Check if total_count exists
-            if 'total_count' not in response_data:
-                format_issues.append("'total_count' field missing")
-            
-            # Check first few recipes for required fields
-            required_fields = ['id', 'title', 'description', 'created_at']
-            sample_recipes = recipes[:3] if recipes else []
-            
-            for i, recipe in enumerate(sample_recipes):
-                print(f"\n--- Recipe {i+1} Format Check ---")
-                recipe_issues = []
-                
-                for field in required_fields:
-                    if field not in recipe:
-                        recipe_issues.append(f"Missing '{field}' field")
-                    else:
-                        print(f"✅ {field}: {recipe.get(field)}")
-                
-                if recipe_issues:
-                    format_issues.extend([f"Recipe {i+1}: {issue}" for issue in recipe_issues])
-                else:
-                    print(f"✅ Recipe {i+1} format is correct")
-            
-            # Summary of format check
-            if format_issues:
-                print(f"\n❌ FORMAT ISSUES FOUND:")
-                for issue in format_issues:
-                    print(f"  - {issue}")
-                return False, recipes, total_count
-            else:
-                print(f"\n✅ RESPONSE FORMAT IS CORRECT FOR RECIPEHISTORYSCREEN")
-                return True, recipes, total_count
-                
-        else:
-            print(f"\n❌ RECIPE HISTORY FAILED - Status: {response.status_code}")
-            return False, [], 0
-            
-    except Exception as e:
-        print(f"\n❌ RECIPE HISTORY ERROR: {str(e)}")
-        return False, [], 0
-
-def test_recipe_deletion(recipe_id, recipe_title):
-    """Test recipe deletion endpoint"""
-    print_separator(f"TESTING RECIPE DELETION - {recipe_title}")
-    
-    try:
-        url = f"{API_BASE}/recipes/{recipe_id}"
-        print(f"Testing DELETE URL: {url}")
-        print(f"Recipe ID: {recipe_id}")
-        print(f"Recipe Title: {recipe_title}")
-        
-        response = requests.delete(url, timeout=10)
-        response_data = print_response(response, "Recipe Deletion Response")
-        
-        if response.status_code == 200:
-            print(f"\n✅ RECIPE DELETION SUCCESS")
-            return True, response_data
-        elif response.status_code == 404:
-            print(f"\n⚠️ RECIPE NOT FOUND FOR DELETION (may already be deleted)")
-            return False, response_data
-        else:
-            print(f"\n❌ RECIPE DELETION FAILED - Status: {response.status_code}")
-            return False, response_data
-            
-    except Exception as e:
-        print(f"\n❌ RECIPE DELETION ERROR: {str(e)}")
-        return False, None
-
-def test_data_structure_compatibility(recipes):
-    """Verify data structure is compatible with new clean implementation"""
-    print_separator("TESTING DATA STRUCTURE COMPATIBILITY")
-    
-    compatibility_score = 0
-    total_checks = 0
-    issues = []
-    
-    if not recipes:
-        print("❌ No recipes to test compatibility")
-        return False, []
-    
-    print(f"Testing compatibility for {len(recipes)} recipes...")
-    
-    # Test sample of recipes (first 5)
-    sample_recipes = recipes[:5]
-    
-    for i, recipe in enumerate(sample_recipes):
-        print(f"\n--- Recipe {i+1} Compatibility Check ---")
-        recipe_score = 0
-        recipe_checks = 0
-        
-        # Check for essential fields
-        essential_fields = {
-            'id': 'string',
-            'title': 'string', 
-            'description': 'string',
-            'created_at': 'string'
-        }
-        
-        for field, expected_type in essential_fields.items():
-            recipe_checks += 1
-            total_checks += 1
-            
-            if field in recipe:
-                value = recipe[field]
-                if expected_type == 'string' and isinstance(value, str) and value.strip():
-                    print(f"✅ {field}: Valid {expected_type}")
-                    recipe_score += 1
-                    compatibility_score += 1
-                elif expected_type == 'string' and not isinstance(value, str):
-                    print(f"❌ {field}: Expected {expected_type}, got {type(value).__name__}")
-                    issues.append(f"Recipe {i+1}: {field} type mismatch")
-                elif expected_type == 'string' and not value.strip():
-                    print(f"❌ {field}: Empty string")
-                    issues.append(f"Recipe {i+1}: {field} is empty")
-                else:
-                    print(f"✅ {field}: Present")
-                    recipe_score += 1
-                    compatibility_score += 1
-            else:
-                print(f"❌ {field}: Missing")
-                issues.append(f"Recipe {i+1}: Missing {field}")
-        
-        # Check for optional but useful fields
-        optional_fields = ['ingredients', 'instructions', 'prep_time', 'cook_time', 'servings', 'cuisine_type']
-        
-        for field in optional_fields:
-            if field in recipe:
-                print(f"✅ Optional field {field}: Present")
-            else:
-                print(f"⚠️ Optional field {field}: Missing")
-        
-        recipe_percentage = (recipe_score / recipe_checks) * 100 if recipe_checks > 0 else 0
-        print(f"Recipe {i+1} compatibility: {recipe_percentage:.1f}% ({recipe_score}/{recipe_checks})")
-    
-    # Overall compatibility score
-    overall_percentage = (compatibility_score / total_checks) * 100 if total_checks > 0 else 0
-    print(f"\n--- OVERALL COMPATIBILITY RESULTS ---")
-    print(f"Compatibility Score: {overall_percentage:.1f}% ({compatibility_score}/{total_checks})")
-    
-    if overall_percentage >= 90:
-        print("✅ EXCELLENT COMPATIBILITY - Ready for production")
-        return True, issues
-    elif overall_percentage >= 75:
-        print("⚠️ GOOD COMPATIBILITY - Minor issues to address")
-        return True, issues
-    elif overall_percentage >= 50:
-        print("❌ POOR COMPATIBILITY - Significant issues need fixing")
-        return False, issues
-    else:
-        print("🚨 CRITICAL COMPATIBILITY ISSUES - Major fixes required")
-        return False, issues
-
-def test_recipe_detail_comprehensive(recipe_info):
-    """Comprehensive test of recipe detail endpoint"""
-    print_separator(f"COMPREHENSIVE RECIPE DETAIL TEST - {recipe_info['title']}")
-    
-    recipe_id = recipe_info['id']
-    
-    try:
-        url = f"{API_BASE}/recipes/{recipe_id}/detail"
-        print(f"Testing URL: {url}")
-        
-        response = requests.get(url, timeout=10)
-        response_data = print_response(response, "Recipe Detail Response")
-        
-        if response.status_code == 200 and response_data:
-            print(f"\n✅ RECIPE DETAIL SUCCESS")
-            
-            # Verify all expected fields are present
-            expected_fields = ['id', 'title', 'description', 'ingredients', 'instructions']
-            missing_fields = []
-            
-            for field in expected_fields:
-                if field not in response_data:
-                    missing_fields.append(field)
-                else:
-                    value = response_data[field]
-                    if isinstance(value, list):
-                        print(f"✅ {field}: {len(value)} items")
-                    else:
-                        print(f"✅ {field}: {str(value)[:50]}...")
-            
-            if missing_fields:
-                print(f"❌ Missing fields: {missing_fields}")
-                return False, response_data
-            else:
-                print(f"✅ All expected fields present")
-                return True, response_data
-                
-        else:
-            print(f"\n❌ RECIPE DETAIL FAILED - Status: {response.status_code}")
-            return False, response_data
-            
-    except Exception as e:
-        print(f"\n❌ RECIPE DETAIL ERROR: {str(e)}")
-        return False, None
-
 def main():
-    """Main test function for Recipe History Implementation"""
-    print_separator("RECIPE HISTORY IMPLEMENTATION TESTING")
+    """Main test function for Improved OpenAI Recipe Generation & Shopping List Extraction"""
+    print_separator("IMPROVED OPENAI RECIPE GENERATION & SHOPPING LIST EXTRACTION TESTING")
     print(f"Backend URL: {BACKEND_URL}")
     print(f"API Base: {API_BASE}")
     print(f"Test User: {TEST_EMAIL}")
     print(f"Test Time: {datetime.now()}")
+    print(f"Focus: Testing improved OpenAI prompt for recipe generation and shopping list extraction")
     
     # Step 1: Login with demo@test.com/password123
     user_id = test_login()
@@ -582,86 +361,115 @@ def main():
         print("\n🚨 CANNOT PROCEED - Login failed")
         return
     
-    # Step 2: Test /api/recipes/history/{user_id} endpoint format
-    format_ok, recipes, total_count = test_recipe_history_format(user_id)
-    if not format_ok or not recipes:
-        print("\n🚨 CANNOT PROCEED - Recipe history format issues or no recipes")
+    # Step 2: Test recipe generation with different parameters
+    print_separator("TESTING RECIPE GENERATION WITH DIFFERENT PARAMETERS")
+    
+    # Single comprehensive test first
+    single_test = {
+        'name': 'Italian Pasta with Complex Ingredients',
+        'params': {
+            'user_id': user_id,
+            'cuisine_type': 'italian',
+            'dietary_preferences': ['vegetarian'],
+            'ingredients_on_hand': ['tomatoes', 'basil', 'garlic'],
+            'servings': 4,
+            'difficulty': 'medium'
+        }
+    }
+    
+    single_success, single_data, single_valid, single_issues = test_recipe_generation(user_id, single_test)
+    
+    if not single_success:
+        print("\n🚨 SINGLE TEST FAILED - Cannot proceed with comprehensive testing")
+        print("This may indicate API issues or authentication problems")
         return
     
-    # Step 3: Test data structure compatibility with new clean implementation
-    compatibility_ok, compatibility_issues = test_data_structure_compatibility(recipes)
+    # Step 3: Test different recipe types and cuisines for consistency
+    results, all_issues = test_different_recipe_types(user_id)
     
-    # Step 4: Test recipe detail endpoint for sample recipes
-    print_separator("TESTING RECIPE DETAIL ENDPOINTS")
-    detail_test_results = []
+    # Step 4: Analyze comprehensive prompt effectiveness
+    prompt_effective = analyze_comprehensive_prompt_effectiveness(results)
     
-    # Test first 3 recipes
-    sample_recipes = recipes[:3]
-    for i, recipe in enumerate(sample_recipes):
-        recipe_info = {
-            'id': recipe.get('id'),
-            'title': recipe.get('title', f'Recipe {i+1}'),
-            'type': recipe.get('type', 'recipe')
+    # Step 5: Test specific shopping list extraction examples from review
+    print_separator("TESTING SPECIFIC SHOPPING LIST EXTRACTION EXAMPLES")
+    
+    # Test with ingredients that should demonstrate the extraction rules
+    complex_test = {
+        'name': 'Complex Ingredient Extraction Test',
+        'params': {
+            'user_id': user_id,
+            'cuisine_type': 'american',
+            'dietary_preferences': [],
+            'ingredients_on_hand': ['flour', 'olive oil', 'tomatoes', 'canned tomatoes', 'salt', 'pepper'],
+            'servings': 4,
+            'difficulty': 'easy'
         }
-        
-        if recipe_info['id']:
-            success, data = test_recipe_detail_comprehensive(recipe_info)
-            detail_test_results.append((success, recipe_info, data))
+    }
     
-    # Step 5: Test recipe deletion endpoint for one sample recipe
-    if sample_recipes and sample_recipes[0].get('id'):
-        sample_recipe = sample_recipes[0]
-        deletion_success, deletion_data = test_recipe_deletion(
-            sample_recipe.get('id'), 
-            sample_recipe.get('title', 'Sample Recipe')
-        )
+    complex_success, complex_data, complex_valid, complex_issues = test_recipe_generation(user_id, complex_test)
     
     # Final Summary
-    print_separator("FINAL TEST SUMMARY")
+    print_separator("FINAL TEST SUMMARY - IMPROVED OPENAI PROMPT VALIDATION")
     
     print(f"✅ User Login: SUCCESS")
-    print(f"{'✅' if format_ok else '❌'} Recipe History Format: {'PASS' if format_ok else 'FAIL'}")
-    print(f"{'✅' if compatibility_ok else '❌'} Data Structure Compatibility: {'PASS' if compatibility_ok else 'FAIL'}")
+    print(f"{'✅' if single_success else '❌'} Single Recipe Test: {'PASS' if single_success else 'FAIL'}")
     
-    detail_success_count = sum(1 for success, _, _ in detail_test_results if success)
-    print(f"✅ Recipe Detail Tests: {detail_success_count}/{len(detail_test_results)} PASSED")
+    if results:
+        successful_generations = sum(1 for r in results if r['success'])
+        valid_shopping_lists = sum(1 for r in results if r['shopping_valid'])
+        
+        print(f"✅ Recipe Generation Tests: {successful_generations}/{len(results)} PASSED")
+        print(f"✅ Shopping List Validation: {valid_shopping_lists}/{len(results)} PASSED")
     
-    if 'deletion_success' in locals():
-        print(f"{'✅' if deletion_success else '❌'} Recipe Deletion Test: {'PASS' if deletion_success else 'FAIL'}")
+    print(f"{'✅' if prompt_effective else '❌'} Comprehensive Prompt Effectiveness: {'EXCELLENT' if prompt_effective else 'NEEDS IMPROVEMENT'}")
+    print(f"{'✅' if complex_success else '❌'} Complex Extraction Test: {'PASS' if complex_success else 'FAIL'}")
     
-    # Overall assessment
-    total_tests = 4  # login, format, compatibility, detail tests
-    passed_tests = 1  # login always passes if we get here
-    if format_ok:
-        passed_tests += 1
-    if compatibility_ok:
-        passed_tests += 1
-    if detail_success_count > 0:
-        passed_tests += 1
+    # Calculate overall success metrics
+    total_tests = len(results) if results else 0
+    successful_tests = sum(1 for r in results if r['success']) if results else 0
+    valid_extractions = sum(1 for r in results if r['shopping_valid']) if results else 0
     
-    success_rate = (passed_tests / total_tests) * 100
+    if total_tests > 0:
+        generation_success_rate = (successful_tests / total_tests) * 100
+        extraction_success_rate = (valid_extractions / total_tests) * 100
+        
+        print(f"\n--- OVERALL METRICS ---")
+        print(f"Recipe Generation Success Rate: {generation_success_rate:.1f}%")
+        print(f"Shopping List Extraction Success Rate: {extraction_success_rate:.1f}%")
+        
+        # Assessment based on review requirements
+        if generation_success_rate >= 90 and extraction_success_rate >= 80:
+            print("🎉 EXCELLENT - Improved OpenAI prompt is working excellently!")
+            print("✅ Shopping list extraction properly removes quantities/measurements")
+            print("✅ Clean ingredient names suitable for Walmart product searches")
+            print("✅ Consistent performance across different cuisines and dietary preferences")
+        elif generation_success_rate >= 75 and extraction_success_rate >= 70:
+            print("✅ GOOD - Improved OpenAI prompt is working well")
+            print("⚠️ Minor improvements may be needed for shopping list extraction")
+        else:
+            print("❌ NEEDS IMPROVEMENT - OpenAI prompt requires optimization")
+            print("🔧 Shopping list extraction rules may need refinement")
     
-    print(f"\n--- OVERALL ASSESSMENT ---")
-    print(f"Success Rate: {success_rate:.1f}% ({passed_tests}/{total_tests})")
-    
-    if success_rate >= 90:
-        print("🎉 EXCELLENT - Recipe History implementation is ready for production!")
-    elif success_rate >= 75:
-        print("✅ GOOD - Recipe History implementation working well with minor issues")
-    elif success_rate >= 50:
-        print("⚠️ NEEDS WORK - Recipe History implementation has significant issues")
-    else:
-        print("🚨 CRITICAL - Recipe History implementation requires major fixes")
-    
-    # Report issues found
-    if compatibility_issues:
-        print(f"\n--- ISSUES TO ADDRESS ---")
-        for issue in compatibility_issues[:5]:  # Show first 5 issues
+    # Report specific issues found
+    if all_issues:
+        print(f"\n--- SHOPPING LIST EXTRACTION ISSUES FOUND ---")
+        unique_issues = list(set(all_issues))
+        for issue in unique_issues[:10]:  # Show first 10 unique issues
             print(f"  - {issue}")
-        if len(compatibility_issues) > 5:
-            print(f"  ... and {len(compatibility_issues) - 5} more issues")
+        if len(unique_issues) > 10:
+            print(f"  ... and {len(unique_issues) - 10} more unique issues")
     
-    print_separator("TEST COMPLETE")
+    # Recommendations based on findings
+    print(f"\n--- RECOMMENDATIONS ---")
+    if prompt_effective and extraction_success_rate >= 80:
+        print("✅ The improved OpenAI prompt is ready for production")
+        print("✅ Shopping list extraction meets requirements for Walmart integration")
+    else:
+        print("🔧 Consider refining the OpenAI prompt to improve shopping list extraction")
+        print("🔧 Focus on better handling of compound ingredients (e.g., 'salt and pepper')")
+        print("🔧 Improve quantity/measurement removal patterns")
+    
+    print_separator("TEST COMPLETE - IMPROVED OPENAI PROMPT VALIDATION")
 
 if __name__ == "__main__":
     main()
