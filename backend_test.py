@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Recipe History Navigation Issue
-Testing the specific issue where users click "View" from recipe history but get "Recipe Not Found"
+Backend API Testing for Recipe History Implementation
+Testing the new Recipe History implementation as requested in review:
+1. Login with demo@test.com/password123
+2. Test /api/recipes/history/{user_id} endpoint to ensure it returns proper data
+3. Check response format matches RecipeHistoryScreen component expectations
+4. Test recipe deletion endpoint /api/recipes/{recipe_id} for a sample recipe
+5. Verify data structure compatibility with new clean implementation
 """
 
 import requests
