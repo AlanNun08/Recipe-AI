@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Stripe Payment Fix
-Testing the immediate Stripe payment fix that was just applied as requested in review:
+Complete Stripe Payment System Testing
+Testing the complete Stripe payment system now that valid API keys are confirmed to be in the deployment environment.
 
-1. Test the subscription status endpoint for demo user to confirm it still works
-2. Test the create-checkout endpoint with demo user to verify the new error handling
-3. Confirm that users now see "Payment system not configured. Please contact support." instead of generic 500 errors
-4. Verify that the API key validation is working properly
-5. Test with invalid user to ensure proper 404 error handling
+As requested in the review, verify the full payment flow works:
+1. Test demo user login and get user_id
+2. Test subscription status endpoint - should show trial status
+3. Test create-checkout endpoint with demo user - should now successfully create Stripe checkout session with valid URL
+4. Verify checkout response contains proper Stripe URL (checkout.stripe.com) and session_id
+5. Test checkout status endpoint with a sample session_id
+6. Confirm the payment system is fully operational for revenue generation
 
-The goal is to confirm that:
-- The immediate fix is working (better error messages)
-- System is ready for API key configuration
-- Error handling has been improved
-- Users get clear guidance instead of confusing errors
+Since the user confirmed valid Stripe keys are in the environment and code fixes are applied, 
+the payment flow should work completely now instead of showing configuration errors.
 
 Focus on the endpoints:
+- POST /api/auth/login
 - GET /api/subscription/status/{user_id}
 - POST /api/subscription/create-checkout
+- GET /api/subscription/checkout/status/{session_id}
 """
 
 import requests
