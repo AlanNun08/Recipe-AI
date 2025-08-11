@@ -2330,7 +2330,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Complete Walmart Integration Frontend Testing - COMPLETED"
+    - "Enhanced OpenAI Prompt for Professional Chef-Level Cooking Instructions - COMPLETED"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
