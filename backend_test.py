@@ -16,7 +16,7 @@ import re
 from datetime import datetime
 
 # Backend URL from frontend/.env
-BACKEND_URL = "https://350e6048-1e7b-4cd5-955b-ebca6201edd0.preview.emergentagent.com"
+BACKEND_URL = "https://4d24c0b0-8c0e-4246-8e3e-2e81e97a4fe7.preview.emergentagent.com"
 API_BASE = f"{BACKEND_URL}/api"
 
 # Test credentials
