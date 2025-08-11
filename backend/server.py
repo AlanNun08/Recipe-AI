@@ -3353,6 +3353,9 @@ async def get_subscription_status(user_id: str):
         access_status = get_user_access_status(user)
         return access_status
         
+    except HTTPException:
+        # Re-raise HTTPExceptions to preserve specific error messages
+        raise
     except Exception as e:
         logger.error(f"Error getting subscription status: {e}")
         raise HTTPException(status_code=500, detail="Failed to get subscription status")
