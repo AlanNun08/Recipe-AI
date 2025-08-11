@@ -3369,6 +3369,14 @@ async def create_subscription_checkout(request: SubscriptionCheckoutRequest):
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
+        # Validate Stripe configuration first
+        if not STRIPE_API_KEY or STRIPE_API_KEY == "your-str************here":
+            logger.error("Invalid Stripe API key configuration")
+            raise HTTPException(
+                status_code=500, 
+                detail="Payment system not configured. Please contact support."
+            )
+        
         # Only prevent checkout if user already has active PAID subscription
         # Users with trial status should be allowed to upgrade to paid subscription
         if user.get('subscription_status') == 'active' and is_subscription_active(user):
