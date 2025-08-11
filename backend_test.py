@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Recipe History Implementation
-Testing the new Recipe History implementation as requested in review:
-1. Login with demo@test.com/password123
-2. Test /api/recipes/history/{user_id} endpoint to ensure it returns proper data
-3. Check response format matches RecipeHistoryScreen component expectations
-4. Test recipe deletion endpoint /api/recipes/{recipe_id} for a sample recipe
-5. Verify data structure compatibility with new clean implementation
+Backend API Testing for Improved OpenAI Recipe Generation & Shopping List Extraction
+Testing the improved OpenAI prompt for recipe generation as requested in review:
+1. Test Recipe Generation with /api/recipes/generate endpoint using different parameters
+2. Validate Shopping List Extraction - clean ingredient names without quantities
+3. Test Different Recipe Types and cuisines for consistency
+4. Compare extraction quality and validate new comprehensive prompt rules
+5. Verify shopping list format suitable for Walmart product searches
 """
 
 import requests
 import json
 import sys
+import re
 from datetime import datetime
 
 # Backend URL from frontend/.env
