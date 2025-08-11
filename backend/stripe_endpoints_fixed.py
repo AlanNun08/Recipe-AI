@@ -17,8 +17,10 @@ ENDPOINTS FIXED:
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Dict, Any
+from datetime import datetime
 import logging
 import os
+import uuid
 
 # Import our new service classes
 from stripe.stripe_service import StripeService
@@ -105,9 +107,6 @@ async def create_subscription_checkout_fixed(request: SubscriptionCheckoutReques
             )
         
         # Create payment transaction record
-        from datetime import datetime
-        import uuid
-        
         transaction = PaymentTransaction(
             id=str(uuid.uuid4()),
             user_id=request.user_id,
