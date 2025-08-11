@@ -2308,33 +2308,47 @@ Return ONLY a valid JSON object with this exact structure:
     "shopping_list": ["ingredient_name_1", "ingredient_name_2"]
 }
 
-COMPREHENSIVE COOKING INSTRUCTIONS REQUIREMENTS:
-The instructions array must contain detailed, step-by-step cooking instructions that are professional, clear, and comprehensive. Each instruction should:
+COMPREHENSIVE COOKING INSTRUCTIONS - PROFESSIONAL CHEF STANDARDS:
+Create step-by-step instructions that read like they're written by a professional chef. Each instruction must be detailed, specific, and educational. Follow this structure:
 
-1. **Be Specific and Detailed**: Include exact temperatures, times, techniques, and visual cues
-2. **Include Professional Techniques**: Proper cooking methods, seasoning tips, and chef techniques
-3. **Provide Visual Cues**: Describe what to look for (golden brown, bubbling, tender, etc.)
-4. **Include Timing**: Specific cook times and when to add ingredients
-5. **Cover All Stages**: Prep, cooking, assembly, and finishing touches
-6. **Add Pro Tips**: Temperature checks, doneness tests, seasoning adjustments
-7. **Be Sequential**: Each step builds logically on the previous one
+**MANDATORY ELEMENTS FOR EACH COOKING STEP:**
+1. **Specific Temperatures**: Use exact temperatures (350°F, medium-high heat, 165°F internal temperature)
+2. **Precise Timing**: Include specific times ("cook for 6-7 minutes", "until golden brown, about 4-5 minutes")
+3. **Visual Cues**: Describe what to look for ("until translucent", "when bubbling vigorously", "golden brown crust forms")
+4. **Professional Techniques**: Use proper culinary terms (sauté, sear, braise, simmer, reduce, caramelize, deglaze, fold, whisk)
+5. **Equipment Details**: Specify pan types, tools needed ("in a large cast iron skillet", "using a wooden spoon")
+6. **Safety Notes**: Include temperature checks for meat ("internal temperature reaches 165°F", "until steaming hot throughout")
+7. **Pro Tips**: Add helpful techniques ("don't overcrowd the pan", "taste and adjust seasoning", "let rest for 5 minutes")
 
-Instruction Quality Standards:
-- ❌ Basic: "Cook the chicken"
-- ✅ Comprehensive: "Heat 2 tablespoons olive oil in a large skillet over medium-high heat. Season chicken breasts with salt and pepper, then cook for 6-7 minutes per side until golden brown and internal temperature reaches 165°F (74°C). Let rest for 5 minutes before slicing."
+**INSTRUCTION QUALITY EXAMPLES:**
 
-- ❌ Basic: "Add vegetables"
-- ✅ Comprehensive: "Add diced onions to the pan and sauté for 3-4 minutes until translucent and fragrant. Add minced garlic and cook for another 30 seconds until aromatic, being careful not to burn."
+❌ BASIC (Don't do this): "Cook the chicken"
+✅ PROFESSIONAL: "Heat 2 tablespoons olive oil in a large cast iron skillet over medium-high heat until shimmering. Season chicken breasts with salt and pepper, then sear for 6-7 minutes per side until golden brown crust forms and internal temperature reaches 165°F (74°C). Let rest for 5 minutes before slicing to retain juices."
 
-- ❌ Basic: "Make sauce"
-- ✅ Comprehensive: "In the same pan, add tomatoes, herbs, and broth. Bring to a simmer, then reduce heat to low and let the sauce reduce for 15-20 minutes, stirring occasionally, until it coats the back of a spoon and has reduced by about half."
+❌ BASIC: "Add vegetables and cook"
+✅ PROFESSIONAL: "Add diced onions to the same pan and sauté for 3-4 minutes until translucent and fragrant, stirring occasionally. Add minced garlic and cook for 30 seconds more until aromatic, being careful not to let it burn."
 
-Each instruction should include:
-- **Temperature/Heat Level**: "medium heat", "375°F", "high heat"
-- **Timing**: "5-7 minutes", "until golden brown", "cook for 15 minutes"
-- **Visual/Texture Cues**: "until bubbling", "until tender when pierced with fork", "until lightly caramelized"
-- **Technique Details**: "stirring frequently", "without stirring", "fold gently"
-- **Safety Notes**: "internal temperature reaches 165°F", "until steaming hot"
+❌ BASIC: "Make the sauce"
+✅ PROFESSIONAL: "Deglaze the pan with 1/2 cup white wine, scraping up any browned bits with a wooden spoon. Add crushed tomatoes, herbs, and broth. Bring to a vigorous boil, then reduce heat to low and simmer for 15-20 minutes, stirring occasionally, until sauce reduces by half and coats the back of a spoon."
+
+❌ BASIC: "Season to taste"
+✅ PROFESSIONAL: "Taste the dish and adjust seasoning with salt and freshly ground black pepper. For added brightness, finish with a squeeze of fresh lemon juice and chopped fresh herbs just before serving."
+
+**REQUIRED INSTRUCTION COMPONENTS:**
+- Start each major step with temperature/heat level
+- Include timing for each stage
+- Use sensory descriptions (sound, smell, appearance)
+- Add chef techniques and terminology  
+- Include safety temperatures for proteins
+- End with plating/presentation notes
+
+**STRUCTURE YOUR INSTRUCTIONS LIKE THIS:**
+1. **Preparation Step**: "Preheat oven to 425°F (220°C). Pat ingredients dry and season..."
+2. **Cooking Steps**: "Heat oil in skillet over medium-high heat until shimmering. Add [ingredient] and cook for X minutes until [visual cue]..."
+3. **Assembly/Finishing**: "Fold ingredients gently to combine. Taste and adjust seasoning..."
+4. **Serving**: "Let rest for 5 minutes, then slice and serve immediately with..."
+
+Make every instruction educational and professional - as if teaching someone to cook properly, not just following a basic recipe.
 
 CRITICAL: The shopping_list must contain ONLY the core ingredient names without ANY quantities, measurements, preparations, or descriptions.
 
@@ -2366,7 +2380,7 @@ Examples:
 - "2 bay leaves" → "bay leaves"
 - "1 bunch fresh cilantro" → "cilantro"
 
-Make sure every ingredient in the shopping_list follows these rules precisely, and every instruction follows the comprehensive cooking standards.
+Generate professional-quality cooking instructions that teach proper technique while following precise shopping list extraction rules.
 """
         
         # Call OpenAI
