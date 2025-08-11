@@ -2308,6 +2308,34 @@ Return ONLY a valid JSON object with this exact structure:
     "shopping_list": ["ingredient_name_1", "ingredient_name_2"]
 }
 
+COMPREHENSIVE COOKING INSTRUCTIONS REQUIREMENTS:
+The instructions array must contain detailed, step-by-step cooking instructions that are professional, clear, and comprehensive. Each instruction should:
+
+1. **Be Specific and Detailed**: Include exact temperatures, times, techniques, and visual cues
+2. **Include Professional Techniques**: Proper cooking methods, seasoning tips, and chef techniques
+3. **Provide Visual Cues**: Describe what to look for (golden brown, bubbling, tender, etc.)
+4. **Include Timing**: Specific cook times and when to add ingredients
+5. **Cover All Stages**: Prep, cooking, assembly, and finishing touches
+6. **Add Pro Tips**: Temperature checks, doneness tests, seasoning adjustments
+7. **Be Sequential**: Each step builds logically on the previous one
+
+Instruction Quality Standards:
+- ❌ Basic: "Cook the chicken"
+- ✅ Comprehensive: "Heat 2 tablespoons olive oil in a large skillet over medium-high heat. Season chicken breasts with salt and pepper, then cook for 6-7 minutes per side until golden brown and internal temperature reaches 165°F (74°C). Let rest for 5 minutes before slicing."
+
+- ❌ Basic: "Add vegetables"
+- ✅ Comprehensive: "Add diced onions to the pan and sauté for 3-4 minutes until translucent and fragrant. Add minced garlic and cook for another 30 seconds until aromatic, being careful not to burn."
+
+- ❌ Basic: "Make sauce"
+- ✅ Comprehensive: "In the same pan, add tomatoes, herbs, and broth. Bring to a simmer, then reduce heat to low and let the sauce reduce for 15-20 minutes, stirring occasionally, until it coats the back of a spoon and has reduced by about half."
+
+Each instruction should include:
+- **Temperature/Heat Level**: "medium heat", "375°F", "high heat"
+- **Timing**: "5-7 minutes", "until golden brown", "cook for 15 minutes"
+- **Visual/Texture Cues**: "until bubbling", "until tender when pierced with fork", "until lightly caramelized"
+- **Technique Details**: "stirring frequently", "without stirring", "fold gently"
+- **Safety Notes**: "internal temperature reaches 165°F", "until steaming hot"
+
 CRITICAL: The shopping_list must contain ONLY the core ingredient names without ANY quantities, measurements, preparations, or descriptions.
 
 Shopping List Extraction Rules:
@@ -2338,7 +2366,7 @@ Examples:
 - "2 bay leaves" → "bay leaves"
 - "1 bunch fresh cilantro" → "cilantro"
 
-Make sure every ingredient in the shopping_list follows these rules precisely.
+Make sure every ingredient in the shopping_list follows these rules precisely, and every instruction follows the comprehensive cooking standards.
 """
         
         # Call OpenAI
