@@ -3505,6 +3505,9 @@ async def get_checkout_status(session_id: str):
             "metadata": checkout_status.metadata
         }
         
+    except HTTPException:
+        # Re-raise HTTPExceptions to preserve specific error messages
+        raise
     except Exception as e:
         logger.error(f"Error getting checkout status: {e}")
         raise HTTPException(status_code=500, detail="Failed to get checkout status")
