@@ -26,7 +26,7 @@ from datetime import datetime
 
 # Backend URL - Use local backend for testing
 BACKEND_URL = "http://localhost:8010"
-API_BASE = f"{BACKEND_URL}"
+API_BASE = f"{BACKEND_URL}/api"
 
 # Test credentials
 TEST_EMAIL = "demo@test.com"
