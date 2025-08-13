@@ -33,7 +33,6 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
         setRecipes(data.recipes || []);
         
       } catch (error) {
-        console.error('🆕 NEW RECIPE HISTORY: Error:', error);
         setError(error.message);
         showNotification(`Error loading recipes: ${error.message}`, 'error');
       } finally {
