@@ -74,10 +74,37 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
       showNotification('🎉 Your weekly meal plan is ready!', 'success');
     } catch (error) {
       console.error('Failed to generate weekly plan:', error);
+      
+      // Check if it's a usage limit error (status 429)
+      if (error.response?.status === 429) {
+        const errorData = error.response.data.detail;
+        
+        if (typeof errorData === 'object' && errorData.upgrade_required) {
+          // Show usage limit reached message and redirect to upgrade
+          showNotification(
+            `⚠️ ${errorData.message} Redirecting to upgrade...`, 
+            'warning'
+          );
+          
+          // Redirect to subscription screen after a short delay
+          setTimeout(() => {
+            if (onBack) {
+              onBack(); // Go back to dashboard first
+              setTimeout(() => {
+                showNotification('💎 Upgrade to get more weekly recipe plans!', 'info');
+              }, 500);
+            }
+          }, 2000);
+          
+          return;
+        }
+      }
+      
       if (error.response?.status === 402) {
         showNotification('❌ Premium feature: Upgrade to access weekly meal plans!', 'error');
       } else {
-        showNotification('❌ Failed to generate meal plan. Please try again.', 'error');
+        const errorMessage = error.response?.data?.detail || 'Failed to generate meal plan. Please try again.';
+        showNotification(`❌ ${errorMessage}`, 'error');
       }
     } finally {
       setIsGenerating(false);
