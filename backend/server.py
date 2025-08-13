@@ -3772,88 +3772,14 @@ async def get_subscription_status(user_id: str):
         raise HTTPException(status_code=500, detail="Failed to get subscription status")
 
 @api_router.post("/subscription/create-checkout")
-async def create_subscription_checkout(request: SubscriptionCheckoutRequest):
-    """Create Stripe checkout session for subscription"""
-    try:
-        if not STRIPE_API_KEY:
-            raise HTTPException(status_code=500, detail="Stripe not configured")
-            
-        # Validate user exists
-        user = await users_collection.find_one({"id": request.user_id})
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        # Validate Stripe configuration first
-        if not STRIPE_API_KEY or STRIPE_API_KEY == "your-stripe-api-key-here":
-            logger.error("Invalid Stripe API key configuration")
-            raise HTTPException(
-                status_code=500, 
-                detail="Payment system not configured. Please contact support."
-            )
-        
-        # Only prevent checkout if user already has active PAID subscription
-        # Users with trial status should be allowed to upgrade to paid subscription
-        if user.get('subscription_status') == 'active' and is_subscription_active(user):
-            raise HTTPException(status_code=400, detail="User already has active subscription")
-        
-        # Get subscription package (server-side security)
-        package = SUBSCRIPTION_PACKAGES.get("monthly_subscription")
-        if not package:
-            raise HTTPException(status_code=400, detail="Invalid package")
-        
-        # Initialize Stripe checkout
-        stripe_checkout = StripeCheckout(
-            api_key=STRIPE_API_KEY,
-            webhook_url=f"{request.origin_url}/api/webhook/stripe"
-        )
-        
-        # Build success/cancel URLs
-        success_url = f"{request.origin_url}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}"
-        cancel_url = f"{request.origin_url}/subscription/cancel"
-        
-        # Create checkout session
-        checkout_request = CheckoutSessionRequest(
-            amount=package["price"],
-            currency=package["currency"],
-            success_url=success_url,
-            cancel_url=cancel_url,
-            metadata={
-                "user_id": request.user_id,
-                "user_email": request.user_email,
-                "package_id": "monthly_subscription",
-                "subscription_type": "monthly"
-            }
-        )
-        
-        session = await stripe_checkout.create_checkout_session(checkout_request)
-        
-        # Create payment transaction record
-        transaction = PaymentTransaction(
-            user_id=request.user_id,
-            email=request.user_email,
-            session_id=session.session_id,
-            payment_status="pending",
-            amount=package["price"],
-            currency=package["currency"],
-            metadata={
-                "package_id": "monthly_subscription",
-                "subscription_type": "monthly"
-            }
-        )
-        
-        await payment_transactions_collection.insert_one(transaction.dict())
-        
-        return {
-            "url": session.url,
-            "session_id": session.session_id
-        }
-        
-    except HTTPException:
-        # Re-raise HTTPExceptions to preserve specific error messages
-        raise
-    except Exception as e:
-        logger.error(f"Error creating subscription checkout: {e}")
-        raise HTTPException(status_code=500, detail="Failed to create checkout session")
+async def create_subscription_checkout(request: SubscriptionCheckoutRequestLegacy):
+    """Create Stripe checkout session for subscription - FIXED WITH EMERGENTINTEGRATIONS"""
+    return await create_subscription_checkout_integrated(
+        request, 
+        db, 
+        users_collection, 
+        payment_transactions_collection
+    )
 
 @api_router.get("/subscription/checkout/status/{session_id}")
 async def get_checkout_status(session_id: str):
