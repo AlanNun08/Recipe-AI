@@ -103,7 +103,7 @@ def test_api_key_validation():
     
     try:
         # Test the health endpoint to see if Stripe is properly configured
-        url = f"{API_BASE}/health"
+        url = f"{BACKEND_URL}/health"  # Health endpoint doesn't use /api prefix
         print(f"Testing health endpoint: {url}")
         
         response = requests.get(url, timeout=10)
