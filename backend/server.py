@@ -3796,6 +3796,13 @@ async def stripe_webhook(request: Request):
     """Handle Stripe webhook events - FIXED WITH EMERGENTINTEGRATIONS"""
     return await stripe_webhook_integrated(request, db)
 
+@api_router.get("/subscription/packages")
+async def get_subscription_packages():
+    """Get available subscription packages"""
+    return {
+        "packages": SUBSCRIPTION_PACKAGES
+    }
+
 @api_router.post("/subscription/cancel/{user_id}")
 async def cancel_subscription(user_id: str):
     """Cancel user's active subscription"""
