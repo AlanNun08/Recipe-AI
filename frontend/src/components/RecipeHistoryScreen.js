@@ -30,8 +30,6 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
         }
 
         const data = await response.json();
-        console.log('🆕 NEW RECIPE HISTORY: Data loaded:', data);
-        
         setRecipes(data.recipes || []);
         
       } catch (error) {
