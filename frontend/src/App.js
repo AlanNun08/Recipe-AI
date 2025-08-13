@@ -12,6 +12,7 @@ import TrialStatusBanner from './components/TrialStatusBanner';
 import RecipeDetailScreen from './components/RecipeDetailScreen';
 import RecipeGeneratorScreen from './components/RecipeGeneratorScreen';
 import RecipeHistoryScreen from './components/RecipeHistoryScreen';
+import SettingsScreen from './components/SettingsScreen';
 
 function App() {
   // BUILDYOURSMARTCART - PRODUCTION VERSION
