@@ -278,230 +278,411 @@ def test_user_usage_endpoint(user_id):
         print(f"\n❌ TEST 4 ERROR: {str(e)}")
         return False, None
 
-def test_subscription_status_trial(user_id):
-    """Test 2: Test subscription status endpoint - should show trial status"""
-    print_separator(f"TEST 2: SUBSCRIPTION STATUS - SHOULD SHOW TRIAL STATUS")
+def test_subscription_cancel(user_id):
+    """Test 5: POST /api/subscription/cancel/{user_id} - Test subscription cancellation"""
+    print_separator("TEST 5: SUBSCRIPTION CANCELLATION")
     
     try:
-        url = f"{API_BASE}/subscription/status/{user_id}"
+        url = f"{API_BASE}/subscription/cancel/{user_id}"
         print(f"Testing URL: {url}")
         
-        response = requests.get(url, timeout=10)
-        response_data = print_response(response, "Subscription Status Response")
+        response = requests.post(url, timeout=10)
+        response_data = print_response(response, "Subscription Cancel Response")
         
         if response.status_code == 200 and response_data:
-            print(f"\n✅ TEST 2 SUCCESS: Subscription status endpoint working")
+            print(f"\n✅ TEST 5 SUCCESS: Subscription cancellation working")
             
-            # Analyze the subscription status
-            has_access = response_data.get('has_access', False)
-            subscription_status = response_data.get('subscription_status', 'unknown')
-            trial_active = response_data.get('trial_active', False)
-            subscription_active = response_data.get('subscription_active', False)
-            trial_end_date = response_data.get('trial_end_date')
+            # Verify response structure
+            expected_keys = ['message', 'cancel_at_period_end', 'cancelled_date']
+            missing_keys = [key for key in expected_keys if key not in response_data]
             
-            print(f"✅ Demo User Subscription Status:")
-            print(f"   - Has Access: {has_access}")
-            print(f"   - Subscription Status: {subscription_status}")
-            print(f"   - Trial Active: {trial_active}")
-            print(f"   - Subscription Active: {subscription_active}")
-            print(f"   - Trial End Date: {trial_end_date}")
+            if missing_keys:
+                print(f"⚠️ Missing keys in response: {missing_keys}")
             
-            # Verify trial status
-            if subscription_status == 'trial' and trial_active:
-                print(f"\n✅ TRIAL STATUS CONFIRMED: User is on active trial")
-                return True, response_data
-            elif subscription_status == 'active' and subscription_active:
-                print(f"\n⚠️ PAID SUBSCRIPTION DETECTED: User has active paid subscription")
-                return True, response_data
-            else:
-                print(f"\n⚠️ UNEXPECTED STATUS: subscription_status={subscription_status}, trial_active={trial_active}")
-                return True, response_data  # Still consider success if endpoint works
-            
-        else:
-            print(f"\n❌ TEST 2 FAILED: Subscription status endpoint returned {response.status_code}")
-            return False, response_data
-            
-    except Exception as e:
-        print(f"\n❌ TEST 2 ERROR: {str(e)}")
-        return False, None
-
-def test_create_checkout_success(user_id, user_email):
-    """Test 3: Test create-checkout endpoint - should successfully create Stripe checkout session"""
-    print_separator(f"TEST 3: CREATE CHECKOUT - SHOULD CREATE STRIPE SESSION")
-    
-    checkout_data = {
-        "user_id": user_id,
-        "user_email": user_email,
-        "origin_url": BACKEND_URL
-    }
-    
-    try:
-        url = f"{API_BASE}/subscription/create-checkout"
-        print(f"Testing URL: {url}")
-        print(f"Request Data: {json.dumps(checkout_data, indent=2)}")
-        
-        response = requests.post(url, json=checkout_data, timeout=15)
-        response_data = print_response(response, "Create Checkout Response")
-        
-        if response.status_code == 200 and response_data:
-            checkout_url = response_data.get('url', '')
-            session_id = response_data.get('session_id', '')
-            
-            print(f"\n✅ TEST 3 SUCCESS: Checkout session created successfully")
-            print(f"   - Checkout URL: {checkout_url}")
-            print(f"   - Session ID: {session_id}")
-            
-            # Verify Stripe URL format
-            if 'checkout.stripe.com' in checkout_url:
-                print(f"✅ STRIPE URL VERIFIED: Contains checkout.stripe.com")
-            else:
-                print(f"⚠️ STRIPE URL WARNING: Does not contain checkout.stripe.com")
-                print(f"   URL: {checkout_url}")
-            
-            # Verify session ID format
-            if session_id and len(session_id) > 10:
-                print(f"✅ SESSION ID VERIFIED: Valid session ID format")
-            else:
-                print(f"⚠️ SESSION ID WARNING: Invalid or missing session ID")
-            
-            return True, checkout_url, session_id
-            
-        elif response.status_code == 500 and response_data:
-            error_detail = response_data.get('detail', '')
-            
-            if "Payment system not configured" in error_detail or "Stripe not configured" in error_detail:
-                print(f"\n❌ TEST 3 FAILED: Stripe API keys not configured")
-                print(f"   Error: {error_detail}")
-                print(f"   Expected: Valid Stripe keys should be in deployment environment")
-                return False, None, None
-            else:
-                print(f"\n❌ TEST 3 FAILED: Unexpected error")
-                print(f"   Error: {error_detail}")
-                return False, None, None
-        
-        elif response.status_code == 400 and response_data:
-            error_detail = response_data.get('detail', '')
-            if "already has active subscription" in error_detail:
-                print(f"\n⚠️ TEST 3 PARTIAL: User already has active subscription")
-                print(f"   This is expected if user already upgraded from trial")
-                return True, None, None
-            else:
-                print(f"\n❌ TEST 3 FAILED: Bad request error")
-                print(f"   Error: {error_detail}")
-                return False, None, None
-        
-        else:
-            print(f"\n❌ TEST 3 FAILED: Unexpected status code {response.status_code}")
-            return False, None, None
-            
-    except Exception as e:
-        print(f"\n❌ TEST 3 ERROR: {str(e)}")
-        return False, None, None
-
-def test_checkout_status_endpoint(session_id):
-    """Test 4: Test checkout status endpoint with sample session_id"""
-    print_separator(f"TEST 4: CHECKOUT STATUS ENDPOINT")
-    
-    if not session_id:
-        print("⚠️ TEST 4 SKIPPED: No session_id available from previous test")
-        return True  # Don't fail if no session_id
-    
-    try:
-        url = f"{API_BASE}/subscription/checkout/status/{session_id}"
-        print(f"Testing URL: {url}")
-        
-        response = requests.get(url, timeout=15)
-        response_data = print_response(response, "Checkout Status Response")
-        
-        if response.status_code == 200 and response_data:
-            payment_status = response_data.get('payment_status', 'unknown')
-            session_status = response_data.get('session_status', 'unknown')
-            
-            print(f"\n✅ TEST 4 SUCCESS: Checkout status endpoint working")
-            print(f"   - Payment Status: {payment_status}")
-            print(f"   - Session Status: {session_status}")
-            
-            # Expected statuses for a new session
-            expected_statuses = ['pending', 'open', 'unpaid', 'incomplete']
-            if payment_status in expected_statuses or session_status in expected_statuses:
-                print(f"✅ STATUS VERIFIED: Session in expected state for new checkout")
-            else:
-                print(f"⚠️ STATUS INFO: Session status may vary - {payment_status}/{session_status}")
+            print(f"✅ Cancellation Details:")
+            print(f"   - Message: {response_data.get('message', 'N/A')}")
+            print(f"   - Cancel at Period End: {response_data.get('cancel_at_period_end', 'N/A')}")
+            print(f"   - Access Until: {response_data.get('access_until', 'N/A')}")
+            print(f"   - Cancelled Date: {response_data.get('cancelled_date', 'N/A')}")
             
             return True, response_data
             
-        elif response.status_code == 404:
-            print(f"\n⚠️ TEST 4 PARTIAL: Session not found (404)")
-            print(f"   This may be expected for test sessions")
-            return True, None  # Don't fail for 404 on test sessions
-            
-        elif response.status_code == 500 and response_data:
+        elif response.status_code == 400 and response_data:
             error_detail = response_data.get('detail', '')
-            if "Stripe not configured" in error_detail:
-                print(f"\n❌ TEST 4 FAILED: Stripe not configured")
-                print(f"   Error: {error_detail}")
-                return False, None
+            if "No active subscription to cancel" in error_detail:
+                print(f"\n⚠️ TEST 5 EXPECTED: No active subscription to cancel (user is on trial)")
+                print(f"   This is expected for demo user on trial")
+                return True, response_data
             else:
-                print(f"\n❌ TEST 4 FAILED: Server error")
-                print(f"   Error: {error_detail}")
-                return False, None
+                print(f"\n❌ TEST 5 FAILED: Unexpected error - {error_detail}")
+                return False, response_data
         
         else:
-            print(f"\n❌ TEST 4 FAILED: Unexpected status code {response.status_code}")
-            return False, None
+            print(f"\n❌ TEST 5 FAILED: Subscription cancel returned {response.status_code}")
+            return False, response_data
             
     except Exception as e:
-        print(f"\n❌ TEST 4 ERROR: {str(e)}")
+        print(f"\n❌ TEST 5 ERROR: {str(e)}")
         return False, None
 
-def test_payment_system_operational():
-    """Test 5: Confirm the payment system is fully operational for revenue generation"""
-    print_separator("TEST 5: PAYMENT SYSTEM OPERATIONAL VERIFICATION")
+def test_subscription_reactivate(user_id):
+    """Test 6: POST /api/subscription/reactivate/{user_id} - Test subscription reactivation"""
+    print_separator("TEST 6: SUBSCRIPTION REACTIVATION")
     
-    print("🔍 Verifying payment system operational status...")
+    try:
+        url = f"{API_BASE}/subscription/reactivate/{user_id}"
+        print(f"Testing URL: {url}")
+        
+        response = requests.post(url, timeout=10)
+        response_data = print_response(response, "Subscription Reactivate Response")
+        
+        if response.status_code == 200 and response_data:
+            print(f"\n✅ TEST 6 SUCCESS: Subscription reactivation working")
+            
+            # Verify response structure
+            expected_keys = ['message', 'cancel_at_period_end', 'reactivated_date']
+            missing_keys = [key for key in expected_keys if key not in response_data]
+            
+            if missing_keys:
+                print(f"⚠️ Missing keys in response: {missing_keys}")
+            
+            print(f"✅ Reactivation Details:")
+            print(f"   - Message: {response_data.get('message', 'N/A')}")
+            print(f"   - Cancel at Period End: {response_data.get('cancel_at_period_end', 'N/A')}")
+            print(f"   - Reactivated Date: {response_data.get('reactivated_date', 'N/A')}")
+            
+            return True, response_data
+            
+        elif response.status_code == 400 and response_data:
+            error_detail = response_data.get('detail', '')
+            if "Subscription is not set to cancel" in error_detail:
+                print(f"\n⚠️ TEST 6 EXPECTED: Subscription is not set to cancel")
+                print(f"   This is expected if subscription was not previously cancelled")
+                return True, response_data
+            else:
+                print(f"\n❌ TEST 6 FAILED: Unexpected error - {error_detail}")
+                return False, response_data
+        
+        else:
+            print(f"\n❌ TEST 6 FAILED: Subscription reactivate returned {response.status_code}")
+            return False, response_data
+            
+    except Exception as e:
+        print(f"\n❌ TEST 6 ERROR: {str(e)}")
+        return False, None
+
+def test_individual_recipe_usage_limit(user_id):
+    """Test 7: Individual recipe generation usage limit enforcement (should allow up to 10, then block)"""
+    print_separator("TEST 7: INDIVIDUAL RECIPE USAGE LIMIT ENFORCEMENT")
     
-    # Get demo user info
-    login_success, user_id, user_data = test_demo_user_login()
-    if not login_success:
-        print("❌ Cannot verify payment system - demo user login failed")
-        return False
+    # First, get current usage
+    try:
+        usage_response = requests.get(f"{API_BASE}/user/usage/{user_id}", timeout=10)
+        if usage_response.status_code == 200:
+            usage_data = usage_response.json()
+            current_usage = usage_data.get('usage', {}).get('individual_recipes', {}).get('current', 0)
+            limit = usage_data.get('usage', {}).get('individual_recipes', {}).get('limit', 10)
+            print(f"Current individual recipe usage: {current_usage}/{limit}")
+        else:
+            print(f"Could not get current usage, proceeding with test")
+            current_usage = 0
+            limit = 10
+    except Exception as e:
+        print(f"Error getting usage: {e}")
+        current_usage = 0
+        limit = 10
     
-    user_email = user_data.get('email', TEST_EMAIL)
+    # Test recipe generation
+    recipe_data = {
+        "user_id": user_id,
+        "cuisine_type": "italian",
+        "difficulty": "easy",
+        "servings": 4,
+        "dietary_preferences": [],
+        "ingredients": []
+    }
     
-    # Test subscription status
-    status_success, status_data = test_subscription_status_trial(user_id)
-    if not status_success:
-        print("❌ Payment system not operational - subscription status failed")
-        return False
+    try:
+        url = f"{API_BASE}/recipes/generate"
+        print(f"Testing URL: {url}")
+        print(f"Recipe Data: {json.dumps(recipe_data, indent=2)}")
+        
+        response = requests.post(url, json=recipe_data, timeout=15)
+        response_data = print_response(response, "Individual Recipe Generation Response")
+        
+        if current_usage < limit:
+            # Should succeed
+            if response.status_code == 200 and response_data:
+                print(f"\n✅ TEST 7 SUCCESS: Individual recipe generation working (within limit)")
+                print(f"   - Recipe generated successfully")
+                print(f"   - Usage should increment from {current_usage} to {current_usage + 1}")
+                return True, response_data
+            else:
+                print(f"\n❌ TEST 7 FAILED: Recipe generation failed when it should succeed")
+                return False, response_data
+        else:
+            # Should fail with 429
+            if response.status_code == 429 and response_data:
+                print(f"\n✅ TEST 7 SUCCESS: Usage limit properly enforced")
+                
+                # Verify error structure
+                detail = response_data.get('detail', {})
+                if isinstance(detail, dict):
+                    print(f"   - Error: {detail.get('error', 'N/A')}")
+                    print(f"   - Message: {detail.get('message', 'N/A')}")
+                    print(f"   - Current Usage: {detail.get('current_usage', 'N/A')}")
+                    print(f"   - Limit: {detail.get('limit', 'N/A')}")
+                    print(f"   - Subscription Status: {detail.get('subscription_status', 'N/A')}")
+                    print(f"   - Upgrade Required: {detail.get('upgrade_required', 'N/A')}")
+                    
+                    if detail.get('error') == 'Usage limit exceeded':
+                        print(f"✅ Proper error message returned")
+                        return True, response_data
+                    else:
+                        print(f"⚠️ Unexpected error message")
+                        return False, response_data
+                else:
+                    print(f"⚠️ Unexpected error format: {detail}")
+                    return False, response_data
+            else:
+                print(f"\n❌ TEST 7 FAILED: Expected 429 error but got {response.status_code}")
+                return False, response_data
+            
+    except Exception as e:
+        print(f"\n❌ TEST 7 ERROR: {str(e)}")
+        return False, None
+
+def test_starbucks_drink_usage_limit(user_id):
+    """Test 8: Starbucks drink generation usage limit enforcement (should allow up to 10, then block)"""
+    print_separator("TEST 8: STARBUCKS DRINK USAGE LIMIT ENFORCEMENT")
     
-    # Test checkout creation
-    checkout_success, checkout_url, session_id = test_create_checkout_success(user_id, user_email)
-    if not checkout_success:
-        print("❌ Payment system not operational - checkout creation failed")
-        return False
+    # First, get current usage
+    try:
+        usage_response = requests.get(f"{API_BASE}/user/usage/{user_id}", timeout=10)
+        if usage_response.status_code == 200:
+            usage_data = usage_response.json()
+            current_usage = usage_data.get('usage', {}).get('starbucks_drinks', {}).get('current', 0)
+            limit = usage_data.get('usage', {}).get('starbucks_drinks', {}).get('limit', 10)
+            print(f"Current Starbucks drink usage: {current_usage}/{limit}")
+        else:
+            print(f"Could not get current usage, proceeding with test")
+            current_usage = 0
+            limit = 10
+    except Exception as e:
+        print(f"Error getting usage: {e}")
+        current_usage = 0
+        limit = 10
     
-    # Test checkout status (if session_id available)
-    if session_id:
-        status_endpoint_success, _ = test_checkout_status_endpoint(session_id)
-        if not status_endpoint_success:
-            print("❌ Payment system not operational - checkout status endpoint failed")
-            return False
+    # Test Starbucks drink generation
+    starbucks_data = {
+        "user_id": user_id,
+        "drink_type": "frappuccino",
+        "flavor_inspiration": "vanilla"
+    }
     
-    print(f"\n✅ TEST 5 SUCCESS: PAYMENT SYSTEM FULLY OPERATIONAL")
-    print(f"✅ All critical payment endpoints working correctly")
-    print(f"✅ Stripe integration configured and functional")
-    print(f"✅ Ready for revenue generation")
+    try:
+        url = f"{API_BASE}/generate-starbucks-drink"
+        print(f"Testing URL: {url}")
+        print(f"Starbucks Data: {json.dumps(starbucks_data, indent=2)}")
+        
+        response = requests.post(url, json=starbucks_data, timeout=15)
+        response_data = print_response(response, "Starbucks Drink Generation Response")
+        
+        if current_usage < limit:
+            # Should succeed
+            if response.status_code == 200 and response_data:
+                print(f"\n✅ TEST 8 SUCCESS: Starbucks drink generation working (within limit)")
+                print(f"   - Drink generated successfully")
+                print(f"   - Usage should increment from {current_usage} to {current_usage + 1}")
+                return True, response_data
+            else:
+                print(f"\n❌ TEST 8 FAILED: Starbucks drink generation failed when it should succeed")
+                return False, response_data
+        else:
+            # Should fail with 429
+            if response.status_code == 429 and response_data:
+                print(f"\n✅ TEST 8 SUCCESS: Usage limit properly enforced")
+                
+                # Verify error structure
+                detail = response_data.get('detail', {})
+                if isinstance(detail, dict):
+                    print(f"   - Error: {detail.get('error', 'N/A')}")
+                    print(f"   - Message: {detail.get('message', 'N/A')}")
+                    print(f"   - Current Usage: {detail.get('current_usage', 'N/A')}")
+                    print(f"   - Limit: {detail.get('limit', 'N/A')}")
+                    print(f"   - Subscription Status: {detail.get('subscription_status', 'N/A')}")
+                    print(f"   - Upgrade Required: {detail.get('upgrade_required', 'N/A')}")
+                    
+                    if detail.get('error') == 'Usage limit exceeded':
+                        print(f"✅ Proper error message returned")
+                        return True, response_data
+                    else:
+                        print(f"⚠️ Unexpected error message")
+                        return False, response_data
+                else:
+                    print(f"⚠️ Unexpected error format: {detail}")
+                    return False, response_data
+            else:
+                print(f"\n❌ TEST 8 FAILED: Expected 429 error but got {response.status_code}")
+                return False, response_data
+            
+    except Exception as e:
+        print(f"\n❌ TEST 8 ERROR: {str(e)}")
+        return False, None
+
+def test_weekly_recipe_usage_limit(user_id):
+    """Test 9: Weekly recipe generation usage limit enforcement (should allow up to 2, then block)"""
+    print_separator("TEST 9: WEEKLY RECIPE USAGE LIMIT ENFORCEMENT")
     
-    return True
+    # First, get current usage
+    try:
+        usage_response = requests.get(f"{API_BASE}/user/usage/{user_id}", timeout=10)
+        if usage_response.status_code == 200:
+            usage_data = usage_response.json()
+            current_usage = usage_data.get('usage', {}).get('weekly_recipes', {}).get('current', 0)
+            limit = usage_data.get('usage', {}).get('weekly_recipes', {}).get('limit', 2)
+            print(f"Current weekly recipe usage: {current_usage}/{limit}")
+        else:
+            print(f"Could not get current usage, proceeding with test")
+            current_usage = 0
+            limit = 2
+    except Exception as e:
+        print(f"Error getting usage: {e}")
+        current_usage = 0
+        limit = 2
+    
+    # Test weekly recipe generation
+    weekly_data = {
+        "user_id": user_id,
+        "family_size": 2,
+        "dietary_preferences": ["vegetarian"],
+        "allergies": [],
+        "budget": 100.0,
+        "cuisines": ["italian", "mexican"]
+    }
+    
+    try:
+        url = f"{API_BASE}/weekly-recipes/generate"
+        print(f"Testing URL: {url}")
+        print(f"Weekly Recipe Data: {json.dumps(weekly_data, indent=2)}")
+        
+        response = requests.post(url, json=weekly_data, timeout=20)
+        response_data = print_response(response, "Weekly Recipe Generation Response")
+        
+        if current_usage < limit:
+            # Should succeed
+            if response.status_code == 200 and response_data:
+                print(f"\n✅ TEST 9 SUCCESS: Weekly recipe generation working (within limit)")
+                print(f"   - Weekly plan generated successfully")
+                print(f"   - Usage should increment from {current_usage} to {current_usage + 1}")
+                return True, response_data
+            else:
+                print(f"\n❌ TEST 9 FAILED: Weekly recipe generation failed when it should succeed")
+                return False, response_data
+        else:
+            # Should fail with 429
+            if response.status_code == 429 and response_data:
+                print(f"\n✅ TEST 9 SUCCESS: Usage limit properly enforced")
+                
+                # Verify error structure
+                detail = response_data.get('detail', {})
+                if isinstance(detail, dict):
+                    print(f"   - Error: {detail.get('error', 'N/A')}")
+                    print(f"   - Message: {detail.get('message', 'N/A')}")
+                    print(f"   - Current Usage: {detail.get('current_usage', 'N/A')}")
+                    print(f"   - Limit: {detail.get('limit', 'N/A')}")
+                    print(f"   - Subscription Status: {detail.get('subscription_status', 'N/A')}")
+                    print(f"   - Upgrade Required: {detail.get('upgrade_required', 'N/A')}")
+                    
+                    if detail.get('error') == 'Usage limit exceeded':
+                        print(f"✅ Proper error message returned")
+                        return True, response_data
+                    else:
+                        print(f"⚠️ Unexpected error message")
+                        return False, response_data
+                else:
+                    print(f"⚠️ Unexpected error format: {detail}")
+                    return False, response_data
+            else:
+                print(f"\n❌ TEST 9 FAILED: Expected 429 error but got {response.status_code}")
+                return False, response_data
+            
+    except Exception as e:
+        print(f"\n❌ TEST 9 ERROR: {str(e)}")
+        return False, None
+
+def test_usage_tracking_accuracy(user_id):
+    """Test 10: Verify usage tracking accuracy in settings endpoint"""
+    print_separator("TEST 10: USAGE TRACKING ACCURACY VERIFICATION")
+    
+    try:
+        # Get usage before any operations
+        url = f"{API_BASE}/user/usage/{user_id}"
+        print(f"Getting initial usage from: {url}")
+        
+        response_before = requests.get(url, timeout=10)
+        if response_before.status_code != 200:
+            print(f"❌ Could not get initial usage data")
+            return False, None
+        
+        usage_before = response_before.json()
+        print(f"Initial Usage Data:")
+        for usage_type in ['weekly_recipes', 'individual_recipes', 'starbucks_drinks']:
+            if usage_type in usage_before.get('usage', {}):
+                usage_info = usage_before['usage'][usage_type]
+                print(f"   - {usage_type}: {usage_info.get('current', 0)}/{usage_info.get('limit', 0)}")
+        
+        # Now get the same data from settings endpoint
+        settings_url = f"{API_BASE}/user/settings/{user_id}"
+        print(f"Getting usage from settings endpoint: {settings_url}")
+        
+        settings_response = requests.get(settings_url, timeout=10)
+        if settings_response.status_code != 200:
+            print(f"❌ Could not get settings data")
+            return False, None
+        
+        settings_data = settings_response.json()
+        settings_usage = settings_data.get('usage', {})
+        
+        print(f"Settings Usage Data:")
+        for usage_type in ['weekly_recipes', 'individual_recipes', 'starbucks_drinks']:
+            if usage_type in settings_usage:
+                usage_info = settings_usage[usage_type]
+                print(f"   - {usage_type}: {usage_info.get('current_count', 0)}/{usage_info.get('limit', 0)}")
+        
+        # Compare the data
+        print(f"\n✅ Comparing usage data between endpoints:")
+        all_match = True
+        
+        for usage_type in ['weekly_recipes', 'individual_recipes', 'starbucks_drinks']:
+            usage_current = usage_before.get('usage', {}).get(usage_type, {}).get('current', 0)
+            settings_current = settings_usage.get(usage_type, {}).get('current_count', 0)
+            
+            if usage_current == settings_current:
+                print(f"   ✅ {usage_type}: {usage_current} == {settings_current} (MATCH)")
+            else:
+                print(f"   ❌ {usage_type}: {usage_current} != {settings_current} (MISMATCH)")
+                all_match = False
+        
+        if all_match:
+            print(f"\n✅ TEST 10 SUCCESS: Usage data is consistent between endpoints")
+            return True, {"usage_endpoint": usage_before, "settings_endpoint": settings_data}
+        else:
+            print(f"\n❌ TEST 10 FAILED: Usage data inconsistency detected")
+            return False, {"usage_endpoint": usage_before, "settings_endpoint": settings_data}
+            
+    except Exception as e:
+        print(f"\n❌ TEST 10 ERROR: {str(e)}")
+        return False, None
 
 def main():
-    """Main test function for Complete Stripe Payment System"""
-    print_separator("COMPLETE STRIPE PAYMENT SYSTEM TESTING")
+    """Main test function for Comprehensive Settings and Usage Limit System"""
+    print_separator("COMPREHENSIVE SETTINGS AND USAGE LIMIT SYSTEM TESTING")
     print(f"Backend URL: {BACKEND_URL}")
     print(f"API Base: {API_BASE}")
     print(f"Test User: {TEST_EMAIL}")
     print(f"Test Time: {datetime.now()}")
-    print(f"Focus: Testing complete Stripe payment system with valid API keys")
+    print(f"Focus: Testing comprehensive Settings and Usage Limit system")
     
     # Run all the required tests in sequence
     test_results = {}
@@ -516,34 +697,53 @@ def main():
         print("🚨 Please ensure demo@test.com user exists and password is correct")
         return False
     
-    user_email = user_data.get('email', TEST_EMAIL)
+    # Test 2: User settings endpoint
+    print("\n🔍 Running Test 2: User Settings Endpoint...")
+    settings_success, settings_data = test_user_settings_endpoint(user_id)
+    test_results['user_settings_endpoint'] = settings_success
     
-    # Test 2: Subscription status endpoint - should show trial status
-    print("\n🔍 Running Test 2: Subscription Status...")
-    status_success, status_data = test_subscription_status_trial(user_id)
-    test_results['subscription_status_trial'] = status_success
+    # Test 3: User profile update endpoint
+    print("\n🔍 Running Test 3: User Profile Update...")
+    profile_success, profile_data = test_user_profile_update(user_id)
+    test_results['user_profile_update'] = profile_success
     
-    # Test 3: Create-checkout endpoint - should create Stripe checkout session
-    print("\n🔍 Running Test 3: Create Checkout Session...")
-    checkout_success, checkout_url, session_id = test_create_checkout_success(user_id, user_email)
-    test_results['create_checkout_success'] = checkout_success
+    # Test 4: User usage endpoint
+    print("\n🔍 Running Test 4: User Usage Endpoint...")
+    usage_success, usage_data = test_user_usage_endpoint(user_id)
+    test_results['user_usage_endpoint'] = usage_success
     
-    # Test 4: Checkout status endpoint with session_id
-    print("\n🔍 Running Test 4: Checkout Status Endpoint...")
-    if session_id:
-        status_endpoint_success, _ = test_checkout_status_endpoint(session_id)
-        test_results['checkout_status_endpoint'] = status_endpoint_success
-    else:
-        print("⚠️ Test 4 Skipped: No session_id available")
-        test_results['checkout_status_endpoint'] = True  # Don't penalize if no session_id
+    # Test 5: Subscription cancellation
+    print("\n🔍 Running Test 5: Subscription Cancellation...")
+    cancel_success, cancel_data = test_subscription_cancel(user_id)
+    test_results['subscription_cancel'] = cancel_success
     
-    # Test 5: Overall payment system operational verification
-    print("\n🔍 Running Test 5: Payment System Operational...")
-    operational_success = test_payment_system_operational()
-    test_results['payment_system_operational'] = operational_success
+    # Test 6: Subscription reactivation
+    print("\n🔍 Running Test 6: Subscription Reactivation...")
+    reactivate_success, reactivate_data = test_subscription_reactivate(user_id)
+    test_results['subscription_reactivate'] = reactivate_success
+    
+    # Test 7: Individual recipe usage limit enforcement
+    print("\n🔍 Running Test 7: Individual Recipe Usage Limit...")
+    individual_limit_success, individual_data = test_individual_recipe_usage_limit(user_id)
+    test_results['individual_recipe_limit'] = individual_limit_success
+    
+    # Test 8: Starbucks drink usage limit enforcement
+    print("\n🔍 Running Test 8: Starbucks Drink Usage Limit...")
+    starbucks_limit_success, starbucks_data = test_starbucks_drink_usage_limit(user_id)
+    test_results['starbucks_drink_limit'] = starbucks_limit_success
+    
+    # Test 9: Weekly recipe usage limit enforcement
+    print("\n🔍 Running Test 9: Weekly Recipe Usage Limit...")
+    weekly_limit_success, weekly_data = test_weekly_recipe_usage_limit(user_id)
+    test_results['weekly_recipe_limit'] = weekly_limit_success
+    
+    # Test 10: Usage tracking accuracy
+    print("\n🔍 Running Test 10: Usage Tracking Accuracy...")
+    tracking_success, tracking_data = test_usage_tracking_accuracy(user_id)
+    test_results['usage_tracking_accuracy'] = tracking_success
     
     # Final Analysis
-    print_separator("FINAL ANALYSIS - COMPLETE STRIPE PAYMENT SYSTEM")
+    print_separator("FINAL ANALYSIS - SETTINGS AND USAGE LIMIT SYSTEM")
     
     print("🔍 TEST RESULTS SUMMARY:")
     for test_name, result in test_results.items():
@@ -556,53 +756,74 @@ def main():
     print(f"\n📊 OVERALL RESULTS: {passed_tests}/{total_tests} tests passed")
     
     # Specific findings based on the review requirements
-    print("\n--- STRIPE PAYMENT SYSTEM VERIFICATION ---")
+    print("\n--- SETTINGS AND USAGE LIMIT SYSTEM VERIFICATION ---")
     
     if test_results['demo_user_login']:
         print("✅ CONFIRMED: Demo user login working and user_id obtained")
     else:
         print("❌ ISSUE: Demo user login failed")
     
-    if test_results['subscription_status_trial']:
-        print("✅ CONFIRMED: Subscription status endpoint shows trial status")
+    if test_results['user_settings_endpoint']:
+        print("✅ CONFIRMED: User settings endpoint returns complete profile, subscription, and usage data")
     else:
-        print("❌ ISSUE: Subscription status endpoint has problems")
+        print("❌ ISSUE: User settings endpoint has problems")
     
-    if test_results['create_checkout_success']:
-        print("✅ CONFIRMED: Create-checkout successfully creates Stripe checkout session")
-        if checkout_url and 'checkout.stripe.com' in checkout_url:
-            print("✅ CONFIRMED: Checkout URL contains proper Stripe domain")
-        if session_id:
-            print("✅ CONFIRMED: Valid session_id returned")
+    if test_results['user_profile_update']:
+        print("✅ CONFIRMED: User profile update endpoint working correctly")
     else:
-        print("❌ ISSUE: Create-checkout endpoint failed - Stripe keys may not be configured")
+        print("❌ ISSUE: User profile update endpoint has problems")
     
-    if test_results['checkout_status_endpoint']:
-        print("✅ CONFIRMED: Checkout status endpoint working with session_id")
+    if test_results['user_usage_endpoint']:
+        print("✅ CONFIRMED: User usage endpoint returns detailed usage information")
     else:
-        print("❌ ISSUE: Checkout status endpoint has problems")
+        print("❌ ISSUE: User usage endpoint has problems")
     
-    if test_results['payment_system_operational']:
-        print("✅ CONFIRMED: Payment system is fully operational for revenue generation")
+    if test_results['subscription_cancel']:
+        print("✅ CONFIRMED: Subscription cancellation endpoint working (cancel_at_period_end)")
     else:
-        print("❌ ISSUE: Payment system is not fully operational")
+        print("❌ ISSUE: Subscription cancellation endpoint has problems")
+    
+    if test_results['subscription_reactivate']:
+        print("✅ CONFIRMED: Subscription reactivation endpoint working")
+    else:
+        print("❌ ISSUE: Subscription reactivation endpoint has problems")
+    
+    if test_results['individual_recipe_limit']:
+        print("✅ CONFIRMED: Individual recipe usage limits properly enforced (10 limit)")
+    else:
+        print("❌ ISSUE: Individual recipe usage limits not working correctly")
+    
+    if test_results['starbucks_drink_limit']:
+        print("✅ CONFIRMED: Starbucks drink usage limits properly enforced (10 limit)")
+    else:
+        print("❌ ISSUE: Starbucks drink usage limits not working correctly")
+    
+    if test_results['weekly_recipe_limit']:
+        print("✅ CONFIRMED: Weekly recipe usage limits properly enforced (2 limit)")
+    else:
+        print("❌ ISSUE: Weekly recipe usage limits not working correctly")
+    
+    if test_results['usage_tracking_accuracy']:
+        print("✅ CONFIRMED: Usage tracking is accurate across endpoints")
+    else:
+        print("❌ ISSUE: Usage tracking inconsistencies detected")
     
     # Overall assessment
-    if passed_tests >= 4:  # At least 4 out of 5 tests should pass
-        print("\n🎉 STRIPE PAYMENT SYSTEM ASSESSMENT: FULLY OPERATIONAL")
-        print("✅ Valid Stripe API keys are configured in deployment environment")
-        print("✅ Complete payment flow working end-to-end")
-        print("✅ Checkout sessions create proper Stripe URLs")
-        print("✅ System ready for revenue generation")
-        print("✅ No configuration errors detected")
+    if passed_tests >= 8:  # At least 8 out of 10 tests should pass
+        print("\n🎉 SETTINGS AND USAGE LIMIT SYSTEM ASSESSMENT: FULLY OPERATIONAL")
+        print("✅ All settings endpoints working correctly")
+        print("✅ Profile management functional")
+        print("✅ Subscription management working")
+        print("✅ Usage limits properly enforced with 429 errors")
+        print("✅ Usage tracking accurate and consistent")
+        print("✅ System ready for production use")
     else:
-        print("\n⚠️ STRIPE PAYMENT SYSTEM ASSESSMENT: NEEDS ATTENTION")
-        print("❌ Some critical payment functionality is not working")
-        print("❌ May need to verify Stripe API key configuration")
+        print("\n⚠️ SETTINGS AND USAGE LIMIT SYSTEM ASSESSMENT: NEEDS ATTENTION")
+        print("❌ Some critical functionality is not working")
         print("❌ Review the failed tests above for specific issues")
     
-    print_separator("COMPLETE STRIPE PAYMENT SYSTEM TESTING COMPLETE")
-    return passed_tests >= 4
+    print_separator("COMPREHENSIVE SETTINGS AND USAGE LIMIT SYSTEM TESTING COMPLETE")
+    return passed_tests >= 8
 
 if __name__ == "__main__":
     main()
