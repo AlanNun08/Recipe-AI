@@ -75,6 +75,7 @@ weekly_recipes_collection = db["weekly_recipes"]  # NEW - for weekly recipe plan
 
 # Stripe setup
 STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY')
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
 if not STRIPE_API_KEY:
     logger.warning("STRIPE_API_KEY not found in environment variables")
 
