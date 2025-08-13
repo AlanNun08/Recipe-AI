@@ -6,6 +6,8 @@ import WelcomeOnboarding from './components/WelcomeOnboarding';
 import TutorialScreen from './components/TutorialScreen';
 import SubscriptionScreen from './components/SubscriptionScreen';
 import SubscriptionSuccess from './components/SubscriptionSuccess';
+import SubscriptionSuccessScreen from './components/SubscriptionSuccessScreen';
+import SubscriptionCancelScreen from './components/SubscriptionCancelScreen';
 import SubscriptionGate from './components/SubscriptionGate';
 import WeeklyRecipesScreen from './components/WeeklyRecipesScreen';
 import TrialStatusBanner from './components/TrialStatusBanner';
