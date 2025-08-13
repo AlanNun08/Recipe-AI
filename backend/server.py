@@ -457,6 +457,11 @@ class SubscriptionRequest(BaseModel):
     package_id: str  # "monthly_subscription"
     origin_url: str
 
+class UserProfileUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    dietary_preferences: Optional[List[str]] = None
+
 class SubscriptionCheckoutRequest(BaseModel):
     user_id: str
     user_email: str
