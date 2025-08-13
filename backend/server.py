@@ -3790,7 +3790,7 @@ async def create_subscription_checkout(request: SubscriptionCheckoutRequest):
 
 @api_router.get("/subscription/checkout/status/{session_id}")
 async def get_checkout_status(session_id: str):
-    """Get checkout session status - FIXED WITH EMERGENTINTEGRATIONS"""
+    """Get checkout session status - NATIVE STRIPE IMPLEMENTATION"""
     return await get_checkout_status_native(
         session_id,
         db,
@@ -3800,7 +3800,7 @@ async def get_checkout_status(session_id: str):
 
 @api_router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
-    """Handle Stripe webhook events - FIXED WITH EMERGENTINTEGRATIONS"""
+    """Handle Stripe webhook events - NATIVE STRIPE IMPLEMENTATION"""
     return await stripe_webhook_native(request, db)
 
 @api_router.get("/subscription/packages")
