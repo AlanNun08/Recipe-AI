@@ -1,35 +1,37 @@
 #!/usr/bin/env python3
 """
-Comprehensive Stripe Checkout Implementation Testing
-Testing the new Stripe checkout implementation using emergentintegrations library.
+Native Stripe Implementation Testing for Google Cloud Deployment
+Testing the native Stripe implementation (without emergentintegrations) for production readiness.
 
 As requested in the review, focus on:
 
-1. Stripe Configuration Testing:
-   - Verify that the emergentintegrations library is properly installed and working
-   - Test that the new Stripe API key is properly loaded
-   - Check if the StripeService initializes correctly
+1. Native Stripe Configuration Testing:
+   - Verify that the standard Stripe library is working
+   - Test that the live API key is properly loaded from environment variables
+   - Confirm native Stripe service initialization
 
 2. Checkout Creation Testing:
-   - Test the new `/api/subscription/create-checkout` endpoint with demo user
-   - Verify it creates proper Stripe checkout sessions
-   - Check that payment transaction records are created in the database
-   - Confirm the response includes proper Stripe checkout URL and session_id
+   - Test `/api/subscription/create-checkout` with native Stripe implementation
+   - Verify it creates proper Stripe checkout sessions using stripe.checkout.Session.create
+   - Check that the response includes valid Stripe checkout URLs
+   - Confirm payment transaction records are created
 
-3. Integration Testing:
-   - Test with user_id: demo user from previous tests
-   - Use proper origin_url format
-   - Verify all the new integrated functions work correctly
+3. Cloud Deployment Readiness:
+   - Verify no emergentintegrations dependencies remain
+   - Test that all imports use standard Python libraries
+   - Confirm the implementation works with MongoDB and standard libraries only
 
-4. Error Handling:
-   - Test with invalid user_id to ensure proper 404 responses
-   - Check that the new implementation handles errors gracefully
+4. Database Integration:
+   - Test payment_transactions collection creation
+   - Verify transaction data structure is correct
+   - Check user subscription status updates
 
-5. Database Verification:
-   - Confirm payment_transactions collection exists and is being used
-   - Verify transaction records are created with proper structure
-
-The goal is to confirm the 500 error is fixed and users can now successfully create Stripe checkout sessions for subscription payments using the live keys provided.
+Expected Results:
+- ✅ Native Stripe checkout session creation successful
+- ✅ Valid live Stripe checkout URLs generated
+- ✅ Database transactions properly recorded
+- ✅ No emergentintegrations dependencies
+- ✅ Ready for Google Cloud Run deployment
 """
 
 import requests
