@@ -5495,6 +5495,29 @@ async def generate_weekly_recipe_plan(request: WeeklyRecipeRequest):
         # Check subscription access for premium feature
         await check_subscription_access(request.user_id)
         
+        # Check usage limits
+        user = await users_collection.find_one({"id": request.user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        can_use, usage_info = check_usage_limit(user, "weekly_recipes")
+        if not can_use:
+            # Return detailed limit information for frontend to handle
+            subscription_status = user.get('subscription_status', 'trial')
+            limits = get_user_usage_limits(subscription_status)
+            
+            raise HTTPException(
+                status_code=429, 
+                detail={
+                    "error": "Usage limit exceeded",
+                    "message": f"Weekly recipe limit reached ({usage_info['current_count']}/{usage_info['limit']})",
+                    "current_usage": usage_info['current_count'],
+                    "limit": usage_info['limit'],
+                    "subscription_status": subscription_status,
+                    "upgrade_required": subscription_status == "trial"
+                }
+            )
+        
         # Get current week
         current_week = get_current_week()
         
