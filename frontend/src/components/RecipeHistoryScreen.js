@@ -51,8 +51,6 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
   });
 
   const handleViewRecipe = (recipe) => {
-    console.log('🆕 NEW RECIPE HISTORY: Viewing recipe:', recipe.title, recipe.id);
-    
     if (recipe.category === 'starbucks' || recipe.type === 'starbucks') {
       onViewStarbucksRecipe?.(recipe);
     } else {
