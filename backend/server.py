@@ -3783,74 +3783,13 @@ async def create_subscription_checkout(request: SubscriptionCheckoutRequestLegac
 
 @api_router.get("/subscription/checkout/status/{session_id}")
 async def get_checkout_status(session_id: str):
-    """Get status of checkout session and update subscription if paid"""
-    try:
-        if not STRIPE_API_KEY:
-            raise HTTPException(status_code=500, detail="Stripe not configured")
-        
-        # Get transaction record
-        transaction = await payment_transactions_collection.find_one({"session_id": session_id})
-        if not transaction:
-            raise HTTPException(status_code=404, detail="Transaction not found")
-        
-        # Initialize Stripe checkout
-        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
-        
-        # Get checkout status from Stripe
-        checkout_status = await stripe_checkout.get_checkout_status(session_id)
-        
-        # Update transaction record
-        await payment_transactions_collection.update_one(
-            {"session_id": session_id},
-            {
-                "$set": {
-                    "payment_status": checkout_status.payment_status,
-                    "updated_at": datetime.utcnow()
-                }
-            }
-        )
-        
-        # If payment is successful, activate subscription
-        if checkout_status.payment_status == "paid" and transaction["payment_status"] != "paid":
-            user_id = transaction["user_id"]
-            
-            # Calculate subscription dates
-            subscription_start = datetime.utcnow()
-            subscription_end = subscription_start + timedelta(days=30)  # 30-day subscription
-            next_billing = subscription_end
-            
-            # Update user subscription status
-            await users_collection.update_one(
-                {"id": user_id},
-                {
-                    "$set": {
-                        "subscription_status": "active",
-                        "subscription_start_date": subscription_start,
-                        "subscription_end_date": subscription_end,
-                        "last_payment_date": subscription_start,
-                        "next_billing_date": next_billing,
-                        "stripe_customer_id": checkout_status.metadata.get("customer_id"),
-                        "stripe_subscription_id": session_id
-                    }
-                }
-            )
-            
-            logger.info(f"Activated subscription for user {user_id}")
-        
-        return {
-            "status": checkout_status.status,
-            "payment_status": checkout_status.payment_status,
-            "amount_total": checkout_status.amount_total,
-            "currency": checkout_status.currency,
-            "metadata": checkout_status.metadata
-        }
-        
-    except HTTPException:
-        # Re-raise HTTPExceptions to preserve specific error messages
-        raise
-    except Exception as e:
-        logger.error(f"Error getting checkout status: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get checkout status")
+    """Get checkout session status - FIXED WITH EMERGENTINTEGRATIONS"""
+    return await get_checkout_status_integrated(
+        session_id,
+        db,
+        users_collection,
+        payment_transactions_collection
+    )
 
 @api_router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
