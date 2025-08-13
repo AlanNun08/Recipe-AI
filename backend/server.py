@@ -5800,6 +5800,5 @@ app.add_middleware(
 # Include the API router after all endpoints are defined
 app.include_router(api_router)
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+# Note: Server startup is handled by main.py for Cloud Run deployment
+# The main.py file properly uses the PORT environment variable
