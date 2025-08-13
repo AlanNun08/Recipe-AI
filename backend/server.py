@@ -3791,7 +3791,7 @@ async def create_subscription_checkout(request: SubscriptionCheckoutRequest):
 @api_router.get("/subscription/checkout/status/{session_id}")
 async def get_checkout_status(session_id: str):
     """Get checkout session status - FIXED WITH EMERGENTINTEGRATIONS"""
-    return await get_checkout_status_integrated(
+    return await get_checkout_status_native(
         session_id,
         db,
         users_collection,
