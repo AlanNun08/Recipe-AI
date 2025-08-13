@@ -2081,6 +2081,18 @@ function App() {
             showNotification('🌟 Opening Starbucks recipe generator', 'info');
           }}
         />;
+      case 'subscription/success':
+        return <SubscriptionSuccessScreen 
+          backendUrl={API}
+          onClose={() => setCurrentScreen('dashboard')}
+          showNotification={showNotification}
+        />;
+      case 'subscription/cancel':
+        return <SubscriptionCancelScreen 
+          onClose={() => setCurrentScreen('dashboard')}
+          onRetry={() => setCurrentScreen('subscription')}
+          showNotification={showNotification}
+        />;
       case 'settings':
         return <SettingsScreen 
           user={user}
