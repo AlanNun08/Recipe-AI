@@ -34,9 +34,6 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install emergentintegrations with special index URL
-RUN pip install emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
-
 # Copy backend source
 COPY backend/ ./backend/
 COPY main.py .
