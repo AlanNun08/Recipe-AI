@@ -100,6 +100,184 @@ def test_demo_user_login():
         print(f"\n❌ TEST 1 ERROR: {str(e)}")
         return False, None, None
 
+def test_user_settings_endpoint(user_id):
+    """Test 2: GET /api/user/settings/{user_id} - Test fetching complete user settings"""
+    print_separator("TEST 2: USER SETTINGS ENDPOINT")
+    
+    try:
+        url = f"{API_BASE}/user/settings/{user_id}"
+        print(f"Testing URL: {url}")
+        
+        response = requests.get(url, timeout=10)
+        response_data = print_response(response, "User Settings Response")
+        
+        if response.status_code == 200 and response_data:
+            print(f"\n✅ TEST 2 SUCCESS: User settings endpoint working")
+            
+            # Verify response structure
+            required_keys = ['profile', 'subscription', 'usage', 'limits']
+            missing_keys = [key for key in required_keys if key not in response_data]
+            
+            if missing_keys:
+                print(f"⚠️ Missing keys in response: {missing_keys}")
+                return False, response_data
+            
+            # Verify profile data
+            profile = response_data.get('profile', {})
+            profile_keys = ['user_id', 'first_name', 'last_name', 'email', 'dietary_preferences', 'is_verified']
+            profile_missing = [key for key in profile_keys if key not in profile]
+            
+            if profile_missing:
+                print(f"⚠️ Missing profile keys: {profile_missing}")
+            
+            # Verify subscription data
+            subscription = response_data.get('subscription', {})
+            sub_keys = ['has_access', 'subscription_status', 'trial_active', 'subscription_active']
+            sub_missing = [key for key in sub_keys if key not in subscription]
+            
+            if sub_missing:
+                print(f"⚠️ Missing subscription keys: {sub_missing}")
+            
+            # Verify usage data
+            usage = response_data.get('usage', {})
+            usage_types = ['weekly_recipes', 'individual_recipes', 'starbucks_drinks']
+            usage_missing = [utype for utype in usage_types if utype not in usage]
+            
+            if usage_missing:
+                print(f"⚠️ Missing usage types: {usage_missing}")
+            
+            # Verify limits data
+            limits = response_data.get('limits', {})
+            limits_missing = [utype for utype in usage_types if utype not in limits]
+            
+            if limits_missing:
+                print(f"⚠️ Missing limit types: {limits_missing}")
+            
+            print(f"✅ Settings Data Structure:")
+            print(f"   - Profile: {profile.get('email', 'N/A')} ({profile.get('first_name', 'N/A')} {profile.get('last_name', 'N/A')})")
+            print(f"   - Subscription Status: {subscription.get('subscription_status', 'N/A')}")
+            print(f"   - Has Access: {subscription.get('has_access', 'N/A')}")
+            print(f"   - Trial Active: {subscription.get('trial_active', 'N/A')}")
+            
+            for usage_type in usage_types:
+                if usage_type in usage:
+                    usage_info = usage[usage_type]
+                    limit_info = limits.get(usage_type, 0)
+                    print(f"   - {usage_type}: {usage_info.get('current_count', 0)}/{limit_info} (remaining: {usage_info.get('remaining', 0)})")
+            
+            return True, response_data
+            
+        else:
+            print(f"\n❌ TEST 2 FAILED: Settings endpoint returned {response.status_code}")
+            return False, response_data
+            
+    except Exception as e:
+        print(f"\n❌ TEST 2 ERROR: {str(e)}")
+        return False, None
+
+def test_user_profile_update(user_id):
+    """Test 3: PUT /api/user/profile/{user_id} - Test updating user profile information"""
+    print_separator("TEST 3: USER PROFILE UPDATE ENDPOINT")
+    
+    # Test data for profile update
+    update_data = {
+        "first_name": "Demo Updated",
+        "last_name": "User Updated",
+        "dietary_preferences": ["vegetarian", "gluten-free"]
+    }
+    
+    try:
+        url = f"{API_BASE}/user/profile/{user_id}"
+        print(f"Testing URL: {url}")
+        print(f"Update Data: {json.dumps(update_data, indent=2)}")
+        
+        response = requests.put(url, json=update_data, timeout=10)
+        response_data = print_response(response, "Profile Update Response")
+        
+        if response.status_code == 200 and response_data:
+            print(f"\n✅ TEST 3 SUCCESS: Profile update endpoint working")
+            
+            # Verify response structure
+            if 'message' in response_data and 'profile' in response_data:
+                profile = response_data['profile']
+                print(f"✅ Updated Profile:")
+                print(f"   - Name: {profile.get('first_name', 'N/A')} {profile.get('last_name', 'N/A')}")
+                print(f"   - Email: {profile.get('email', 'N/A')}")
+                print(f"   - Dietary Preferences: {profile.get('dietary_preferences', [])}")
+                
+                # Verify the update was applied
+                if (profile.get('first_name') == update_data['first_name'] and 
+                    profile.get('last_name') == update_data['last_name'] and
+                    profile.get('dietary_preferences') == update_data['dietary_preferences']):
+                    print(f"✅ Profile update verified successfully")
+                    return True, response_data
+                else:
+                    print(f"⚠️ Profile update may not have been applied correctly")
+                    return False, response_data
+            else:
+                print(f"⚠️ Unexpected response structure")
+                return False, response_data
+            
+        else:
+            print(f"\n❌ TEST 3 FAILED: Profile update returned {response.status_code}")
+            return False, response_data
+            
+    except Exception as e:
+        print(f"\n❌ TEST 3 ERROR: {str(e)}")
+        return False, None
+
+def test_user_usage_endpoint(user_id):
+    """Test 4: GET /api/user/usage/{user_id} - Test fetching detailed usage information"""
+    print_separator("TEST 4: USER USAGE ENDPOINT")
+    
+    try:
+        url = f"{API_BASE}/user/usage/{user_id}"
+        print(f"Testing URL: {url}")
+        
+        response = requests.get(url, timeout=10)
+        response_data = print_response(response, "User Usage Response")
+        
+        if response.status_code == 200 and response_data:
+            print(f"\n✅ TEST 4 SUCCESS: User usage endpoint working")
+            
+            # Verify response structure
+            required_keys = ['user_id', 'subscription_status', 'usage', 'limits']
+            missing_keys = [key for key in required_keys if key not in response_data]
+            
+            if missing_keys:
+                print(f"⚠️ Missing keys in response: {missing_keys}")
+                return False, response_data
+            
+            # Verify usage data structure
+            usage = response_data.get('usage', {})
+            limits = response_data.get('limits', {})
+            usage_types = ['weekly_recipes', 'individual_recipes', 'starbucks_drinks']
+            
+            print(f"✅ Usage Information:")
+            print(f"   - User ID: {response_data.get('user_id', 'N/A')}")
+            print(f"   - Subscription Status: {response_data.get('subscription_status', 'N/A')}")
+            print(f"   - Usage Reset Date: {response_data.get('usage_reset_date', 'N/A')}")
+            
+            for usage_type in usage_types:
+                if usage_type in usage:
+                    usage_info = usage[usage_type]
+                    limit_info = limits.get(usage_type, 0)
+                    print(f"   - {usage_type}:")
+                    print(f"     * Current: {usage_info.get('current', 0)}")
+                    print(f"     * Limit: {usage_info.get('limit', 0)}")
+                    print(f"     * Remaining: {usage_info.get('remaining', 0)}")
+                    print(f"     * Can Use: {usage_info.get('can_use', False)}")
+            
+            return True, response_data
+            
+        else:
+            print(f"\n❌ TEST 4 FAILED: Usage endpoint returned {response.status_code}")
+            return False, response_data
+            
+    except Exception as e:
+        print(f"\n❌ TEST 4 ERROR: {str(e)}")
+        return False, None
+
 def test_subscription_status_trial(user_id):
     """Test 2: Test subscription status endpoint - should show trial status"""
     print_separator(f"TEST 2: SUBSCRIPTION STATUS - SHOULD SHOW TRIAL STATUS")
