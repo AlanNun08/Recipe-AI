@@ -2079,6 +2079,20 @@ function App() {
             showNotification('🌟 Opening Starbucks recipe generator', 'info');
           }}
         />;
+      case 'settings':
+        return <SettingsScreen 
+          user={user}
+          backendUrl={API}
+          onClose={() => setCurrentScreen('dashboard')}
+          onLogout={() => {
+            // Clear user session and redirect to landing
+            setUser(null);
+            localStorage.removeItem('ai_chef_user');
+            setCurrentScreen('landing');
+            showNotification('👋 Logged out successfully', 'success');
+          }}
+          showNotification={showNotification}
+        />;
       default:
         return <LandingScreen />;
     }
