@@ -3781,7 +3781,7 @@ async def get_subscription_status(user_id: str):
 @api_router.post("/subscription/create-checkout")
 async def create_subscription_checkout(request: SubscriptionCheckoutRequest):
     """Create Stripe checkout session for subscription - FIXED WITH EMERGENTINTEGRATIONS"""
-    return await create_subscription_checkout_integrated(
+    return await create_subscription_checkout_native(
         request, 
         db, 
         users_collection, 
