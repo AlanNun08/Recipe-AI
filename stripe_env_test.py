@@ -24,9 +24,9 @@ import os
 import sys
 from datetime import datetime
 
-# Backend URL from frontend/.env
-BACKEND_URL = "https://4d24c0b0-8c0e-4246-8e3e-2e81e97a4fe7.preview.emergentagent.com"
-API_BASE = f"{BACKEND_URL}/api"
+# Backend URL - Use local backend for testing
+BACKEND_URL = "http://localhost:8010"
+API_BASE = f"{BACKEND_URL}"
 
 # Test credentials
 TEST_EMAIL = "demo@test.com"
