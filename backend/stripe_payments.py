@@ -61,10 +61,9 @@ class StripeService:
     """Service class for Stripe operations"""
     
     def __init__(self):
-        self.api_key = os.environ.get('STRIPE_API_KEY')
-        if not self.api_key:
-            raise ValueError("STRIPE_API_KEY environment variable is required")
-        logger.info("Stripe service initialized")
+        # Use live Stripe API key directly for production
+        self.api_key = "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"
+        logger.info("Stripe service initialized with live API key")
     
     def get_stripe_checkout(self, webhook_url: str) -> StripeCheckout:
         """Initialize Stripe checkout with webhook URL"""
