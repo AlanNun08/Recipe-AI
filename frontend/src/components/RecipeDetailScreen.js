@@ -15,14 +15,12 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
 
   useEffect(() => {
     if (!recipeId) {
-      console.log('❌ No recipeId provided');
       setIsLoading(false);
       return;
     }
     
     const loadRecipeDetail = async () => {
       try {
-        console.log('🔍 Loading recipe ID:', recipeId, 'from source:', recipeSource);
         setIsLoading(true);
         
         // Determine the correct API endpoint based on source
@@ -34,8 +32,6 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
           apiUrl = `${API}/api/recipes/${recipeId}/detail`;
         }
         
-        console.log('🔍 Making API call to:', apiUrl);
-        
         const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
@@ -43,22 +39,12 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
           }
         });
         
-        console.log('📡 API Response status:', response.status);
-        
         if (!response.ok) {
-          console.error(`❌ API call failed with status ${response.status}`);
           const errorText = await response.text();
-          console.error('❌ Error response:', errorText);
           throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
         }
         
         const data = await response.json();
-        console.log('✅ Recipe data received:', {
-          id: data.id,
-          name: data.name || data.title,
-          hasIngredients: !!data.ingredients,
-          hasInstructions: !!data.instructions
-        });
         
         if (!data || (!data.name && !data.title)) {
           throw new Error('Invalid recipe data received');
@@ -67,15 +53,12 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
         setRecipe(data);
         setIsLoading(false);
         
-        console.log('✅ Recipe state updated, loading cart options...');
-        
         // Load cart options after a short delay
         setTimeout(() => {
           loadCartOptionsForRecipe(recipeId);
         }, 1000);
         
       } catch (error) {
-        console.error('❌ Recipe loading failed:', error);
         showNotification(`❌ Failed to load recipe: ${error.message}`, 'error');
         setRecipe(null);
         setIsLoading(false);
