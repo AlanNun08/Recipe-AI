@@ -1100,6 +1100,17 @@ function App() {
               <span className="text-2xl ml-3 animate-pulse">🏆</span>
             </span>
           </button>
+          
+          <button
+            onClick={() => setCurrentScreen('settings')}
+            className="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-bold py-6 px-8 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-300 text-lg"
+          >
+            <span className="flex items-center justify-center">
+              <span className="text-2xl mr-3 animate-bounce">⚙️</span>
+              Settings
+              <span className="text-2xl ml-3 animate-pulse">🔧</span>
+            </span>
+          </button>
         </div>
         
         {/* Enhanced Quick Stats */}
