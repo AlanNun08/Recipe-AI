@@ -130,7 +130,6 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     } catch (error) {
       console.error('❌ Failed to load cart options:', error);
       if (error.name === 'AbortError') {
-        console.log('⚠️ Cart request timed out after 25 seconds');
         showNotification('⚠️ Walmart product search is taking longer than expected. Recipe still available!', 'warning');
       } else {
         console.log('⚠️ Error loading Walmart products, recipe still available');
