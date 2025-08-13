@@ -5588,6 +5588,9 @@ async def generate_weekly_recipe_plan(request: WeeklyRecipeRequest):
         result = await weekly_recipes_collection.insert_one(plan_dict)
         
         if result.inserted_id:
+            # Increment usage counter after successful generation
+            await increment_usage(request.user_id, "weekly_recipes")
+            
             # Return the created plan
             inserted_plan = await weekly_recipes_collection.find_one({"_id": result.inserted_id})
             return mongo_to_dict(inserted_plan)
