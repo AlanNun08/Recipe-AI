@@ -3793,62 +3793,8 @@ async def get_checkout_status(session_id: str):
 
 @api_router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
-    """Handle Stripe webhooks for subscription events"""
-    try:
-        if not STRIPE_API_KEY:
-            raise HTTPException(status_code=500, detail="Stripe not configured")
-        
-        body = await request.body()
-        signature = request.headers.get("stripe-signature")
-        
-        # Initialize Stripe checkout for webhook handling
-        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
-        
-        # Handle webhook
-        webhook_response = await stripe_checkout.handle_webhook(body, signature)
-        
-        # Process different event types
-        if webhook_response.event_type == "checkout.session.completed":
-            # Handle successful payment
-            session_id = webhook_response.session_id
-            metadata = webhook_response.metadata
-            
-            if metadata.get("subscription_type") == "monthly":
-                user_id = metadata.get("user_id")
-                if user_id:
-                    # Activate subscription (similar to above)
-                    subscription_start = datetime.utcnow()
-                    subscription_end = subscription_start + timedelta(days=30)
-                    
-                    await users_collection.update_one(
-                        {"id": user_id},
-                        {
-                            "$set": {
-                                "subscription_status": "active",
-                                "subscription_start_date": subscription_start,
-                                "subscription_end_date": subscription_end,
-                                "last_payment_date": subscription_start,
-                                "next_billing_date": subscription_end
-                            }
-                        }
-                    )
-                    
-                    # Update transaction
-                    await payment_transactions_collection.update_one(
-                        {"session_id": session_id},
-                        {
-                            "$set": {
-                                "payment_status": "paid",
-                                "updated_at": datetime.utcnow()
-                            }
-                        }
-                    )
-        
-        return {"status": "success"}
-        
-    except Exception as e:
-        logger.error(f"Webhook error: {e}")
-        return {"status": "error", "message": str(e)}
+    """Handle Stripe webhook events - FIXED WITH EMERGENTINTEGRATIONS"""
+    return await stripe_webhook_integrated(request, db)
 
 @api_router.post("/subscription/cancel/{user_id}")
 async def cancel_subscription(user_id: str):
