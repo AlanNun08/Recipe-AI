@@ -45,7 +45,13 @@ import sys
 import os
 
 # Stripe integration
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+# Native Stripe integration (no emergentintegrations)
+from stripe_native import (
+    create_subscription_checkout_native,
+    get_checkout_status_native, 
+    stripe_webhook_native,
+    SubscriptionCheckoutRequest
+)
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from email_service import email_service
