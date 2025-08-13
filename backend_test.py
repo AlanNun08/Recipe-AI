@@ -1,32 +1,35 @@
 #!/usr/bin/env python3
 """
-Comprehensive Settings and Usage Limit System Testing
-Testing the comprehensive Settings and Usage Limit system that was just implemented.
+Comprehensive Stripe Checkout Implementation Testing
+Testing the new Stripe checkout implementation using emergentintegrations library.
 
 As requested in the review, focus on:
 
-1. Settings Endpoints Testing:
-   - GET /api/user/settings/{user_id} - Test fetching complete user settings including profile, subscription, and usage data
-   - PUT /api/user/profile/{user_id} - Test updating user profile information
-   - GET /api/user/usage/{user_id} - Test fetching detailed usage information
+1. Stripe Configuration Testing:
+   - Verify that the emergentintegrations library is properly installed and working
+   - Test that the new Stripe API key is properly loaded
+   - Check if the StripeService initializes correctly
 
-2. Subscription Management:
-   - POST /api/subscription/cancel/{user_id} - Test subscription cancellation (cancel_at_period_end)
-   - POST /api/subscription/reactivate/{user_id} - Test subscription reactivation
+2. Checkout Creation Testing:
+   - Test the new `/api/subscription/create-checkout` endpoint with demo user
+   - Verify it creates proper Stripe checkout sessions
+   - Check that payment transaction records are created in the database
+   - Confirm the response includes proper Stripe checkout URL and session_id
 
-3. Usage Limit Enforcement:
-   - Test that usage limits are properly enforced for demo user on:
-     - Individual recipe generation (should allow up to 10, then block)
-     - Weekly recipe generation (should allow up to 2, then block)
-     - Starbucks drink generation (should allow up to 10, then block)
-   - Verify that 429 errors are returned with proper upgrade information when limits are exceeded
+3. Integration Testing:
+   - Test with user_id: demo user from previous tests
+   - Use proper origin_url format
+   - Verify all the new integrated functions work correctly
 
-4. Usage Tracking:
-   - Verify that usage counters increment properly after successful generations
-   - Test monthly reset functionality
-   - Confirm usage data is accurate in settings endpoint
+4. Error Handling:
+   - Test with invalid user_id to ensure proper 404 responses
+   - Check that the new implementation handles errors gracefully
 
-Use demo user (demo@test.com) for testing. Verify all error handling, success responses, and data accuracy.
+5. Database Verification:
+   - Confirm payment_transactions collection exists and is being used
+   - Verify transaction records are created with proper structure
+
+The goal is to confirm the 500 error is fixed and users can now successfully create Stripe checkout sessions for subscription payments using the live keys provided.
 """
 
 import requests
