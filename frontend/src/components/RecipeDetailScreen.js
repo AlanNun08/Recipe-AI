@@ -132,7 +132,6 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
       if (error.name === 'AbortError') {
         showNotification('⚠️ Walmart product search is taking longer than expected. Recipe still available!', 'warning');
       } else {
-        console.log('⚠️ Error loading Walmart products, recipe still available');
         showNotification('⚠️ Could not load Walmart products. Recipe details available.', 'warning');  
       }
     } finally {
