@@ -235,8 +235,21 @@ async def increment_usage(user_id: str, usage_type: str) -> bool:
         return False
 
 def can_access_premium_features(user: dict) -> dict:
-    """Check if user can access premium features (trial or active subscription)"""
-    return is_trial_active(user) or is_subscription_active(user)
+    """Check if user can access premium features and return detailed access status"""
+    trial_active = is_trial_active(user)
+    subscription_active = is_subscription_active(user)
+    has_access = trial_active or subscription_active
+    
+    return {
+        'has_access': has_access,
+        'subscription_status': user.get('subscription_status', 'trial'),
+        'trial_active': trial_active,
+        'subscription_active': subscription_active,
+        'trial_end_date': user.get('trial_end_date'),
+        'subscription_end_date': user.get('subscription_end_date'),
+        'next_billing_date': user.get('next_billing_date'),
+        'cancel_at_period_end': user.get('cancel_at_period_end', False)
+    }
 
 def get_user_access_status(user: dict) -> dict:
     """Get detailed user access status"""
