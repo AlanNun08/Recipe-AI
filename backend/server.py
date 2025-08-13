@@ -1,5 +1,5 @@
 # Native Stripe integration imports
-from stripe_native import (
+from .stripe_native import (
     create_subscription_checkout_native,
     get_checkout_status_native, 
     stripe_webhook_native,
