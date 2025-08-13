@@ -65,9 +65,10 @@ class StripeService:
         if not self.api_key:
             raise ValueError("STRIPE_API_KEY environment variable is required")
         
-        # Validate API key format
-        if not (self.api_key.startswith('sk_test_') or self.api_key.startswith('sk_live_')):
-            raise ValueError("Invalid Stripe API key format - must start with sk_test_ or sk_live_")
+        # Validate API key format (including emergent test keys)
+        valid_prefixes = ('sk_test_', 'sk_live_', 'sk_test_emergent')
+        if not any(self.api_key.startswith(prefix) for prefix in valid_prefixes):
+            raise ValueError("Invalid Stripe API key format - must start with sk_test_, sk_live_, or sk_test_emergent")
         
         logger.info(f"Stripe service initialized with {'live' if self.api_key.startswith('sk_live_') else 'test'} API key")
     
