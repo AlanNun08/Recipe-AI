@@ -1,24 +1,32 @@
 #!/usr/bin/env python3
 """
-Complete Stripe Payment System Testing
-Testing the complete Stripe payment system now that valid API keys are confirmed to be in the deployment environment.
+Comprehensive Settings and Usage Limit System Testing
+Testing the comprehensive Settings and Usage Limit system that was just implemented.
 
-As requested in the review, verify the full payment flow works:
-1. Test demo user login and get user_id
-2. Test subscription status endpoint - should show trial status
-3. Test create-checkout endpoint with demo user - should now successfully create Stripe checkout session with valid URL
-4. Verify checkout response contains proper Stripe URL (checkout.stripe.com) and session_id
-5. Test checkout status endpoint with a sample session_id
-6. Confirm the payment system is fully operational for revenue generation
+As requested in the review, focus on:
 
-Since the user confirmed valid Stripe keys are in the environment and code fixes are applied, 
-the payment flow should work completely now instead of showing configuration errors.
+1. Settings Endpoints Testing:
+   - GET /api/user/settings/{user_id} - Test fetching complete user settings including profile, subscription, and usage data
+   - PUT /api/user/profile/{user_id} - Test updating user profile information
+   - GET /api/user/usage/{user_id} - Test fetching detailed usage information
 
-Focus on the endpoints:
-- POST /api/auth/login
-- GET /api/subscription/status/{user_id}
-- POST /api/subscription/create-checkout
-- GET /api/subscription/checkout/status/{session_id}
+2. Subscription Management:
+   - POST /api/subscription/cancel/{user_id} - Test subscription cancellation (cancel_at_period_end)
+   - POST /api/subscription/reactivate/{user_id} - Test subscription reactivation
+
+3. Usage Limit Enforcement:
+   - Test that usage limits are properly enforced for demo user on:
+     - Individual recipe generation (should allow up to 10, then block)
+     - Weekly recipe generation (should allow up to 2, then block)
+     - Starbucks drink generation (should allow up to 10, then block)
+   - Verify that 429 errors are returned with proper upgrade information when limits are exceeded
+
+4. Usage Tracking:
+   - Verify that usage counters increment properly after successful generations
+   - Test monthly reset functionality
+   - Confirm usage data is accurate in settings endpoint
+
+Use demo user (demo@test.com) for testing. Verify all error handling, success responses, and data accuracy.
 """
 
 import requests
