@@ -89,8 +89,33 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user, AP
       setGeneratedDrink(response.data);
       showNotification('🎉 Your secret menu drink is ready!', 'success');
     } catch (error) {
-      // Error generating drink
-      showNotification('Failed to generate drink. Please try again.', 'error');
+      console.error('Failed to generate Starbucks drink:', error);
+      
+      // Check if it's a usage limit error (status 429)
+      if (error.response?.status === 429) {
+        const errorData = error.response.data.detail;
+        
+        if (typeof errorData === 'object' && errorData.upgrade_required) {
+          // Show usage limit reached message and redirect to upgrade
+          showNotification(
+            `⚠️ ${errorData.message} Redirecting to upgrade...`, 
+            'warning'
+          );
+          
+          // Redirect to subscription screen after a short delay
+          setTimeout(() => {
+            setCurrentScreen('dashboard');
+            setTimeout(() => {
+              showNotification('💎 Upgrade to generate more Starbucks drinks!', 'info');
+            }, 500);
+          }, 2000);
+          
+          return;
+        }
+      }
+      
+      const errorMessage = error.response?.data?.detail || 'Failed to generate drink. Please try again.';
+      showNotification(`❌ ${errorMessage}`, 'error');
     } finally {
       setIsGenerating(false);
     }
