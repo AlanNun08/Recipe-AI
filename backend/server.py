@@ -3801,7 +3801,7 @@ async def get_checkout_status(session_id: str):
 @api_router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
     """Handle Stripe webhook events - FIXED WITH EMERGENTINTEGRATIONS"""
-    return await stripe_webhook_integrated(request, db)
+    return await stripe_webhook_native(request, db)
 
 @api_router.get("/subscription/packages")
 async def get_subscription_packages():
