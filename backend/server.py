@@ -227,9 +227,16 @@ class User(BaseModel):
     stripe_subscription_id: Optional[str] = None
     last_payment_date: Optional[datetime] = None
     next_billing_date: Optional[datetime] = None
+    cancel_at_period_end: bool = False  # For subscription cancellation
     subscription_cancelled_date: Optional[datetime] = None
     subscription_cancel_reason: Optional[str] = None
     subscription_reactivated_date: Optional[datetime] = None
+    
+    # Usage tracking fields
+    usage_reset_date: Optional[datetime] = None
+    weekly_recipes_used: int = 0
+    individual_recipes_used: int = 0
+    starbucks_drinks_used: int = 0
 
 class UserRegistration(BaseModel):
     first_name: str
