@@ -72,8 +72,6 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     setIsLoadingCart(true);
     
     try {
-      console.log('🔍 Loading cart options for recipe:', currentRecipeId);
-      
       // SIMPLIFIED APPROACH - Try the weekly endpoint first, fallback to regular
       let apiUrl = `${API}/api/v2/walmart/weekly-cart-options?recipe_id=${currentRecipeId}`;
       let cartData = null;
