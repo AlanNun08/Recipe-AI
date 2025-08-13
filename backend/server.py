@@ -915,6 +915,9 @@ Respond with JSON in this exact format:
         
         # Return the created drink
         if result.inserted_id:
+            # Increment usage counter after successful generation
+            await increment_usage(request.user_id, "starbucks_drinks")
+            
             inserted_drink = await db.starbucks_recipes.find_one({"_id": result.inserted_id})
             return mongo_to_dict(inserted_drink)
         else:
