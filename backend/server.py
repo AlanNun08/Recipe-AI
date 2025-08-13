@@ -704,6 +704,28 @@ async def generate_starbucks_drink(request: StarbucksRequest):
         # Check subscription access for premium feature
         await check_subscription_access(request.user_id)
         
+        # Check usage limits for Starbucks drinks
+        user = await users_collection.find_one({"id": request.user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        can_use, usage_info = check_usage_limit(user, "starbucks_drinks")
+        if not can_use:
+            # Return detailed limit information for frontend to handle
+            subscription_status = user.get('subscription_status', 'trial')
+            
+            raise HTTPException(
+                status_code=429, 
+                detail={
+                    "error": "Usage limit exceeded",
+                    "message": f"Starbucks drink limit reached ({usage_info['current_count']}/{usage_info['limit']})",
+                    "current_usage": usage_info['current_count'],
+                    "limit": usage_info['limit'],
+                    "subscription_status": subscription_status,
+                    "upgrade_required": subscription_status == "trial"
+                }
+            )
+        
         # Handle random drink type
         if request.drink_type == "random":
             drink_types = ["frappuccino", "refresher", "lemonade", "iced_matcha_latte"]
