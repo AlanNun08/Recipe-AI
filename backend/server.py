@@ -2602,6 +2602,9 @@ Generate professional-quality cooking instructions that teach proper technique w
         
         # Get the inserted document and return it
         if result.inserted_id:
+            # Increment usage counter after successful generation
+            await increment_usage(request.user_id, "individual_recipes")
+            
             inserted_recipe = await db.recipes.find_one({"_id": result.inserted_id})
             return mongo_to_dict(inserted_recipe)
         
