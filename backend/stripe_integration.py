@@ -10,7 +10,7 @@ from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 # Import our comprehensive Stripe implementation
-from stripe_payments import (
+from .stripe_payments import (
     stripe_service, 
     PaymentCheckoutRequest, 
     SUBSCRIPTION_PACKAGES,
