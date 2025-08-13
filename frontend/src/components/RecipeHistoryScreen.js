@@ -23,8 +23,6 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
       }
 
       try {
-        console.log('🆕 NEW RECIPE HISTORY: Fetching recipes for user:', user.id);
-        
         const response = await fetch(`${API}/api/recipes/history/${user.id}`);
         
         if (!response.ok) {
