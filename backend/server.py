@@ -1,9 +1,9 @@
-# Import new Stripe integration
-from .stripe_integration import (
-    create_subscription_checkout_integrated,
-    get_checkout_status_integrated, 
-    stripe_webhook_integrated,
-    SubscriptionCheckoutRequestLegacy
+# Native Stripe integration imports
+from stripe_native import (
+    create_subscription_checkout_native,
+    get_checkout_status_native, 
+    stripe_webhook_native,
+    SubscriptionCheckoutRequest
 )
 
 from fastapi import FastAPI, APIRouter, HTTPException, Query, Request, Depends
