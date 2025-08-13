@@ -3493,6 +3493,208 @@ async def delete_starbucks_recipe(recipe_id: str):
 # 💳 STRIPE SUBSCRIPTION & PAYMENT ROUTES
 # ========================================
 
+@api_router.get("/user/settings/{user_id}")
+async def get_user_settings(user_id: str):
+    """Get user settings including profile, subscription, and usage information"""
+    try:
+        user = await users_collection.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Get access status
+        access_status = can_access_premium_features(user)
+        
+        # Get usage information for all types
+        usage_info = {}
+        for usage_type in ["weekly_recipes", "individual_recipes", "starbucks_drinks"]:
+            can_use, info = check_usage_limit(user, usage_type)
+            usage_info[usage_type] = info
+        
+        return {
+            "profile": {
+                "user_id": user["id"],
+                "first_name": user.get("first_name", ""),
+                "last_name": user.get("last_name", ""),
+                "email": user.get("email", ""),
+                "dietary_preferences": user.get("dietary_preferences", []),
+                "is_verified": user.get("is_verified", False),
+                "created_at": user.get("created_at")
+            },
+            "subscription": access_status,
+            "usage": usage_info,
+            "limits": get_user_usage_limits(user.get('subscription_status', 'trial'))
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting user settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get user settings")
+
+@api_router.put("/user/profile/{user_id}")
+async def update_user_profile(user_id: str, profile_update: UserProfileUpdate):
+    """Update user profile information"""
+    try:
+        user = await users_collection.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Prepare update data
+        update_data = {}
+        if profile_update.first_name is not None:
+            update_data["first_name"] = profile_update.first_name
+        if profile_update.last_name is not None:
+            update_data["last_name"] = profile_update.last_name
+        if profile_update.dietary_preferences is not None:
+            update_data["dietary_preferences"] = profile_update.dietary_preferences
+        
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No valid fields to update")
+        
+        # Update user
+        result = await users_collection.update_one(
+            {"id": user_id},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=400, detail="No changes made")
+        
+        # Return updated user data
+        updated_user = await users_collection.find_one({"id": user_id})
+        return {
+            "message": "Profile updated successfully",
+            "profile": {
+                "user_id": updated_user["id"],
+                "first_name": updated_user.get("first_name", ""),
+                "last_name": updated_user.get("last_name", ""),
+                "email": updated_user.get("email", ""),
+                "dietary_preferences": updated_user.get("dietary_preferences", [])
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating user profile: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update profile")
+
+@api_router.post("/subscription/cancel/{user_id}")
+async def cancel_subscription(user_id: str):
+    """Cancel user subscription at end of billing period"""
+    try:
+        user = await users_collection.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        subscription_status = user.get('subscription_status', 'trial')
+        if subscription_status != 'active':
+            raise HTTPException(status_code=400, detail="No active subscription to cancel")
+        
+        # Set cancellation flag
+        update_data = {
+            "cancel_at_period_end": True,
+            "subscription_cancel_reason": "user_requested",
+            "subscription_cancelled_date": datetime.utcnow()
+        }
+        
+        result = await users_collection.update_one(
+            {"id": user_id},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=400, detail="Failed to cancel subscription")
+        
+        # Get next billing date for user notification
+        next_billing_date = user.get('next_billing_date')
+        if isinstance(next_billing_date, str):
+            next_billing_date = parser.parse(next_billing_date)
+        
+        return {
+            "message": "Subscription will be cancelled at the end of current billing period",
+            "cancel_at_period_end": True,
+            "access_until": next_billing_date.isoformat() if next_billing_date else None,
+            "cancelled_date": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error cancelling subscription: {e}")
+        raise HTTPException(status_code=500, detail="Failed to cancel subscription")
+
+@api_router.post("/subscription/reactivate/{user_id}")
+async def reactivate_subscription(user_id: str):
+    """Reactivate a cancelled subscription before period end"""
+    try:
+        user = await users_collection.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        if not user.get('cancel_at_period_end', False):
+            raise HTTPException(status_code=400, detail="Subscription is not set to cancel")
+        
+        # Remove cancellation flag
+        update_data = {
+            "cancel_at_period_end": False,
+            "subscription_cancel_reason": None,
+            "subscription_reactivated_date": datetime.utcnow()
+        }
+        
+        result = await users_collection.update_one(
+            {"id": user_id},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=400, detail="Failed to reactivate subscription")
+        
+        return {
+            "message": "Subscription reactivated successfully",
+            "cancel_at_period_end": False,
+            "reactivated_date": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reactivating subscription: {e}")
+        raise HTTPException(status_code=500, detail="Failed to reactivate subscription")
+
+@api_router.get("/user/usage/{user_id}")
+async def get_user_usage(user_id: str):
+    """Get detailed user usage information"""
+    try:
+        user = await users_collection.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Get usage information for all types
+        usage_info = {}
+        for usage_type in ["weekly_recipes", "individual_recipes", "starbucks_drinks"]:
+            can_use, info = check_usage_limit(user, usage_type)
+            usage_info[usage_type] = {
+                "current": info["current_count"],
+                "limit": info["limit"],
+                "remaining": info["remaining"],
+                "can_use": info["can_use"]
+            }
+        
+        return {
+            "user_id": user_id,
+            "subscription_status": user.get('subscription_status', 'trial'),
+            "usage": usage_info,
+            "limits": get_user_usage_limits(user.get('subscription_status', 'trial')),
+            "usage_reset_date": user.get('usage_reset_date')
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting user usage: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get user usage")
+
 @api_router.get("/subscription/status/{user_id}")
 async def get_subscription_status(user_id: str):
     """Get user's subscription status and access details"""
