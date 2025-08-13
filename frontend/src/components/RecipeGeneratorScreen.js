@@ -162,6 +162,33 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
 
     } catch (error) {
       console.error('❌ Error generating recipe:', error);
+      
+      // Check if it's a usage limit error (status 429)
+      if (error.response?.status === 429) {
+        const errorData = error.response.data.detail;
+        
+        if (typeof errorData === 'object' && errorData.upgrade_required) {
+          // Show usage limit reached message and redirect to upgrade
+          showNotification(
+            `⚠️ ${errorData.message} Redirecting to upgrade...`, 
+            'warning'
+          );
+          
+          // Redirect to subscription screen after a short delay
+          setTimeout(() => {
+            if (onBack) {
+              onBack(); // Go back to dashboard first
+              setTimeout(() => {
+                // Trigger subscription screen (this would need to be passed as a prop)
+                showNotification('💎 Upgrade to continue generating recipes!', 'info');
+              }, 500);
+            }
+          }, 2000);
+          
+          return;
+        }
+      }
+      
       const errorMessage = error.response?.data?.detail || 'Failed to generate recipe. Please try again.';
       showNotification(`❌ ${errorMessage}`, 'error');
     } finally {
