@@ -2374,6 +2374,28 @@ async def generate_recipe_frontend_compatible(data: dict):
                 raise HTTPException(status_code=400, detail="Invalid user ID")
             raise e
         
+        # Check usage limits for individual recipes
+        user = await users_collection.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        can_use, usage_info = check_usage_limit(user, "individual_recipes")
+        if not can_use:
+            # Return detailed limit information for frontend to handle
+            subscription_status = user.get('subscription_status', 'trial')
+            
+            raise HTTPException(
+                status_code=429, 
+                detail={
+                    "error": "Usage limit exceeded",
+                    "message": f"Individual recipe limit reached ({usage_info['current_count']}/{usage_info['limit']})",
+                    "current_usage": usage_info['current_count'],
+                    "limit": usage_info['limit'],
+                    "subscription_status": subscription_status,
+                    "upgrade_required": subscription_status == "trial"
+                }
+            )
+        
         # Map frontend data to backend format
         dietary_preferences = []
         if data.get('dietary_restrictions'):
