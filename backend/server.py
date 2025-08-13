@@ -1,3 +1,11 @@
+# Import new Stripe integration
+from stripe_integration import (
+    create_subscription_checkout_integrated,
+    get_checkout_status_integrated, 
+    stripe_webhook_integrated,
+    SubscriptionCheckoutRequestLegacy
+)
+
 from fastapi import FastAPI, APIRouter, HTTPException, Query, Request, Depends
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
