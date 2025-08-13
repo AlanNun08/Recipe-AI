@@ -167,7 +167,20 @@ function App() {
 
   // Check for subscription success URL parameters
   useEffect(() => {
+    // Check URL for Stripe redirects
     const urlParams = new URLSearchParams(window.location.search);
+    const currentPath = window.location.pathname;
+    
+    if (currentPath.includes('/subscription/success') || urlParams.get('session_id')) {
+      setCurrentScreen('subscription/success');
+      return;
+    }
+    
+    if (currentPath.includes('/subscription/cancel')) {
+      setCurrentScreen('subscription/cancel');
+      return;
+    }
+    
     const sessionId = urlParams.get('session_id');
     
     if (sessionId && currentScreen !== 'subscription-success') {
