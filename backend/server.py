@@ -108,7 +108,133 @@ def is_subscription_active(user: dict) -> bool:
             return datetime.utcnow() < subscription_end_date
     return False
 
-def can_access_premium_features(user: dict) -> bool:
+# Usage limits configuration
+USAGE_LIMITS = {
+    "trial": {
+        "weekly_recipes": 2,
+        "individual_recipes": 10,
+        "starbucks_drinks": 10
+    },
+    "active": {
+        "weekly_recipes": 3,
+        "individual_recipes": 30,
+        "starbucks_drinks": 30
+    }
+}
+
+def get_user_usage_limits(subscription_status: str) -> dict:
+    """Get usage limits for user based on subscription status"""
+    return USAGE_LIMITS.get(subscription_status, USAGE_LIMITS["trial"])
+
+def check_usage_limit(user: dict, usage_type: str) -> tuple[bool, dict]:
+    """
+    Check if user has exceeded usage limit for a specific type
+    Returns (can_use: bool, usage_info: dict)
+    """
+    subscription_status = user.get('subscription_status', 'trial')
+    limits = get_user_usage_limits(subscription_status)
+    
+    # Reset usage if it's a new month
+    usage_reset_date = user.get('usage_reset_date')
+    current_date = datetime.utcnow()
+    
+    # Check if we need to reset monthly usage
+    needs_reset = False
+    if not usage_reset_date:
+        needs_reset = True
+    else:
+        if isinstance(usage_reset_date, str):
+            usage_reset_date = parser.parse(usage_reset_date)
+        
+        # Reset if it's been more than 30 days or if it's a new month
+        days_since_reset = (current_date - usage_reset_date).days
+        if days_since_reset >= 30 or current_date.month != usage_reset_date.month:
+            needs_reset = True
+    
+    # Current usage
+    current_usage = {
+        "weekly_recipes": user.get('weekly_recipes_used', 0),
+        "individual_recipes": user.get('individual_recipes_used', 0),
+        "starbucks_drinks": user.get('starbucks_drinks_used', 0)
+    }
+    
+    # If reset needed, set current usage to 0 for calculation
+    if needs_reset:
+        current_usage = {
+            "weekly_recipes": 0,
+            "individual_recipes": 0,
+            "starbucks_drinks": 0
+        }
+    
+    # Check specific usage type
+    current_count = current_usage.get(usage_type, 0)
+    limit = limits.get(usage_type, 0)
+    can_use = current_count < limit
+    
+    usage_info = {
+        "current_usage": current_usage,
+        "limits": limits,
+        "can_use": can_use,
+        "usage_type": usage_type,
+        "current_count": current_count,
+        "limit": limit,
+        "remaining": max(0, limit - current_count),
+        "needs_reset": needs_reset,
+        "subscription_status": subscription_status
+    }
+    
+    return can_use, usage_info
+
+async def increment_usage(user_id: str, usage_type: str) -> bool:
+    """Increment usage counter for user and reset if needed"""
+    try:
+        user = await users_collection.find_one({"id": user_id})
+        if not user:
+            return False
+        
+        can_use, usage_info = check_usage_limit(user, usage_type)
+        
+        if not can_use:
+            return False
+        
+        # Prepare update data
+        update_data = {}
+        current_date = datetime.utcnow()
+        
+        # Reset counters if needed
+        if usage_info["needs_reset"]:
+            update_data.update({
+                "usage_reset_date": current_date,
+                "weekly_recipes_used": 0,
+                "individual_recipes_used": 0,
+                "starbucks_drinks_used": 0
+            })
+        
+        # Increment the specific usage type
+        usage_field_map = {
+            "weekly_recipes": "weekly_recipes_used",
+            "individual_recipes": "individual_recipes_used", 
+            "starbucks_drinks": "starbucks_drinks_used"
+        }
+        
+        usage_field = usage_field_map.get(usage_type)
+        if usage_field:
+            current_count = 0 if usage_info["needs_reset"] else user.get(usage_field, 0)
+            update_data[usage_field] = current_count + 1
+        
+        # Update user in database
+        await users_collection.update_one(
+            {"id": user_id},
+            {"$set": update_data}
+        )
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error incrementing usage for user {user_id}: {e}")
+        return False
+
+def can_access_premium_features(user: dict) -> dict:
     """Check if user can access premium features (trial or active subscription)"""
     return is_trial_active(user) or is_subscription_active(user)
 
