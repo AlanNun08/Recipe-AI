@@ -9,6 +9,7 @@ import logging
 import signal
 import sys
 from pathlib import Path
+from datetime import datetime
 
 import uvicorn
 from fastapi import FastAPI, Request, HTTPException
