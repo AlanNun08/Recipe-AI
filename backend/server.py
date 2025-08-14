@@ -38,9 +38,8 @@ import bcrypt
 import sys
 import os
 
-# Stripe integration
-# Native Stripe integration (no emergentintegrations)
-from stripe_native import (
+# Native Stripe integration (using relative import since we're in backend module)
+from .stripe_native import (
     create_subscription_checkout_native,
     get_checkout_status_native, 
     stripe_webhook_native,
