@@ -73,8 +73,8 @@ gcloud run deploy recipe-ai \
 2. **Set Environment Variables:**
 ```bash
 gcloud run services update recipe-ai \
-  --set-env-vars STRIPE_API_KEY=sk_live_... \
-  --set-env-vars MONGO_URL=mongodb+srv://... \
+  --set-env-vars STRIPE_API_KEY=your-actual-stripe-key \
+  --set-env-vars MONGO_URL=mongodb+srv://your-connection-string \
   --region us-central1
 ```
 
