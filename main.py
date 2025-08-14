@@ -26,7 +26,8 @@ logger = logging.getLogger(__name__)
 
 # Import the backend app
 try:
-    from backend.server import app as backend_app
+    sys.path.insert(0, str(Path(__file__).parent / "src"))
+    from backend.main import app as backend_app
     logger.info("✅ Backend app imported successfully")
 except ImportError as e:
     logger.error(f"❌ Failed to import backend app: {e}")
