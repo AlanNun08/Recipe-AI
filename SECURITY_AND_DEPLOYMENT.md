@@ -91,21 +91,21 @@ if not (stripe.api_key.startswith('sk_test_') or stripe.api_key.startswith('sk_l
 ### Step 1: Prepare Environment Variables
 Create a file `env-vars.yaml`:
 ```yaml
-MONGO_URL: "mongodb+srv://username:password@cluster.mongodb.net/dbname"
-DB_NAME: "buildyoursmartcart_production"
-OPENAI_API_KEY: "sk-your-openai-key"
-STRIPE_API_KEY: "sk_live_your-stripe-key"
-STRIPE_PUBLISHABLE_KEY: "pk_live_your-stripe-key"
-WALMART_CONSUMER_ID: "your-walmart-id"
+MONGO_URL: "your-mongodb-connection-string-from-atlas"
+DB_NAME: "your_database_name"
+OPENAI_API_KEY: "your-openai-api-key-from-platform"
+STRIPE_API_KEY: "your-stripe-secret-key-from-dashboard"
+STRIPE_PUBLISHABLE_KEY: "your-stripe-publishable-key-from-dashboard"
+WALMART_CONSUMER_ID: "your-walmart-consumer-id-from-developer-portal"
 WALMART_KEY_VERSION: "1"
 WALMART_PRIVATE_KEY: |
   -----BEGIN PRIVATE KEY-----
-  your-full-private-key-content-here
+  your-walmart-private-key-from-developer-portal
   -----END PRIVATE KEY-----
-MAILJET_API_KEY: "your-mailjet-key"
-MAILJET_SECRET_KEY: "your-mailjet-secret"
+MAILJET_API_KEY: "your-mailjet-api-key-from-dashboard"
+MAILJET_SECRET_KEY: "your-mailjet-secret-key-from-dashboard"
 SENDER_EMAIL: "noreply@yourdomain.com"
-SECRET_KEY: "your-jwt-secret-key"
+SECRET_KEY: "your-generated-jwt-secret-key"
 ```
 
 ### Step 2: Deploy with Environment Variables
