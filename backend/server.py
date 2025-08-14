@@ -896,6 +896,5 @@ async def generate_fallback_starbucks_recipe(request: StarbucksGeneration) -> di
     
     return random.choice(fallback_recipes)
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+# Remove the __main__ section to prevent conflicts in production
+# The app is imported and run by main.py
