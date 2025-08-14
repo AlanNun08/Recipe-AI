@@ -62,20 +62,40 @@ async def disable_cache(request: Request, call_next):
     
     return response
 
-# Health check endpoint for Cloud Run
+# Health check endpoint for Cloud Run (direct access, not behind /api)
 @app.get("/health")
 async def health_check():
     """Health check endpoint for Google Cloud Run"""
-    return JSONResponse(
-        status_code=200,
-        content={
-            "status": "healthy",
-            "service": "buildyoursmartcart", 
-            "version": "2.2.1",
-            "features": "navigation-fix-active",
-            "last_updated": "2025-08-07T20:15:00Z"
-        }
-    )
+    try:
+        # Test if backend is responding
+        backend_health = await backend_app.router.get("/health").endpoint()
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "healthy",
+                "service": "buildyoursmartcart", 
+                "version": "2.2.1",
+                "environment": os.getenv("NODE_ENV", "development"),
+                "port": os.getenv("PORT", "8080"),
+                "features": {
+                    "frontend": True,
+                    "backend_api": True,
+                    "database": True
+                },
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        )
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "unhealthy",
+                "service": "buildyoursmartcart",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        )
 
 # Mount the backend API with /api prefix
 app.mount("/api", backend_app)
