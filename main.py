@@ -177,28 +177,28 @@ signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == "__main__":
-    # Get port from environment (Cloud Run sets this)
+    # Google Cloud Run uses PORT environment variable
     port = int(os.environ.get("PORT", 8080))
     
-    logger.info(f"🚀 Starting buildyoursmartcart.com on port {port}")
-    logger.info(f"📝 Environment: {os.getenv('NODE_ENV', 'development')}")
-    
-    # Production-optimized uvicorn configuration
+    # Production configuration for Google Cloud Run
     uvicorn_config = {
         "host": "0.0.0.0",
         "port": port,
+        "workers": 1,
         "log_level": "info",
-        "access_log": True,
-        "workers": 1,  # Cloud Run handles scaling
-        "loop": "asyncio",
-        "http": "h11",
+        "access_log": True
     }
     
-    # Add development features only in non-production
-    if os.getenv("NODE_ENV") != "production":
+    # Optimize for production
+    if os.getenv("NODE_ENV") == "production":
         uvicorn_config.update({
-            "reload": False,  # Don't use reload in containers
-            "log_level": "debug"
+            "log_level": "warning",
+            "access_log": False,  # Use Cloud Logging
+            "server_header": False,
+            "date_header": False
         })
+        logger.info(f"🌐 Google Cloud Run production mode - Port: {port}")
+    else:
+        logger.info(f"🔧 Development mode - Port: {port}")
     
     uvicorn.run(app, **uvicorn_config)
