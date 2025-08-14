@@ -8,7 +8,7 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 COPY frontend/yarn.lock ./
 
-# Install dependencies (now without Capacitor mobile dependencies)
+# Install dependencies
 RUN yarn install --production=false --network-timeout 300000
 
 # Copy frontend source
@@ -34,8 +34,9 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend source
-COPY backend/ ./backend/
+# Copy backend source (NEW STRUCTURE)
+COPY src/ ./src/
+COPY config/ ./config/
 COPY main.py .
 
 # Copy built frontend from previous stage
@@ -54,9 +55,9 @@ ENV PYTHONUNBUFFERED=1
 # Expose port (Cloud Run will set PORT env var)
 EXPOSE 8080
 
-# Add health check
+# Add health check (use correct port)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8080/health', timeout=10)"
+    CMD python -c "import requests; requests.get('http://localhost:' + __import__('os').environ.get('PORT', '8080') + '/health', timeout=10)"
 
 # Start the application
 CMD exec python main.py
