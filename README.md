@@ -32,30 +32,30 @@ Set these in your Google Cloud Run service:
 
 ```bash
 # Database
-MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/dbname
-DB_NAME=buildyoursmartcart_production
+MONGO_URL=your-mongodb-connection-string-from-atlas
+DB_NAME=your_database_name
 
 # AI Services
-OPENAI_API_KEY=sk-your-openai-key-here
+OPENAI_API_KEY=your-openai-api-key-from-platform
 
 # Payment Processing
 STRIPE_API_KEY=your-stripe-secret-key-from-dashboard
 STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key-from-dashboard
 
 # Walmart Integration
-WALMART_CONSUMER_ID=your-walmart-consumer-id
+WALMART_CONSUMER_ID=your-walmart-consumer-id-from-developer-portal
 WALMART_KEY_VERSION=1
 WALMART_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----
-your-walmart-private-key-here
+your-walmart-private-key-from-developer-portal
 -----END PRIVATE KEY-----"
 
 # Email Service
-MAILJET_API_KEY=your-mailjet-api-key
-MAILJET_SECRET_KEY=your-mailjet-secret-key
+MAILJET_API_KEY=your-mailjet-api-key-from-dashboard
+MAILJET_SECRET_KEY=your-mailjet-secret-key-from-dashboard
 SENDER_EMAIL=noreply@yourdomain.com
 
 # Security
-SECRET_KEY=your-jwt-secret-key-here
+SECRET_KEY=your-generated-jwt-secret-key
 ```
 
 ### Deploy to Google Cloud Run
