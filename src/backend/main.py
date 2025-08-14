@@ -130,16 +130,28 @@ if __name__ == "__main__":
     import uvicorn
     from datetime import datetime
     
-    port = int(os.environ.get("PORT", 8001))
+    # Google Cloud Run sets PORT environment variable
+    port = int(os.environ.get("PORT", 8080))
     
     logger.info(f"🚀 Starting buildyoursmartcart.com API v3.0.0 on port {port}")
     logger.info(f"📝 Environment: {os.getenv('NODE_ENV', 'development')}")
+    logger.info(f"🌐 Google Cloud Run compatible configuration")
     
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=port,
-        log_level="info",
-        access_log=True,
-        workers=1
-    )
+    uvicorn_config = {
+        "host": "0.0.0.0",
+        "port": port,
+        "log_level": "info",
+        "access_log": True,
+        "workers": 1
+    }
+    
+    # Production optimizations for Google Cloud Run
+    if os.getenv("NODE_ENV") == "production":
+        uvicorn_config.update({
+            "log_level": "warning",
+            "access_log": False,  # Use Cloud Logging instead
+            "server_header": False,
+            "date_header": False
+        })
+    
+    uvicorn.run("main:app", **uvicorn_config)
