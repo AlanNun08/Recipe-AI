@@ -35,11 +35,24 @@ app = FastAPI(
 )
 
 # CORS middleware
+allowed_origins = [
+    "http://localhost:3000",  # Development frontend
+    "https://buildyoursmartcart.com",  # Production frontend
+    "https://*.buildyoursmartcart.com",  # Production subdomains
+]
+
+# In production, use specific origins only
+if os.getenv("NODE_ENV") == "production":
+    allowed_origins = [
+        "https://buildyoursmartcart.com",
+        "https://www.buildyoursmartcart.com"
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure properly for production
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
