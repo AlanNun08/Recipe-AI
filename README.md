@@ -39,8 +39,8 @@ DB_NAME=buildyoursmartcart_production
 OPENAI_API_KEY=sk-your-openai-key-here
 
 # Payment Processing
-STRIPE_API_KEY=sk_live_your-stripe-secret-key-here
-STRIPE_PUBLISHABLE_KEY=pk_live_your-stripe-publishable-key-here
+STRIPE_API_KEY=your-stripe-secret-key-from-dashboard
+STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key-from-dashboard
 
 # Walmart Integration
 WALMART_CONSUMER_ID=your-walmart-consumer-id
