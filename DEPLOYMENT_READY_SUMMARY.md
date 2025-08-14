@@ -54,8 +54,8 @@ MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/dbname
 DB_NAME=buildyoursmartcart_production
 
 # Payment Processing  
-STRIPE_API_KEY=sk_live_your-actual-stripe-secret-key
-STRIPE_PUBLISHABLE_KEY=pk_live_your-actual-stripe-publishable-key
+STRIPE_API_KEY=your-stripe-secret-key-from-dashboard
+STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key-from-dashboard
 
 # AI Services
 OPENAI_API_KEY=sk-your-actual-openai-key
