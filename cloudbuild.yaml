@@ -31,9 +31,11 @@ steps:
       - '--max-instances'
       - '100'
       - '--timeout'
-      - '300'
+      - '900'
       - '--port'
       - '8080'
+      - '--set-env-vars'
+      - 'NODE_ENV=production'
 
 images:
   - 'gcr.io/$PROJECT_ID/buildyoursmartcart:$COMMIT_SHA'
