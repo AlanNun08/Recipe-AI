@@ -26,16 +26,28 @@ class DatabaseService:
     
     def _initialize_connection(self):
         """Initialize database connection"""
-        # Load environment variables
+        # Load environment variables from multiple sources
         ROOT_DIR = Path(__file__).parent.parent.parent.parent
-        load_dotenv(ROOT_DIR / 'backend' / '.env')
+        env_files = [
+            ROOT_DIR / 'src' / 'backend' / '.env',
+            ROOT_DIR / 'backend' / '.env',  # Fallback for old structure
+            ROOT_DIR / '.env'  # Root level env file
+        ]
         
-        # Get connection details
+        # Try to load from any existing env file
+        for env_file in env_files:
+            if env_file.exists():
+                load_dotenv(env_file)
+                break
+        
+        # Get connection details from environment
         mongo_url = os.environ.get('MONGO_URL')
         db_name = os.environ.get('DB_NAME', 'buildyoursmartcart_development')
         
         if not mongo_url:
-            raise ValueError("MONGO_URL environment variable is required")
+            # Final fallback to default values for development
+            mongo_url = "mongodb://localhost:27017"
+            logger.warning("MONGO_URL not found, using default: mongodb://localhost:27017")
         
         # Create connection
         self._client = AsyncIOMotorClient(mongo_url)
