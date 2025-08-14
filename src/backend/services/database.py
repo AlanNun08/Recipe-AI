@@ -91,4 +91,11 @@ class DatabaseService:
         return self._db["payment_transactions"]
 
 # Create singleton instance
-db_service = DatabaseService()
+db_service = None
+
+def get_db_service():
+    """Get or create database service instance"""
+    global db_service
+    if db_service is None:
+        db_service = DatabaseService()
+    return db_service
