@@ -6,8 +6,8 @@ When deploying to Google Cloud Run, set these environment variables in your Clou
 
 ### **Stripe Payment Configuration**
 ```
-STRIPE_API_KEY=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
-STRIPE_PUBLISHABLE_KEY=pk_live_51RsCXtCSVHHl6aKERazrpCgt9zu82GiYcSxL484QFhxdfoZc1KMJ2LqMR4Ozzq0K2V8kb0sOwRVFk0Xj09xfSpOw00CUkX4dhB
+STRIPE_API_KEY=sk_live_your-actual-stripe-secret-key-here
+STRIPE_PUBLISHABLE_KEY=pk_live_your-actual-stripe-publishable-key-here
 ```
 
 ### **MongoDB Configuration**
