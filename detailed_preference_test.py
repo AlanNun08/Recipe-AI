@@ -10,7 +10,7 @@ import sys
 from typing import Dict, List, Any
 
 # Configuration
-BACKEND_URL = "https://4d24c0b0-8c0e-4246-8e3e-2e81e97a4fe7.preview.emergentagent.com/api"
+BACKEND_URL = "https://meal-shop-ai.preview.emergentagent.com/api"
 DEMO_USER_ID = "f99be98f-c1d5-4ccc-a3ad-9b62e01f4731"
 
 def test_vegetarian_preference():

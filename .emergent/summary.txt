@@ -1,47 +1,75 @@
 <analysis>
-The previous AI engineer successfully stabilized the AI Recipe + Grocery Delivery App, resolving initial MVP issues and integrating core functionalities. Key achievements included robust AI recipe generation with mock data and dietary preferences, forced regeneration for weekly meal plans, and advanced cart ingredient management. Bug fixes were critical, including resolving a  loading infinite loop due to stale closures and  dependency by wrapping it in  in . A major architectural refactor involved completely rebuilding  and removing its old inline version from . Most recently, the engineer focused on comprehensively recreating testing infrastructure, updating documentation, and significantly enhancing the OpenAI prompt in  for clearer ingredient lists and more comprehensive cooking instructions, all confirmed by both backend and frontend testing.
+The previous AI engineer meticulously addressed several critical aspects of the AI Recipe + Grocery Delivery App, starting from stabilizing the MVP to preparing it for robust production deployment. Initially, efforts focused on fixing a broken Stripe payment system, particularly allowing users on free trials to subscribe. This involved extensive backend re-architecting of payment logic into new, modular files and comprehensive documentation. A significant hurdle was encountered with Google Cloud deployment and , leading to a complete pivot from  to a native Stripe implementation. Concurrently, a Settings feature was developed, incorporating detailed usage limits for various recipe generation types for both trial and paid users. The final phase concentrated heavily on security, systematically removing all hardcoded API keys (Stripe, Walmart, OpenAI, Mailjet) from the entire codebase and documentation, replacing them with placeholders, and implementing rigorous validation to ensure keys are solely sourced from environment variables.
 </analysis>
 
 <product_requirements>
-The AI Recipe + Grocery Delivery App is a comprehensive platform for AI-powered recipe generation, grocery shopping via Walmart, and Starbucks Secret Menu generation, aiming for user recipe sharing. It features Stripe integration for payments, offering a 7-day free trial and a .99/month subscription. A premium Weekly Recipe + Walmart Cart Subscription provides AI-generated 7-day meal plans with dynamic grocery shopping. The core objective was to advance from basic Walmart links to a sophisticated, unified shopping cart, allowing users to select/deselect ingredients, choose product options, view real-time prices, and generate personalized Walmart affiliate cart URLs for one-click shopping. Significant UI/UX improvements were required for , , and  to enhance user experience.
+The AI Recipe + Grocery Delivery App is designed as a comprehensive platform offering AI-powered recipe generation, grocery shopping via Walmart integration, and Starbucks Secret Menu generation. It targets future user recipe sharing. The application incorporates Stripe for payments, providing a 7-day free trial followed by a .99/month subscription. A premium Weekly Recipe + Walmart Cart Subscription offers AI-generated 7-day meal plans and dynamic grocery shopping, evolving from basic links to a sophisticated, unified cart allowing ingredient selection, product options, real-time prices, and one-click personalized Walmart affiliate cart URLs. The project required significant UI/UX enhancements for , , and .
+
+Key functional enhancements implemented during this phase include:
+1.  **Stripe Payment Fix:** Resolved issues preventing registered users from subscribing before or after their free trial, ensuring a comprehensive checkout process.
+2.  **User Settings & Usage Limits:** Introduced a Settings section displaying user profile and subscription status. Implemented usage limits:
+    *   **Free Trial:** 2 weekly recipes, 10 individual recipes, 10 Starbucks drinks.
+    *   **Paid Monthly:** 3 recipes per week, 30 individual recipes, 30 Starbucks drinks.
+    *   Users are redirected to an upgrade page upon hitting limits.
+    *   Limits reset monthly.
+    *   Option to cancel next month's subscription.
+3.  **Frontend Cleanup:** Removal of all  statements.
+4.  **Security Enhancement:** Ensured all API keys (Stripe, OpenAI, Mailjet, Walmart) are exclusively handled via environment variables, with no hardcoded values in code or documentation.
 </product_requirements>
 
 <key_technical_concepts>
 -   **React**: Frontend UI development.
 -   **FastAPI**: Python-based backend API.
 -   **MongoDB Atlas**: Cloud NoSQL database.
+-   **Stripe API**: Payment processing and subscription management (native Python library).
 -   **Walmart API**: Grocery product search and cart integration.
--   **AI Prompt Engineering**: For personalized recipe and instruction generation.
--   **Environment Variables**: Secure configuration.
--   **UUIDs**: Unique recipe identification.
+-   **AI Prompt Engineering**: For recipe and instruction generation (OpenAI).
+-   **Environment Variables**: Secure configuration for production and development.
+-   **UUIDs**: Unique identifiers for database entries.
+-   **Google Cloud Run**: Target deployment environment, including port configuration and  optimization.
 </key_technical_concepts>
 
 <code_architecture>
-The application utilizes a React frontend, a FastAPI backend, and MongoDB Atlas.
+The application comprises a React frontend, a FastAPI backend, and MongoDB Atlas for data storage.
 
 
 
 -   ****:
-    -   **Summary**: Core backend logic for auth, payments, AI recipe generation, Walmart.
-    -   **Changes**: Modified to force regeneration of weekly meal plans. Updated  to fetch and apply user preferences. The AI prompt for recipe generation was significantly enhanced: initially refined to extract only ingredient names (e.g., olive oil from 1/4 cup olive oil), and subsequently improved to generate much more comprehensive and professional cooking instructions.
+    -   **Summary**: Core backend for auth, payments, AI recipe generation, Walmart.
+    -   **Changes**: Refactored Stripe integration to use  functions, removed hardcoded  call conflicting with Google Cloud Run's  variable, added user profile endpoints, and implemented usage limit checks/increments for weekly recipe, individual recipe, and Starbucks drink generation endpoints. Also enhanced  to return dict and fixed exception handling.
+-   ** (New File)**:
+    -   **Summary**: Contains the native Stripe API integration logic, including creating checkout sessions, retrieving session status, and handling webhooks. This replaced the  library.
+    -   **Changes**: New file containing  class with methods for , , and . It reads  directly from environment variables and includes validation for placeholder keys.
 -   ****:
     -   **Summary**: Manages global state, routing, and integrates main application components.
-    -   **Changes**: Removed all  statements. Wrapped  function in  to ensure a stable function reference for React's  dependencies, preventing infinite loops. Crucially, an old inline  component (lines 1872-2152) was completely removed as it was overriding the external component.
+    -   **Changes**: Removed numerous  statements. Added import and routing for , , and  components. Integrated URL parsing to handle Stripe checkout redirects (success/cancel). Added a Settings button to the main dashboard navigation.
+-   ** (New File)**:
+    -   **Summary**: A new React component to display user profile, subscription status, and usage limits for various generation features.
+    -   **Changes**: New file, serves as the central hub for user settings.
 -   ****:
-    -   **Summary**: Displays detailed recipe information and integrates Walmart shopping.
-    -   **Changes**: Enhanced error handling and loading state management. Simplified recipe loading logic to handle , , and  sources consistently, attempting appropriate endpoints with automatic fallbacks.
+    -   **Summary**: Handles individual AI recipe generation.
+    -   **Changes**: Updated  function to include error handling for usage limits, redirecting users to the upgrade screen if limits are hit.
 -   ****:
-    -   **Summary**: Manages and displays the user's recipe history.
-    -   **Changes**: The previous implementation was entirely deleted and rebuilt from scratch. The new version features a distinct UI (green color scheme, NEW branding), simplified code, and robust data loading, filtering, and deletion capabilities. It correctly navigates to  without Recipe Not Found errors.
+    -   **Summary**: Manages weekly AI meal plan generation.
+    -   **Changes**: Updated  function with usage limit checks and redirection logic similar to .
 -   ****:
+    -   **Summary**: Handles Starbucks Secret Menu drink generation.
+    -   **Changes**: Updated  function with usage limit checks and redirection logic.
+-   ****:
+    -   **Summary**: Stores environment variables for local development.
+    -   **Changes**: All actual API keys (Stripe, Walmart, OpenAI, Mailjet) were replaced with placeholder values, ensuring sensitive data is not committed to the repository.
+-   ****:
+    -   **Summary**: Lists Python dependencies for the backend.
+    -   **Changes**:  was removed, and  library (version >=5.0.0) was added to support native Stripe integration.
+-   ****:
+    -   **Summary**: Defines the Docker image for the application.
+    -   **Changes**: Modified to remove specific installation instructions for  library, relying on the  for standard package installation.
+-   ****:
+    -   **Summary**: Entry point for the backend application in a production environment.
+    -   **Changes**: Verified to correctly use the  environment variable for Uvicorn, avoiding hardcoded ports.
+-   ** (Directory)**:
     -   **Summary**: Directory for comprehensive project documentation.
-    -   **Changes**: Created , , , , , , , , . New files , , , and  were added. The main  was also updated with a comprehensive structure.
--   ****:
-    -   **Summary**: New or updated directory for comprehensive unit and integration tests for both frontend and backend.
-    -   **Changes**: New test files were created, including , , , and . A global test setup file  and frontend test configuration  were also added.
--   ****:
-    -   **Summary**: New CI/CD workflow for automated testing.
-    -   **Changes**: Created a new GitHub Actions workflow to run comprehensive tests.
+    -   **Changes**: Numerous new documentation files (, , , , , ) were created, and existing ones (like , , ) were updated to reflect changes in Stripe implementation, environment variable usage, and overall security posture, replacing all instances of actual API keys with generic placeholders.
 </code_architecture>
 
 <pending_tasks>
@@ -54,16 +82,23 @@ The application utilizes a React frontend, a FastAPI backend, and MongoDB Atlas.
 -   Deploy code fixes to the production environment at .
 -   Address minor remaining issues with Gluten-Free and Vegan dietary filtering in weekly recipe templates.
 -   Implement search functionality in the .
+-   Frontend testing of Settings screen functionality and usage limit redirections.
+-   Full setup of Stripe webhooks in the production environment.
 </pending_tasks>
 
 <current_work>
-Immediately prior to this summary, the AI engineer was focused on two main areas: first, comprehensive documentation and testing infrastructure recreation, and second, significant improvements to the AI recipe generation prompt.
+Immediately prior to this summary, the AI engineer was focused on a critical security and deployment readiness task: **ensuring that no hardcoded API keys exist anywhere in the codebase or associated documentation, and that all sensitive credentials are exclusively sourced from environment variables.**
 
-Regarding documentation and testing, the engineer first read  to understand existing context. Then, in response to user requests, a detailed plan was executed:  was updated for new comprehensive testing, new test files were created for both frontend () and backend (, , ), and documentation was thoroughly updated. This included new files like , , , , and an updated . Testing configuration (, ) and a CI/CD workflow () were also established. Both backend and frontend testing agents were successfully run to validate this new infrastructure.
+This involved the following specific actions and checks:
+1.  **Walmart Private Key**: The  file was examined, and its content was confirmed to be replaced with a placeholder, with instructions indicating it should be loaded from environment variables in production.
+2.  **Stripe Keys**: Comprehensive checks were performed across all code and documentation files to remove any lingering hardcoded Stripe API keys (both  and ). These were replaced with generic placeholder values like .
+3.  **Documentation Updates**: Multiple documentation files, including , , , , , , and , were updated. These documents now explicitly state that keys must be environment variables, provide placeholder examples, and guide users on how to obtain real keys from their respective dashboards (e.g., Stripe, OpenAI).
+4.  **Validation**: A  script was created and run to programmatically scan the codebase for any hardcoded sensitive information, confirming its absence.
+5.  **Runtime Check**: The backend was restarted with placeholder keys in the local  file to confirm that the  module's validation logic correctly prevents the service from starting without proper, non-placeholder API keys, enforcing secure configuration.
 
-Following this, the engineer addressed a user request to improve the OpenAI prompt for recipe generation. The initial focus was to extract *only* ingredient names from the recipe output (e.g., olive oil from 1/4 cup olive oil). This was achieved by refining the prompt section in  that handles ingredient list generation. Backend and frontend testing confirmed this improvement. Subsequently, the user requested more comprehensive cooking instructions. The prompt in  was further enhanced with specific guidelines and best practices for generating detailed, professional-level cooking instructions, which was also validated successfully through backend and frontend testing.
+The current state is that the application's codebase and documentation are thoroughly sanitized of sensitive credentials, making it secure and ready for Google Cloud Run deployment, with all necessary API keys expected to be configured solely as environment variables in the deployment environment.
 </current_work>
 
 <optional_next_step>
-The AI prompt enhancements for ingredient lists and cooking instructions have been successfully implemented and validated. I am ready for the next task.
+The next step is to perform comprehensive frontend testing for the newly implemented Settings screen and usage limit redirections.
 </optional_next_step>
