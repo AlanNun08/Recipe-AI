@@ -1,210 +1,389 @@
-# 🍳 AI Recipe + Grocery Delivery App
+# buildyoursmartcart.com
 
-A comprehensive platform for AI-powered recipe generation with integrated grocery shopping and subscription management.
+**AI Recipe + Grocery Delivery App - Weekly Meal Planning & Walmart Integration**
 
-## 🌟 Features
+A comprehensive full-stack application that combines AI-powered recipe generation with grocery delivery integration, featuring weekly meal planning, individual recipe creation, and Starbucks secret menu generation.
 
-- **AI Recipe Generation**: Create personalized recipes using OpenAI
-- **Weekly Meal Planning**: Generate 7-day meal plans with grocery lists
-- **Starbucks Secret Menu**: Generate creative Starbucks drink recipes
-- **Walmart Integration**: Automated grocery shopping cart generation
-- **Subscription Management**: Premium features with usage limits and billing
-- **User Profiles**: Dietary preferences and usage tracking
-- **Recipe History**: Save and organize your generated recipes
+## 🚀 Features
 
-## 🏗️ Tech Stack
+- **AI Recipe Generation**: Create personalized recipes using OpenAI GPT
+- **Weekly Meal Planning**: Generate 7-day meal plans with grocery integration
+- **Walmart Shopping Integration**: Direct product links and cart generation
+- **Starbucks Secret Menu**: Curated and AI-generated drink recipes
+- **User Authentication**: Secure registration, login, and email verification
+- **Subscription Management**: Free trial + premium monthly subscription
+- **Usage Limits**: Controlled access to premium features
+- **Mobile Responsive**: Optimized for all devices
 
-- **Backend**: FastAPI (Python) + MongoDB
-- **Frontend**: React + Tailwind CSS
-- **Payment**: Native Stripe integration
-- **Deployment**: Google Cloud Run
-- **Database**: MongoDB Atlas
+## 🏗️ Architecture
 
-## 🚀 Deployment
+### Technology Stack
 
-### Prerequisites
-- Google Cloud account with billing enabled
-- MongoDB Atlas database
-- API keys for integrations (see environment variables below)
+**Backend:**
+- FastAPI (Python 3.9+)
+- MongoDB with Motor (async driver)
+- OpenAI API for recipe generation
+- Stripe for payments
+- Mailjet for email services
+- Walmart API for product search
 
-### Environment Variables
-Set these in your Google Cloud Run service:
+**Frontend:**
+- React 18
+- Tailwind CSS
+- Axios for API communication
+- Responsive design
 
-```bash
-# Database
-MONGO_URL=your-mongodb-connection-string-from-atlas
-DB_NAME=your_database_name
+**Infrastructure:**
+- Google Cloud Run (production)
+- Docker containerization
+- Environment-based configuration
 
-# AI Services
-OPENAI_API_KEY=your-openai-api-key-from-platform
+### Project Structure
 
-# Payment Processing
-STRIPE_API_KEY=your-stripe-secret-key-from-dashboard
-STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key-from-dashboard
-
-# Walmart Integration
-WALMART_CONSUMER_ID=your-walmart-consumer-id-from-developer-portal
-WALMART_KEY_VERSION=1
-WALMART_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----
-your-walmart-private-key-from-developer-portal
------END PRIVATE KEY-----"
-
-# Email Service
-MAILJET_API_KEY=your-mailjet-api-key-from-dashboard
-MAILJET_SECRET_KEY=your-mailjet-secret-key-from-dashboard
-SENDER_EMAIL=noreply@yourdomain.com
-
-# Security
-SECRET_KEY=your-generated-jwt-secret-key
+```
+/app/
+├── src/backend/              # Backend application
+│   ├── api/                  # API route handlers
+│   │   ├── auth.py          # Authentication routes
+│   │   └── recipes.py       # Recipe routes
+│   ├── models/              # Data models
+│   │   ├── user.py          # User-related models
+│   │   ├── recipe.py        # Recipe models
+│   │   └── payment.py       # Payment models
+│   ├── services/            # Business logic
+│   │   ├── auth.py          # Authentication service
+│   │   ├── recipe.py        # Recipe generation service
+│   │   ├── database.py      # Database service
+│   │   ├── email.py         # Email service
+│   │   └── stripe.py        # Payment service
+│   └── main.py             # FastAPI application
+├── frontend/                # React frontend
+│   ├── src/
+│   │   ├── components/      # React components
+│   │   └── index.js         # App entry point
+│   └── public/             # Static assets
+├── tests/                   # Test suite
+│   ├── unit/               # Unit tests
+│   ├── integration/        # Integration tests
+│   └── e2e/               # End-to-end tests
+├── config/                 # Configuration
+│   └── settings.py         # Application settings
+├── main.py                 # Production server
+├── Dockerfile              # Container configuration
+└── pyproject.toml          # Project configuration
 ```
 
-### Deploy to Google Cloud Run
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.9+
+- Node.js 18+
+- MongoDB
+- Docker (optional)
+
+### Environment Setup
+
+1. **Clone and Setup:**
+```bash
+git clone <repository>
+cd buildyoursmartcart
+```
+
+2. **Backend Environment:**
+```bash
+# Install Python dependencies
+pip install -e ".[dev,test]"
+
+# Create backend environment file
+cp src/backend/.env.example src/backend/.env
+```
+
+3. **Frontend Environment:**
+```bash
+cd frontend
+yarn install
+
+# Create frontend environment file
+cp .env.example .env
+```
+
+### Environment Variables
+
+**Backend (.env):**
+```bash
+# Database
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=buildyoursmartcart_development
+
+# API Keys
+OPENAI_API_KEY=your-openai-api-key-here
+STRIPE_API_KEY=your-stripe-secret-key-here
+STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key-here
+MAILJET_API_KEY=your-mailjet-api-key-here
+MAILJET_SECRET_KEY=your-mailjet-secret-key-here
+WALMART_CONSUMER_ID=your-walmart-consumer-id-here
+WALMART_PRIVATE_KEY=your-walmart-private-key-here
+
+# Email
+SENDER_EMAIL=noreply@buildyoursmartcart.com
+
+# Security
+SECRET_KEY=your-secret-key-for-jwt-here
+```
+
+**Frontend (.env):**
+```bash
+REACT_APP_BACKEND_URL=http://localhost:8001
+```
+
+### Running the Application
+
+**Development Mode:**
+```bash
+# Terminal 1: Backend
+make dev
+# or
+cd src && uvicorn backend.main:app --host 0.0.0.0 --port 8001 --reload
+
+# Terminal 2: Frontend
+cd frontend && yarn start
+
+# Terminal 3: MongoDB (if running locally)
+mongod
+```
+
+**Production Mode:**
+```bash
+make run
+# or
+python main.py
+```
+
+**Using Docker:**
+```bash
+make docker-build
+make docker-run
+```
+
+## 🧪 Testing
+
+### Running Tests
+
+```bash
+# All tests
+make test
+
+# Unit tests only
+make test-unit
+
+# Integration tests only
+make test-integration
+
+# End-to-end tests only
+make test-e2e
+
+# With coverage
+make test-coverage
+```
+
+### Test Structure
+
+- **Unit Tests**: Test individual functions and classes in isolation
+- **Integration Tests**: Test API endpoints and service interactions
+- **E2E Tests**: Test complete user workflows
+
+## 🚢 Deployment
+
+### Google Cloud Run
 
 1. **Build and Deploy:**
 ```bash
-gcloud run deploy recipe-ai \
+# Set environment variables in Google Cloud
+gcloud run services update buildyoursmartcart \
+  --set-env-vars MONGO_URL=your-production-mongo-url \
+  --set-env-vars OPENAI_API_KEY=your-production-openai-key \
+  --set-env-vars STRIPE_API_KEY=your-production-stripe-key \
+  --region us-central1
+
+# Deploy
+gcloud run deploy buildyoursmartcart \
   --source . \
   --platform managed \
   --region us-central1 \
-  --allow-unauthenticated \
-  --port 8080
+  --allow-unauthenticated
 ```
 
-2. **Set Environment Variables:**
-```bash
-gcloud run services update recipe-ai \
-  --set-env-vars STRIPE_API_KEY=your-actual-stripe-key \
-  --set-env-vars MONGO_URL=mongodb+srv://your-connection-string \
-  --region us-central1
-```
+2. **Environment Variables Required for Production:**
+- `NODE_ENV=production`
+- `MONGO_URL` (production MongoDB connection)
+- `DB_NAME=buildyoursmartcart_production`
+- All API keys with production values
 
-## 💳 Subscription Plans
+### Production Checklist
 
-### Free Trial (7 days)
-- 2 weekly recipe plans
-- 10 individual recipes
-- 10 Starbucks drinks
-
-### Premium Monthly ($9.99/month)
-- 3 weekly recipe plans
-- 30 individual recipes
-- 30 Starbucks drinks
-- Unlimited recipe history
+- [ ] Environment variables configured
+- [ ] Database backups configured
+- [ ] Monitoring and logging set up
+- [ ] SSL certificates configured
+- [ ] CORS properly configured
+- [ ] Rate limiting enabled
+- [ ] Security headers configured
 
 ## 🔧 Development
 
-### Local Setup
-1. **Clone repository:**
+### Code Quality
+
 ```bash
-git clone [repository-url]
-cd ai-recipe-app
+# Format code
+make format
+
+# Check formatting
+make format-check
+
+# Lint code
+make lint
+
+# Run all validation
+make validate
 ```
 
-2. **Install dependencies:**
+### API Documentation
+
+When running in development mode, API documentation is available at:
+- Swagger UI: http://localhost:8001/docs
+- ReDoc: http://localhost:8001/redoc
+
+### Database Schema
+
+**Users Collection:**
+```javascript
+{
+  id: "uuid",
+  email: "user@example.com",
+  password: "hashed_password",
+  is_verified: true,
+  subscription: {
+    status: "trialing|active|expired|cancelled",
+    trial_starts_at: "ISO_date",
+    trial_ends_at: "ISO_date",
+    customer_id: "stripe_customer_id"
+  },
+  usage_limits: {
+    weekly_recipes: {used: 0, limit: 2},
+    individual_recipes: {used: 0, limit: 10},
+    starbucks_drinks: {used: 0, limit: 10}
+  }
+}
+```
+
+**Recipes Collection:**
+```javascript
+{
+  id: "uuid",
+  user_id: "user_uuid",
+  name: "Recipe Name",
+  description: "Recipe description",
+  ingredients: ["ingredient1", "ingredient2"],
+  instructions: ["step1", "step2"],
+  prep_time: "15 minutes",
+  cook_time: "30 minutes",
+  servings: 4,
+  difficulty: "easy|medium|hard",
+  cuisine_type: "italian",
+  calories: 500,
+  created_at: "ISO_date"
+}
+```
+
+## 📊 Usage Limits
+
+### Free Trial (7 days)
+- Weekly meal plans: 2 per month
+- Individual recipes: 10 per month
+- Starbucks drinks: 10 per month
+
+### Premium Subscription ($9.99/month)
+- Weekly meal plans: 8 per month
+- Individual recipes: 30 per month
+- Starbucks drinks: 30 per month
+
+## 🔐 Security
+
+### Best Practices Implemented
+
+1. **Environment Variables**: All sensitive data in environment variables
+2. **Password Hashing**: Bcrypt for password security
+3. **Input Validation**: Pydantic models for request validation
+4. **CORS Configuration**: Properly configured allowed origins
+5. **Rate Limiting**: API rate limiting (configurable)
+6. **Secure Headers**: Security headers in production
+7. **Database Security**: Parameterized queries, no SQL injection
+
+### Security Validation
+
 ```bash
-# Backend
-cd backend
-pip install -r requirements.txt
-
-# Frontend
-cd ../frontend
-yarn install
+# Run security scan
+make security-scan
 ```
 
-3. **Set environment variables:**
-Copy `/app/backend/.env` and update with your API keys
+## 🤝 Contributing
 
-4. **Run services:**
-```bash
-# Start backend
-python main.py
+1. Fork the repository
+2. Create a feature branch
+3. Make changes with tests
+4. Run validation: `make validate`
+5. Submit a pull request
 
-# Start frontend
-cd frontend && yarn start
-```
+### Development Guidelines
 
-### Project Structure
-```
-/app/
-├── backend/                 # FastAPI backend
-│   ├── server.py           # Main API routes
-│   ├── stripe_native.py    # Payment processing
-│   └── requirements.txt    # Python dependencies
-├── frontend/               # React frontend
-│   ├── src/
-│   │   ├── App.js         # Main app component
-│   │   └── components/    # React components
-│   └── package.json       # Node dependencies
-├── docs/                   # Documentation
-├── Dockerfile             # Container configuration
-└── main.py                # Application entry point
-```
+- Follow PEP 8 for Python code
+- Use TypeScript for complex frontend logic
+- Write tests for new features
+- Update documentation
+- Use conventional commits
 
-## 🔒 Security Features
+## 📈 Monitoring and Analytics
 
-- **Environment Variable Security**: All API keys stored in environment variables
-- **Payment Security**: PCI-compliant Stripe integration
-- **User Authentication**: JWT-based authentication system
-- **Input Validation**: Comprehensive request validation
-- **Rate Limiting**: Usage limits and API protection
+### Health Checks
 
-## 📊 Usage Tracking
+- **API Health**: `/health` endpoint
+- **Database Health**: MongoDB connection status
+- **External APIs**: OpenAI, Stripe, Walmart connectivity
 
-The app implements comprehensive usage tracking:
-- Monthly reset cycles for all quotas
-- Real-time usage monitoring
-- Upgrade prompts when limits reached
-- Analytics dashboard for subscription metrics
+### Logging
 
-## 🛠️ API Documentation
+- Structured logging with Python logging
+- Request/response logging
+- Error tracking and alerting
 
-### Key Endpoints
-
-**Authentication:**
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-
-**Recipe Generation:**
-- `POST /api/recipes/generate` - Generate individual recipe
-- `POST /api/weekly-recipes/generate` - Generate weekly meal plan
-- `POST /api/generate-starbucks-drink` - Generate Starbucks recipe
-
-**Subscription Management:**
-- `POST /api/subscription/create-checkout` - Create payment session
-- `GET /api/subscription/status/{user_id}` - Get subscription status
-- `POST /api/subscription/cancel/{user_id}` - Cancel subscription
-
-**User Management:**
-- `GET /api/user/settings/{user_id}` - Get user settings
-- `PUT /api/user/profile/{user_id}` - Update user profile
-
-## 🐛 Troubleshooting
+## 🆘 Troubleshooting
 
 ### Common Issues
 
-**Deployment Fails:**
-- Check all environment variables are set in Google Cloud Run
-- Verify API keys are valid and not placeholder values
-- Ensure MongoDB connection string is accessible
+1. **Database Connection**: Check MONGO_URL and database accessibility
+2. **API Keys**: Ensure all API keys are valid and not placeholders
+3. **CORS Issues**: Verify allowed origins configuration
+4. **Port Conflicts**: Ensure ports 8001 (backend) and 3000 (frontend) are available
 
-**Payment Issues:**
-- Confirm Stripe keys match the correct format (sk_live_, pk_live_)
-- Check webhook endpoints are configured in Stripe dashboard
-- Verify domain is added to Stripe's allowed origins
+### Debug Mode
 
-**Recipe Generation Fails:**
-- Validate OpenAI API key and billing status
-- Check usage quotas haven't been exceeded
-- Verify dietary preferences are properly formatted
-
-## 📞 Support
-
-For deployment and configuration issues, check:
-1. Google Cloud Run logs
-2. MongoDB connection status  
-3. API key validity and format
-4. Environment variable configuration
+```bash
+# Enable debug logging
+export LOG_LEVEL=DEBUG
+make dev
+```
 
 ## 📄 License
 
-This project is proprietary software. All rights reserved.
+MIT License - see LICENSE file for details
+
+## 📞 Support
+
+- Email: support@buildyoursmartcart.com
+- Documentation: This README
+- Issues: GitHub Issues (if applicable)
+
+---
+
+**buildyoursmartcart.com** - Simplifying meal planning with AI-powered recipes and grocery integration.
