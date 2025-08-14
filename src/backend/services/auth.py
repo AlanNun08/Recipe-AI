@@ -7,7 +7,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from ..models.user import UserRegistration, UserLogin, UserProfile, VerificationCode
-from .database import db_service
+from .database import get_db_service
 from .email import email_service
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class AuthService:
     async def register_user(registration: UserRegistration) -> Dict[str, Any]:
         """Register a new user"""
         # Check if user already exists
-        existing_user = await db_service.users_collection.find_one({"email": registration.email})
+        existing_user = await get_db_service().users_collection.find_one({"email": registration.email})
         if existing_user:
             raise ValueError("User already exists")
         
@@ -62,7 +62,7 @@ class AuthService:
         user_data["password"] = hashed_password
         
         # Insert user
-        await db_service.users_collection.insert_one(user_data)
+        await get_db_service().users_collection.insert_one(user_data)
         
         # Generate and store verification code
         code = AuthService.generate_verification_code()
@@ -72,7 +72,7 @@ class AuthService:
             expires_at=datetime.utcnow() + timedelta(hours=24)
         )
         
-        await db_service.verification_codes_collection.insert_one(verification.dict())
+        await get_db_service().verification_codes_collection.insert_one(verification.dict())
         
         # Send verification email
         try:
@@ -90,7 +90,7 @@ class AuthService:
     async def login_user(login: UserLogin) -> Dict[str, Any]:
         """Login user"""
         # Find user
-        user = await db_service.users_collection.find_one({"email": login.email})
+        user = await get_db_service().users_collection.find_one({"email": login.email})
         if not user:
             raise ValueError("Invalid credentials")
         
@@ -109,7 +109,7 @@ class AuthService:
     async def verify_user_email(user_id: str, code: str) -> Dict[str, Any]:
         """Verify user email with code"""
         # Find verification code
-        verification = await db_service.verification_codes_collection.find_one({
+        verification = await get_db_service().verification_codes_collection.find_one({
             "user_id": user_id,
             "code": code
         })
@@ -122,20 +122,20 @@ class AuthService:
             raise ValueError("Verification code expired")
         
         # Update user as verified
-        await db_service.users_collection.update_one(
+        await get_db_service().users_collection.update_one(
             {"id": user_id},
             {"$set": {"is_verified": True, "updated_at": datetime.utcnow()}}
         )
         
         # Remove verification code
-        await db_service.verification_codes_collection.delete_one({"user_id": user_id})
+        await get_db_service().verification_codes_collection.delete_one({"user_id": user_id})
         
         return {"message": "Email verified successfully"}
     
     @staticmethod
     async def get_user_profile(user_id: str) -> Optional[Dict[str, Any]]:
         """Get user profile"""
-        user = await db_service.users_collection.find_one({"id": user_id})
+        user = await get_db_service().users_collection.find_one({"id": user_id})
         if user:
             # Remove password from response
             return {k: v for k, v in user.items() if k != "password"}
