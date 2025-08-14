@@ -6,10 +6,11 @@ from fastapi.responses import JSONResponse
 from typing import Optional
 from ..models.recipe import RecipeGeneration, WeeklyRecipeGeneration
 from ..services.recipe import recipe_service
-from ..services.database import db_service
+from ..services.database import get_db_service
 import logging
 
 logger = logging.getLogger(__name__)
+db_service = get_db_service()
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 
 @router.post("/generate")
