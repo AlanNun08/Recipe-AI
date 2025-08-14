@@ -29,9 +29,11 @@ API_KEY_NAME=actual-production-api-key-value
 
 #### **Payment Processing (Stripe)**
 ```bash
-STRIPE_API_KEY=sk_live_...           # Secret key for server-side operations
-STRIPE_PUBLISHABLE_KEY=pk_live_...   # Public key for client-side forms
+STRIPE_API_KEY=your-stripe-secret-key-from-dashboard     # Get from Stripe Dashboard → API Keys
+STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key-from-dashboard   # Get from Stripe Dashboard → API Keys
 ```
+
+> **Note**: Get your actual keys from https://dashboard.stripe.com → Developers → API Keys
 
 #### **AI Services (OpenAI)**
 ```bash
