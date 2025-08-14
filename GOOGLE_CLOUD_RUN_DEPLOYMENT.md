@@ -59,11 +59,10 @@ NODE_ENV="production"
 
 ```
 /app/
-├── src/backend/              # Backend application
-│   ├── api/                  # API routes
-│   ├── models/              # Data models
-│   ├── services/            # Business logic
-│   └── main.py             # FastAPI app
+├── backend/                  # Backend application  
+│   ├── server.py            # Main FastAPI application
+│   ├── .env                 # Environment variables
+│   └── __init__.py          # Package initialization
 ├── frontend/                # React frontend
 ├── main.py                 # Production server (Cloud Run entry point)
 ├── Dockerfile              # Container configuration
