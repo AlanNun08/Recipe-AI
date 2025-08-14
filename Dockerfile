@@ -34,9 +34,8 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend source (NEW STRUCTURE)
-COPY src/ ./src/
-COPY config/ ./config/
+# Copy backend source (REVERTED TO WORKING STRUCTURE)
+COPY backend/ ./backend/
 COPY main.py .
 
 # Copy built frontend from previous stage
