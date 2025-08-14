@@ -9,9 +9,12 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 from openai import OpenAI
 from ..models.recipe import RecipeGeneration, Recipe, WeeklyRecipeGeneration, WeeklyRecipe
-from .database import db_service
+from .database import get_db_service
 
 logger = logging.getLogger(__name__)
+
+# Get database service instance
+db_service = get_db_service()
 
 class RecipeService:
     """Recipe generation and management service"""
