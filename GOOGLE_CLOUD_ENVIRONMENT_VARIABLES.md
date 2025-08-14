@@ -6,9 +6,16 @@ When deploying to Google Cloud Run, set these environment variables in your Clou
 
 ### **Stripe Payment Configuration**
 ```
-STRIPE_API_KEY=sk_live_your-actual-stripe-secret-key-here
-STRIPE_PUBLISHABLE_KEY=pk_live_your-actual-stripe-publishable-key-here
+STRIPE_API_KEY=your-stripe-secret-key-from-dashboard
+STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key-from-dashboard
 ```
+
+**How to get Stripe keys:**
+1. Login to your Stripe Dashboard (https://dashboard.stripe.com)
+2. Go to Developers → API Keys
+3. Copy your "Secret key" (starts with `sk_live_`) 
+4. Copy your "Publishable key" (starts with `pk_live_`)
+5. Use these actual values in Google Cloud Run environment variables
 
 ### **MongoDB Configuration**
 ```
