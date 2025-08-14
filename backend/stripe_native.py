@@ -54,9 +54,13 @@ class NativeStripeService:
         if not stripe.api_key:
             raise ValueError("STRIPE_API_KEY environment variable is required")
         
+        # Check for placeholder values
+        if stripe.api_key in ["your-stripe-secret-key-here", "your-str************here"]:
+            raise ValueError("Please set a valid Stripe API key in environment variables")
+        
         # Validate API key format
         if not (stripe.api_key.startswith('sk_test_') or stripe.api_key.startswith('sk_live_')):
-            raise ValueError("Invalid Stripe API key format")
+            raise ValueError("Invalid Stripe API key format - must start with sk_test_ or sk_live_")
         
         logger.info(f"Native Stripe service initialized with {'live' if stripe.api_key.startswith('sk_live_') else 'test'} API key")
     
