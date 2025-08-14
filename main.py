@@ -207,4 +207,5 @@ if __name__ == "__main__":
     else:
         logger.info(f"🔧 Development mode - Port: {port}")
     
-    uvicorn.run(app, **uvicorn_config)
+    # Make sure we're running the main app that includes backend mounting
+    uvicorn.run("main:app", **uvicorn_config)
