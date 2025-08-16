@@ -118,10 +118,24 @@ stripe_api_key = os.environ.get('STRIPE_API_KEY')
 if stripe_api_key and not any(placeholder in stripe_api_key for placeholder in ['your-', 'placeholder', 'here']):
     stripe.api_key = stripe_api_key
 
-# Email service setup
+# Email service setup with validation
 mailjet_api_key = os.environ.get('MAILJET_API_KEY')
 mailjet_secret_key = os.environ.get('MAILJET_SECRET_KEY')
 sender_email = os.environ.get('SENDER_EMAIL', 'noreply@buildyoursmartcart.com')
+
+# Log email service configuration (without exposing keys)
+if mailjet_api_key and mailjet_secret_key:
+    if not any(placeholder in mailjet_api_key for placeholder in ['your-', 'placeholder', 'here']):
+        logger.info("📧 Email service: Mailjet configured with live keys")
+    else:
+        logger.info("📧 Email service: Mailjet configured with placeholder keys (development mode)")
+else:
+    if os.getenv("NODE_ENV") == "production":
+        logger.warning("⚠️ Email service: MAILJET_API_KEY or MAILJET_SECRET_KEY not set in production")
+    else:
+        logger.info("📧 Email service: No Mailjet keys (development logging mode)")
+
+logger.info(f"📧 Sender email: {sender_email}")
 
 # Walmart API setup
 walmart_consumer_id = os.environ.get('WALMART_CONSUMER_ID')
