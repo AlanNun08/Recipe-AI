@@ -114,9 +114,9 @@ if openai_api_key and not any(placeholder in openai_api_key for placeholder in [
     openai_client = OpenAI(api_key=openai_api_key)
 
 # Stripe setup
-stripe_api_key = os.environ.get('STRIPE_API_KEY')
-if stripe_api_key and not any(placeholder in stripe_api_key for placeholder in ['your-', 'placeholder', 'here']):
-    stripe.api_key = stripe_api_key
+stripe_secret_key = os.environ.get('STRIPE_API_KEY')
+if stripe_secret_key and not any(placeholder in stripe_secret_key for placeholder in ['your-', 'placeholder', 'here']):
+    stripe.api_key = stripe_secret_key
 
 # Email service setup with validation
 mailjet_api_key = os.environ.get('MAILJET_API_KEY')
@@ -635,7 +635,7 @@ async def generate_starbucks_recipe(request: StarbucksGeneration):
 async def create_subscription_checkout(request: SubscriptionCheckoutRequest):
     """Create Stripe checkout session for subscription"""
     try:
-        if not stripe_api_key or 'your-' in stripe_api_key:
+        if not stripe_secret_key or 'your-' in stripe_secret_key:
             # Return mock response for development
             return JSONResponse(
                 status_code=200,
@@ -687,7 +687,7 @@ async def create_subscription_checkout(request: SubscriptionCheckoutRequest):
 async def get_subscription_status(session_id: str):
     """Get subscription status from Stripe session"""
     try:
-        if not stripe_api_key or 'your-' in stripe_api_key:
+        if not stripe_secret_key or 'your-' in stripe_secret_key:
             # Return mock response for development
             return JSONResponse(
                 status_code=200,
@@ -754,7 +754,7 @@ async def health_check():
             },
             "external_apis": {
                 "openai": bool(openai_client),
-                "stripe": bool(stripe_api_key and 'your-' not in stripe_api_key),
+                "stripe": bool(stripe_secret_key and 'your-' not in stripe_secret_key),
                 "mailjet": bool(mailjet_api_key and 'your-' not in mailjet_api_key),
                 "walmart": bool(walmart_consumer_id)
             },
