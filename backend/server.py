@@ -114,7 +114,9 @@ if openai_api_key and not any(placeholder in openai_api_key for placeholder in [
     openai_client = OpenAI(api_key=openai_api_key)
 
 # Stripe setup
-stripe_secret_key = os.environ.get('STRIPE_API_KEY')
+stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY')
+stripe_publisher_key = os.environ.get('STRIPE_PUBLISHER_API_KEY')
+
 if stripe_secret_key and not any(placeholder in stripe_secret_key for placeholder in ['your-', 'placeholder', 'here']):
     stripe.api_key = stripe_secret_key
 
