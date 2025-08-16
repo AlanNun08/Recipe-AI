@@ -42,8 +42,23 @@ import stripe
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
+# Load environment variables (development vs production)
+def load_environment_variables():
+    """Load environment variables from .env file in development, system env in production"""
+    if os.getenv("NODE_ENV") == "production":
+        # In production (Google Cloud Run), variables are set directly
+        logger.info("Production mode: Using system environment variables")
+    else:
+        # In development, try to load from .env file
+        env_file = Path(__file__).parent / '.env'
+        if env_file.exists():
+            load_dotenv(env_file)
+            logger.info(f"Development mode: Loaded environment from {env_file}")
+        else:
+            logger.warning("Development mode: No .env file found, using system environment")
+
+# Load environment variables properly
+load_environment_variables()
 
 # Initialize FastAPI app
 app = FastAPI(
