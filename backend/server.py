@@ -78,9 +78,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# MongoDB setup
-mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+# MongoDB setup with validation
+mongo_url = os.environ.get('MONGO_URL')
 db_name = os.environ.get('DB_NAME', 'buildyoursmartcart_development')
+
+if not mongo_url:
+    if os.getenv("NODE_ENV") == "production":
+        logger.error("❌ MONGO_URL environment variable is required in production")
+        raise ValueError("MONGO_URL environment variable is required in production")
+    else:
+        mongo_url = 'mongodb://localhost:27017'
+        logger.warning("⚠️ MONGO_URL not set, using localhost default for development")
+
+logger.info(f"📊 Connecting to MongoDB: {mongo_url.replace(mongo_url.split('@')[0].split('//')[1] if '@' in mongo_url else '', '***') if mongo_url else 'None'}")
+logger.info(f"📊 Database name: {db_name}")
+
 client = AsyncIOMotorClient(mongo_url)
 db = client[db_name]
 
