@@ -192,7 +192,9 @@ if __name__ == "__main__":
         "port": port,
         "workers": 1,
         "log_level": "info",
-        "access_log": True
+        "access_log": True,
+        "reload": False,
+        "loop": "auto"
     }
     
     # Optimize for production
@@ -207,5 +209,12 @@ if __name__ == "__main__":
     else:
         logger.info(f"🔧 Development mode - Port: {port}")
     
-    # Make sure we're running the main app that includes backend mounting
-    uvicorn.run("main:app", **uvicorn_config)
+    # Ensure clean startup
+    logger.info(f"🚀 Starting buildyoursmartcart.com on {uvicorn_config['host']}:{uvicorn_config['port']}")
+    
+    try:
+        # Use the app directly for Google Cloud Run compatibility
+        uvicorn.run(app, **uvicorn_config)
+    except Exception as e:
+        logger.error(f"❌ Failed to start server: {e}")
+        raise
