@@ -41,6 +41,10 @@ COPY main.py .
 # Copy built frontend from previous stage
 COPY --from=frontend-builder /app/frontend/build/ ./frontend/build/
 
+# Copy startup script and make executable
+COPY start.sh .
+RUN chmod +x start.sh
+
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
@@ -58,5 +62,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:' + __import__('os').environ.get('PORT', '8080') + '/health', timeout=10)"
 
-# Start the application
-CMD exec python main.py
+# Start the application using startup script
+CMD ["./start.sh"]
