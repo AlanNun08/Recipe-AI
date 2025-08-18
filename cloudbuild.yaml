@@ -34,6 +34,7 @@ steps:
       - '900'
       - '--port'
       - '8080'
+      - '--no-cpu-throttling'
       - '--set-env-vars'
       - 'NODE_ENV=production'
 
