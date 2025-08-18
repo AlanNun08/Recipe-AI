@@ -183,10 +183,10 @@ signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == "__main__":
-    # Google Cloud Run uses PORT environment variable
+    # Google App Engine uses PORT environment variable
     port = int(os.environ.get("PORT", 8080))
     
-    # Production configuration for Google Cloud Run
+    # App Engine configuration
     uvicorn_config = {
         "host": "0.0.0.0",
         "port": port,
@@ -197,15 +197,15 @@ if __name__ == "__main__":
         "loop": "auto"
     }
     
-    # Optimize for production
+    # Optimize for production (App Engine is always production)
     if os.getenv("NODE_ENV") == "production":
         uvicorn_config.update({
             "log_level": "warning",
-            "access_log": False,  # Use Cloud Logging
+            "access_log": False,  # Use App Engine logging
             "server_header": False,
             "date_header": False
         })
-        logger.info(f"🌐 Google Cloud Run production mode - Port: {port}")
+        logger.info(f"🌐 Google App Engine production mode - Port: {port}")
     else:
         logger.info(f"🔧 Development mode - Port: {port}")
     
@@ -213,7 +213,7 @@ if __name__ == "__main__":
     logger.info(f"🚀 Starting buildyoursmartcart.com on {uvicorn_config['host']}:{uvicorn_config['port']}")
     
     try:
-        # Use the app directly for Google Cloud Run compatibility
+        # Use the app directly for App Engine compatibility
         uvicorn.run(app, **uvicorn_config)
     except Exception as e:
         logger.error(f"❌ Failed to start server: {e}")
