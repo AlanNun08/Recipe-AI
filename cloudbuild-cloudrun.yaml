@@ -1,0 +1,62 @@
+# Google Cloud Build configuration for Cloud Run deployment
+# Triggered automatically from GitHub repository
+
+steps:
+  # Step 1: Install frontend dependencies and build
+  - name: 'node:18'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        cd frontend
+        yarn install --frozen-lockfile
+        yarn build
+        echo "Frontend build completed"
+
+  # Step 2: Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/buildyoursmartcart:$COMMIT_SHA', '.']
+
+  # Step 3: Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/buildyoursmartcart:$COMMIT_SHA']
+
+  # Step 4: Deploy container image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: gcloud
+    args: 
+      - 'run'
+      - 'deploy'
+      - 'buildyoursmartcart'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/buildyoursmartcart:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '2Gi'
+      - '--cpu'
+      - '2'
+      - '--concurrency'
+      - '80'
+      - '--max-instances'
+      - '100'
+      - '--timeout'
+      - '900'
+      - '--port'
+      - '8080'
+      - '--no-cpu-throttling'
+      - '--set-env-vars'
+      - 'NODE_ENV=production'
+
+images:
+  - 'gcr.io/$PROJECT_ID/buildyoursmartcart:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
+  diskSizeGb: 100
+
+timeout: '2400s'  # 40 minutes
