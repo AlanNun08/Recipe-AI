@@ -63,5 +63,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:' + __import__('os').environ.get('PORT', '8080') + '/health', timeout=10)"
 
-# Start the application using production startup script
-CMD ["python", "start_production.py"]
+# Start the application using fast Cloud Run startup
+CMD ["python", "start_cloudrun.py"]
