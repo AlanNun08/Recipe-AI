@@ -41,9 +41,10 @@ COPY main.py .
 # Copy built frontend from previous stage
 COPY --from=frontend-builder /app/frontend/build/ ./frontend/build/
 
-# Copy startup script and make executable
+# Copy production startup script and make executable
+COPY start_production.py .
 COPY start.sh .
-RUN chmod +x start.sh
+RUN chmod +x start_production.py start.sh
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash app && \
