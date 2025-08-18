@@ -1,49 +1,115 @@
 # app.yaml - Google App Engine Configuration
-# This file is ready for Google Cloud deployment
-# Set all environment variables through Google Cloud Console → Variables & Secrets
+# buildyoursmartcart.com - AI Recipe + Grocery Delivery App
 runtime: python39
 
-# Environment variables will be set through Google Cloud Console
-# Go to: Cloud Run → [Your Service] → Edit Container → Variables & Secrets
+# Environment variables for your AI Recipe + Grocery Delivery App
+# SECURITY WARNING: NEVER commit real API keys to version control!
+# Use Google Secret Manager or set these during deployment
 env_variables:
+  # Application Configuration
+  NODE_ENV: "production"
+  
   # Database Configuration
-  MONGO_URL: "mongodb://localhost:27017"  # Set your MongoDB Atlas connection string in Google Cloud
+  MONGO_URL: "YOUR_MONGODB_ATLAS_CONNECTION_STRING"  # Replace with MongoDB Atlas connection string
   DB_NAME: "buildyoursmartcart_production"
   
   # OpenAI API Configuration
-  OPENAI_API_KEY: "your-openai-api-key"  # Set your OpenAI API key in Google Cloud
+  OPENAI_API_KEY: "YOUR_OPENAI_API_KEY"  # Replace with your actual OpenAI API key
+  
+  # Stripe Configuration (matching your exact variable names)
+  STRIPE_SECRET_KEY: "YOUR_STRIPE_SECRET_KEY"  # Replace with your actual Stripe secret key
+  STRIPE_PUBLISHER_API_KEY: "YOUR_STRIPE_PUBLISHER_API_KEY"  # Replace with your actual Stripe publishable key
   
   # Walmart API Configuration
-  WALMART_CONSUMER_ID: "your-walmart-consumer-id"  # Set your Walmart Consumer ID in Google Cloud
+  WALMART_CONSUMER_ID: "YOUR_WALMART_CONSUMER_ID"  # Replace with your actual Walmart Consumer ID
   WALMART_KEY_VERSION: "1"
-  WALMART_PRIVATE_KEY: "your-walmart-private-key"  # Set your Walmart private key in Google Cloud
+  WALMART_PRIVATE_KEY: "YOUR_WALMART_PRIVATE_KEY"  # Replace with your actual Walmart private key
   
   # Mailjet Email Service Configuration
-  MAILJET_API_KEY: "your-mailjet-api-key"  # Set your Mailjet API key in Google Cloud
-  MAILJET_SECRET_KEY: "your-mailjet-secret-key"  # Set your Mailjet secret key in Google Cloud
-  SENDER_EMAIL: "your-sender-email@example.com"  # Set your sender email in Google Cloud
+  MAILJET_API_KEY: "YOUR_MAILJET_API_KEY"  # Replace with your actual Mailjet API key
+  MAILJET_SECRET_KEY: "YOUR_MAILJET_SECRET_KEY"  # Replace with your actual Mailjet secret key
+  SENDER_EMAIL: "YOUR_SENDER_EMAIL@buildyoursmartcart.com"  # Replace with your actual sender email
   
-  # Stripe Configuration
-  STRIPE_API_KEY: "your-stripe-api-key"  # Set your Stripe API key in Google Cloud
-  
-  # JWT Secret Key
-  SECRET_KEY: "your-jwt-secret-key"  # Set a strong, random secret key in Google Cloud
+  # Security Configuration
+  SECRET_KEY: "YOUR_STRONG_RANDOM_JWT_SECRET"  # Generate a strong, random secret key (32+ characters)
 
 # Route handlers
 handlers:
-  # Direct all traffic to your main.py application
+  # Serve static frontend files
+  - url: /static
+    static_dir: frontend/build/static
+    
+  # Serve frontend build files (CSS, JS, etc.)
+  - url: /(.*\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot))$
+    static_files: frontend/build/\1
+    upload: frontend/build/.*\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$
+    
+  # API routes go to the backend
+  - url: /api/.*
+    script: auto
+    
+  # Health check endpoint
+  - url: /health
+    script: auto
+    
+  # All other routes serve the React frontend
+  - url: /.*
+    static_files: frontend/build/index.html
+    upload: frontend/build/index.html
+    
+  # Fallback to main application
   - url: /.*
     script: auto
 
 # Automatic scaling configuration
 automatic_scaling:
   min_instances: 0  # Allow scaling down to zero to save costs
-  max_instances: 3  # Max instances to handle traffic spikes
+  max_instances: 10  # Max instances to handle traffic spikes (increased for better performance)
   target_cpu_utilization: 0.6
   target_throughput_utilization: 0.6
 
-# Resources allocation
+# Resources allocation (optimized for AI processing)
 resources:
-  cpu: 1
-  memory_gb: 0.5
+  cpu: 2  # Increased for AI recipe generation
+  memory_gb: 2  # Increased for better performance
   disk_size_gb: 10
+
+# Additional App Engine settings
+entrypoint: python main.py
+
+# Request timeout (for AI processing)
+request_timeout: 300  # 5 minutes for complex AI operations
+
+# Health check configuration
+readiness_check:
+  path: "/health"
+  check_interval_sec: 5
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2
+  app_start_timeout_sec: 300
+
+liveness_check:
+  path: "/health"
+  check_interval_sec: 30
+  timeout_sec: 4
+  failure_threshold: 4
+  success_threshold: 2
+
+# Skip files that shouldn't be uploaded
+skip_files:
+  - ^(.*/)?#.*#$
+  - ^(.*/)?.*~$
+  - ^(.*/)?.*\.py[co]$
+  - ^(.*/)?.*/RCS/.*$
+  - ^(.*/)?\..*$
+  - ^(.*/)?node_modules/.*$
+  - ^(.*/)?\.venv/.*$
+  - ^(.*/)?venv/.*$
+  - ^(.*/)?tests/.*$
+  - ^(.*/)?test_.*\.py$
+  - ^(.*/)?.*_test\.py$
+  - ^(.*/)?.*\.md$
+  - ^(.*/)?Dockerfile.*$
+  - ^(.*/)?cloudbuild\.yaml$
+  - ^(.*/)?\.git/.*$
