@@ -173,6 +173,50 @@ async def send_verification_email(email: str, code: str) -> bool:
         logger.error(f"Failed to send verification email: {e}")
         return False
 
+# Add database connection testing
+async def test_database_connection():
+    """Test database connection and log results"""
+    try:
+        # Test basic connection
+        await client.admin.command('ping')
+        logger.info("✅ MongoDB connection successful")
+        
+        # Test database access
+        await db.command("ping")
+        logger.info(f"✅ Database '{db_name}' accessible")
+        
+        # Test collections access
+        collections = await db.list_collection_names()
+        logger.info(f"📊 Available collections: {collections}")
+        
+        # Test a simple operation
+        user_count = await users_collection.count_documents({})
+        logger.info(f"👥 Total users in database: {user_count}")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Database connection failed: {e}")
+        logger.error(f"📍 Connection URL: {mongo_url[:20]}...")
+        logger.error(f"📍 Database name: {db_name}")
+        return False
+
+# Test connection on startup
+@app.on_event("startup")
+async def startup_event():
+    """Run startup tasks"""
+    logger.info("🚀 Starting up backend server...")
+    
+    # Test database connection
+    db_connected = await test_database_connection()
+    
+    if not db_connected:
+        if os.getenv("NODE_ENV") == "production":
+            logger.error("❌ Database connection required in production")
+            raise Exception("Database connection failed")
+        else:
+            logger.warning("⚠️ Database connection failed - running in degraded mode")
+
 # Authentication endpoints
 @app.post("/auth/register")
 async def register_user(registration: UserRegistration):
@@ -267,6 +311,76 @@ async def login_user(login: UserLogin):
     except Exception as e:
         logger.error(f"Login error: {e}")
         raise HTTPException(status_code=500, detail="Login failed")
+
+# Add a dedicated database test endpoint
+@app.get("/db/test")
+async def test_database():
+    """Test database connection and operations"""
+    try:
+        results = {}
+        
+        # Test 1: Basic connection
+        await client.admin.command('ping')
+        results["connection"] = "✅ Connected"
+        
+        # Test 2: Database access
+        await db.command("ping")
+        results["database_access"] = "✅ Accessible"
+        
+        # Test 3: Collections
+        collections = await db.list_collection_names()
+        results["collections"] = collections
+        
+        # Test 4: Sample operations
+        user_count = await users_collection.count_documents({})
+        results["user_count"] = user_count
+        
+        # Test 5: Write operation (insert and delete a test document)
+        test_doc = {"test": True, "created_at": datetime.utcnow()}
+        insert_result = await db.test_collection.insert_one(test_doc)
+        await db.test_collection.delete_one({"_id": insert_result.inserted_id})
+        results["write_test"] = "✅ Write operations working"
+        
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "success",
+                "tests": results,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Database test failed: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        )
+
+@app.get("/debug/env")
+async def debug_environment():
+    """Debug environment variables (remove in production)"""
+    if os.getenv("NODE_ENV") == "production":
+        raise HTTPException(status_code=404, detail="Not available in production")
+    
+    return JSONResponse(
+        status_code=200,
+        content={
+            "environment_variables": {
+                "NODE_ENV": os.getenv("NODE_ENV"),
+                "MONGO_URL": "***" + (os.getenv("MONGO_URL", "")[-10:] if os.getenv("MONGO_URL") else "NOT_SET"),
+                "DB_NAME": os.getenv("DB_NAME"),
+                "PORT": os.getenv("PORT"),
+                "backend_env_loaded": str(Path(__file__).parent / '.env') if (Path(__file__).parent / '.env').exists() else "No .env file"
+            },
+            "working_directory": str(Path.cwd()),
+            "file_location": str(Path(__file__).parent)
+        }
+    )
 
 # Health check
 @app.get("/health")

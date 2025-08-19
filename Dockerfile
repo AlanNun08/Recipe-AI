@@ -41,7 +41,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Copy application source
 COPY backend/ ./backend/
-COPY main.py server.py ./
+COPY main.py ./
 
 # Copy environment file if it exists (create backend directory first if needed)
 RUN mkdir -p ./backend/
@@ -62,5 +62,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Expose port
 EXPOSE 8080
 
-# Use universal startup script
-CMD ["python", "server.py"]
+# Use main.py directly instead of server.py
+CMD ["python", "main.py"]
