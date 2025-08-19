@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">AI Chef</string>
-    <string name="title_activity_main">AI Chef</string>
-    <string name="package_name">com.aichef.app</string>
-    <string name="custom_url_scheme">com.aichef.app</string>
-</resources>
