@@ -43,8 +43,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY backend/ ./backend/
 COPY main.py server.py ./
 
-# Copy environment file if it exists
-COPY backend/.env ./backend/.env* ./backend/
+# Copy environment file if it exists (create backend directory first if needed)
+RUN mkdir -p ./backend/
+COPY backend/.env ./backend/.env
 
 # Copy built frontend from previous stage
 COPY --from=frontend-builder /app/frontend/build/ ./frontend/build/
@@ -53,8 +54,6 @@ COPY --from=frontend-builder /app/frontend/build/ ./frontend/build/
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
 USER app
-
-# Set production environment
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

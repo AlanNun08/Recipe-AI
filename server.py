@@ -33,7 +33,7 @@ def setup_logging():
 
 def get_environment_config():
     """Get environment configuration with smart defaults"""
-    # Load .env file first
+    # Load .env file first (will be overridden by Cloud Run env vars)
     env_loaded = load_environment_variables()
     
     # Port configuration (Cloud Run uses PORT, App Engine uses PORT)
@@ -42,6 +42,9 @@ def get_environment_config():
     # Environment detection
     is_production = os.environ.get('NODE_ENV') == 'production'
     is_cloud_run = 'K_SERVICE' in os.environ  # Cloud Run specific env var
+    
+    # Check if we're using Cloud Run environment variables (production values)
+    using_cloud_env = 'K_SERVICE' in os.environ and is_production
     
     # Set required defaults if missing (for development/testing)
     if 'MONGO_URL' not in os.environ:
@@ -53,7 +56,8 @@ def get_environment_config():
         'port': port,
         'is_production': is_production,
         'is_cloud_run': is_cloud_run,
-        'env_loaded': env_loaded
+        'env_loaded': env_loaded,
+        'using_cloud_env': using_cloud_env
     }
 
 def create_uvicorn_config(port, is_production, is_cloud_run):
@@ -91,6 +95,15 @@ def main():
         logger.info(f"🌍 Environment: {'production' if env_config['is_production'] else 'development'}")
         logger.info(f"☁️ Platform: {'Cloud Run' if env_config['is_cloud_run'] else 'App Engine/Local'}")
         logger.info(f"📝 Environment file loaded: {env_config['env_loaded']}")
+        logger.info(f"🔐 Using Cloud Run env vars: {env_config['using_cloud_env']}")
+        
+        # Log which environment source is being used
+        if env_config['using_cloud_env']:
+            logger.info("✅ Using production environment variables from Cloud Run")
+        elif env_config['env_loaded']:
+            logger.info("⚠️ Using development environment variables from backend/.env")
+        else:
+            logger.info("🔧 Using default/fallback environment variables")
         
         # Import application
         from main import app

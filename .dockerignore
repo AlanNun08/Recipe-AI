@@ -70,8 +70,8 @@ verify_*.py
 *_deployment.tar.gz
 
 # Environment files (will be set by Cloud Run)
-.env
-backend/.env
+# .env
+# backend/.env
 frontend/.env
 .env.local
 .env.development.local
