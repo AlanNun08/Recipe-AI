@@ -1,67 +1,66 @@
-# Multi-stage build optimized for Google Cloud Run
-FROM node:20-slim as frontend-builder
+# Production-optimized Dockerfile for Google Cloud deployment
+# Supports both Cloud Run and App Engine
 
-# Set working directory
+# ============================================================================
+# Stage 1: Frontend Build
+# ============================================================================
+FROM node:20-alpine AS frontend-builder
+
 WORKDIR /app/frontend
 
-# Copy frontend package files
-COPY frontend/package*.json ./
-COPY frontend/yarn.lock ./
+# Copy package files for better caching
+COPY frontend/package*.json frontend/yarn.lock ./
 
-# Install dependencies
-RUN yarn install --production=false --network-timeout 300000
+# Install dependencies with production optimizations
+RUN yarn install --frozen-lockfile --production=false --network-timeout 300000
 
-# Copy frontend source
+# Copy source and build
 COPY frontend/ .
-
-# Build frontend for production
 RUN yarn build
 
-# Python backend stage
-FROM python:3.9-slim
+# ============================================================================
+# Stage 2: Python Backend
+# ============================================================================
+FROM python:3.11-slim AS backend
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies (minimal for faster builds)
-RUN apt-get update && apt-get install -y \
+# Install system dependencies (minimal for security)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     gcc \
     g++ \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Copy and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy backend source (REVERTED TO WORKING STRUCTURE)
+# Copy application source
 COPY backend/ ./backend/
-COPY main.py .
+COPY main.py server.py ./
 
 # Copy built frontend from previous stage
 COPY --from=frontend-builder /app/frontend/build/ ./frontend/build/
-
-# Copy production startup script and make executable
-COPY start_production.py .
-COPY start.sh .
-RUN chmod +x start_production.py start.sh
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
 USER app
 
-# Set environment variables for production
+# Set production environment
 ENV NODE_ENV=production
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-# Expose port (Cloud Run will set PORT env var)
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:' + __import__('os').environ.get('PORT', '8080') + '/health', timeout=5)"
+
+# Expose port
 EXPOSE 8080
 
-# Add health check (use correct port)
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:' + __import__('os').environ.get('PORT', '8080') + '/health', timeout=10)"
-
-# Start the application using fast Cloud Run startup
-CMD ["python", "start_cloudrun.py"]
+# Use universal startup script
+CMD ["python", "server.py"]
