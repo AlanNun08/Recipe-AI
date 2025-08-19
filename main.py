@@ -25,15 +25,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Import the backend app
-try:
-    from backend.server import app as backend_app
-    logger.info("✅ Backend app imported successfully")
-except ImportError as e:
-    logger.error(f"❌ Failed to import backend app: {e}")
-    sys.exit(1)
-
-# Create main FastAPI app
+# Create main FastAPI app first (always succeeds)
 app = FastAPI(
     title="buildyoursmartcart.com",
     description="AI Recipe + Grocery Delivery App - Weekly Meal Planning & Walmart Integration",
@@ -41,6 +33,46 @@ app = FastAPI(
     docs_url="/api/docs" if os.getenv("NODE_ENV") != "production" else None,
     redoc_url="/api/redoc" if os.getenv("NODE_ENV") != "production" else None
 )
+
+logger.info("🚀 Main FastAPI app created successfully")
+
+# Try to import the backend app (optional for basic functionality)
+backend_app = None
+backend_available = False
+
+try:
+    logger.info("🔄 Attempting to import backend app...")
+    from backend.server import app as imported_backend_app
+    backend_app = imported_backend_app
+    backend_available = True
+    logger.info("✅ Backend app imported successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Backend app not available: {e}")
+    logger.info("📦 Creating minimal backend app...")
+    
+    # Create a minimal backend app if import fails
+    backend_app = FastAPI(title="Minimal Backend API")
+    
+    @backend_app.get("/")
+    async def backend_status():
+        return {"status": "minimal", "message": "Backend features not available"}
+    
+    @backend_app.get("/health")
+    async def backend_health():
+        return {"status": "healthy", "mode": "minimal"}
+    
+    backend_available = False
+
+except Exception as e:
+    logger.error(f"❌ Unexpected error importing backend: {e}")
+    # Still create minimal backend to prevent crash
+    backend_app = FastAPI(title="Error Backend API")
+    
+    @backend_app.get("/")
+    async def backend_error():
+        return {"status": "error", "message": str(e)}
+    
+    backend_available = False
 
 # 🚀 CACHE BUSTING MIDDLEWARE FOR GOOGLE CLOUD RUN
 @app.middleware("http")
@@ -62,7 +94,7 @@ async def disable_cache(request: Request, call_next):
     
     return response
 
-# Health check endpoint for Cloud Run (direct access, not behind /api)
+# Health check endpoint for Cloud Run (must be available immediately)
 @app.get("/health")
 async def health_check():
     """Health check endpoint for Google Cloud Run"""
@@ -75,33 +107,37 @@ async def health_check():
             "environment": os.getenv("NODE_ENV", "development"),
             "port": os.getenv("PORT", "8080"),
             "features": {
-                "frontend": True,
-                "backend_api": True,
-                "database": True
+                "frontend": FRONTEND_BUILD_DIR.exists() if 'FRONTEND_BUILD_DIR' in globals() else False,
+                "backend_api": backend_available,
+                "database": backend_available
             },
+            "backend_status": "available" if backend_available else "minimal",
             "timestamp": datetime.utcnow().isoformat()
         }
     )
 
-# Mount the backend API with /api prefix
-app.mount("/api", backend_app)
+# Mount the backend API with /api prefix (always mount, even if minimal)
+if backend_app:
+    app.mount("/api", backend_app)
+    logger.info(f"✅ Backend API mounted at /api (mode: {'full' if backend_available else 'minimal'})")
 
-# Root endpoint that serves backend API info
+# Root API endpoint
 @app.get("/api")
 async def api_root():
     """API root endpoint"""
     return JSONResponse({
         "message": "buildyoursmartcart.com API - Weekly Meal Planning & Walmart Integration", 
         "version": "2.2.0",
+        "backend_mode": "full" if backend_available else "minimal",
         "features": [
             "ai-recipe-generation",
-            "weekly-meal-planning",
+            "weekly-meal-planning", 
             "individual-walmart-shopping",
             "starbucks-secret-menu",
             "community-sharing"
-        ],
+        ] if backend_available else ["basic-api"],
         "docs": "/api/docs" if os.getenv("NODE_ENV") != "production" else None,
-        "health": "/api/health"
+        "health": "/health"
     })
 
 # Static files configuration
@@ -183,10 +219,14 @@ signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == "__main__":
-    # Google App Engine uses PORT environment variable
+    # Google Cloud Run uses PORT environment variable
     port = int(os.environ.get("PORT", 8080))
     
-    # App Engine configuration
+    logger.info(f"🌐 Starting on port {port}")
+    logger.info(f"📁 Frontend build dir exists: {FRONTEND_BUILD_DIR.exists()}")
+    logger.info(f"🔧 Backend available: {backend_available}")
+    
+    # Cloud Run configuration (simplified for reliability)
     uvicorn_config = {
         "host": "0.0.0.0",
         "port": port,
@@ -194,27 +234,23 @@ if __name__ == "__main__":
         "log_level": "info",
         "access_log": True,
         "reload": False,
-        "loop": "auto"
+        "timeout_keep_alive": 30,
+        "timeout_graceful_shutdown": 30
     }
     
-    # Optimize for production (App Engine is always production)
+    # Production optimizations
     if os.getenv("NODE_ENV") == "production":
         uvicorn_config.update({
-            "log_level": "warning",
-            "access_log": False,  # Use App Engine logging
-            "server_header": False,
-            "date_header": False
+            "log_level": "info",  # Keep info level for debugging
+            "access_log": True,   # Keep access logs for now
         })
-        logger.info(f"🌐 Google App Engine production mode - Port: {port}")
-    else:
-        logger.info(f"🔧 Development mode - Port: {port}")
+        logger.info("🌐 Production mode enabled")
     
-    # Ensure clean startup
-    logger.info(f"🚀 Starting buildyoursmartcart.com on {uvicorn_config['host']}:{uvicorn_config['port']}")
+    logger.info(f"🚀 Starting buildyoursmartcart.com server...")
     
     try:
-        # Use the app directly for App Engine compatibility
         uvicorn.run(app, **uvicorn_config)
     except Exception as e:
-        logger.error(f"❌ Failed to start server: {e}")
-        raise
+        logger.error(f"❌ Server startup failed: {e}")
+        # Don't re-raise in Cloud Run, let the container exit gracefully
+        sys.exit(1)
