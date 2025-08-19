@@ -11,8 +11,9 @@ WORKDIR /app/frontend
 # Copy package files for better caching
 COPY frontend/package*.json frontend/yarn.lock ./
 
-# Install dependencies with production optimizations
-RUN yarn install --frozen-lockfile --production=false --network-timeout 300000
+# Install dependencies with updated lockfile handling
+RUN yarn install --network-timeout 300000 --update-checksums || \
+    yarn install --network-timeout 300000
 
 # Copy source and build
 COPY frontend/ .
@@ -51,9 +52,6 @@ RUN useradd --create-home --shell /bin/bash app && \
 USER app
 
 # Set production environment
-ENV NODE_ENV=production
-ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
@@ -62,5 +60,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Expose port
 EXPOSE 8080
 
+# Use universal startup script
+CMD ["python", "server.py"]
 # Use universal startup script
 CMD ["python", "server.py"]
