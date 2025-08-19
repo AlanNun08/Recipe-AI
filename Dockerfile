@@ -43,6 +43,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY backend/ ./backend/
 COPY main.py server.py ./
 
+# Copy environment file if it exists
+COPY backend/.env ./backend/.env* ./backend/
+
 # Copy built frontend from previous stage
 COPY --from=frontend-builder /app/frontend/build/ ./frontend/build/
 
@@ -60,7 +63,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Expose port
 EXPOSE 8080
 
-# Use universal startup script
-CMD ["python", "server.py"]
 # Use universal startup script
 CMD ["python", "server.py"]

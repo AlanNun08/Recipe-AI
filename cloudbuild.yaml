@@ -1,0 +1,13 @@
+steps:
+  # ...existing build steps...
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+    - 'run'
+    - 'deploy'
+    - 'recipe-ai'
+    - '--image'
+    - 'gcr.io/$PROJECT_ID/recipe-ai:$COMMIT_SHA'
+    - '--region=us-central1'
+    - '--set-env-vars'
+    - 'NODE_ENV=production,PORT=8080'
+    - '--allow-unauthenticated'

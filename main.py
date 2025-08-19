@@ -11,6 +11,21 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
+# Load environment variables from backend/.env if it exists
+try:
+    from dotenv import load_dotenv
+    backend_env_path = Path(__file__).parent / "backend" / ".env"
+    if backend_env_path.exists():
+        load_dotenv(backend_env_path)
+        logger = logging.getLogger(__name__)
+        logger.info(f"✅ Loaded environment variables from {backend_env_path}")
+    else:
+        logger = logging.getLogger(__name__)
+        logger.info("📝 No backend/.env file found, using system environment variables")
+except ImportError:
+    # python-dotenv not installed, skip loading .env file
+    pass
+
 import uvicorn
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles

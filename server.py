@@ -7,6 +7,20 @@ import os
 import sys
 import uvicorn
 import logging
+from pathlib import Path
+
+def load_environment_variables():
+    """Load environment variables from backend/.env if available"""
+    try:
+        from dotenv import load_dotenv
+        backend_env_path = Path(__file__).parent / "backend" / ".env"
+        if backend_env_path.exists():
+            load_dotenv(backend_env_path)
+            return True
+        return False
+    except ImportError:
+        # python-dotenv not installed
+        return False
 
 def setup_logging():
     """Configure production logging"""
@@ -19,6 +33,9 @@ def setup_logging():
 
 def get_environment_config():
     """Get environment configuration with smart defaults"""
+    # Load .env file first
+    env_loaded = load_environment_variables()
+    
     # Port configuration (Cloud Run uses PORT, App Engine uses PORT)
     port = int(os.environ.get('PORT', 8080))
     
@@ -35,7 +52,8 @@ def get_environment_config():
     return {
         'port': port,
         'is_production': is_production,
-        'is_cloud_run': is_cloud_run
+        'is_cloud_run': is_cloud_run,
+        'env_loaded': env_loaded
     }
 
 def create_uvicorn_config(port, is_production, is_cloud_run):
@@ -72,6 +90,7 @@ def main():
         logger.info(f"🚀 Starting buildyoursmartcart.com on port {env_config['port']}")
         logger.info(f"🌍 Environment: {'production' if env_config['is_production'] else 'development'}")
         logger.info(f"☁️ Platform: {'Cloud Run' if env_config['is_cloud_run'] else 'App Engine/Local'}")
+        logger.info(f"📝 Environment file loaded: {env_config['env_loaded']}")
         
         # Import application
         from main import app
