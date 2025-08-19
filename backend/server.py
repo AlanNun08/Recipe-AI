@@ -38,6 +38,10 @@ import aiohttp
 # Stripe imports
 import stripe
 
+# Import route modules
+from .routes.auth import router as auth_router
+# Add other route imports as needed
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -283,7 +287,7 @@ async def register_user(registration: UserRegistration):
     try:
         # Check if user already exists
         existing_user = await users_collection.find_one({"email": registration.email})
-        if existing_user:
+        if (existing_user):
             raise HTTPException(status_code=400, detail="User already exists")
         
         # Create user
@@ -941,3 +945,18 @@ async def generate_fallback_starbucks_recipe(request: StarbucksGeneration) -> di
 
 # Remove the __main__ section to prevent conflicts in production
 # The app is imported and run by main.py
+
+# Include routers
+app.include_router(auth_router)
+
+@app.get("/")
+async def root():
+    return {
+        "message": "BuildYourSmartCart Backend API",
+        "version": "2.2.0",
+        "status": "running"
+    }
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "service": "backend"}
