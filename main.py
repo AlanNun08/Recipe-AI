@@ -154,7 +154,13 @@ async def api_root():
     })
 
 # Static files configuration
-FRONTEND_BUILD_DIR = Path("/app/frontend/build")
+# Use different paths for local vs container
+if os.path.exists("/app/frontend/build"):
+    FRONTEND_BUILD_DIR = Path("/app/frontend/build")  # Container path
+else:
+    FRONTEND_BUILD_DIR = Path(__file__).parent / "frontend" / "build"  # Local path
+
+logger.info(f"📁 Looking for frontend at: {FRONTEND_BUILD_DIR}")
 
 if FRONTEND_BUILD_DIR.exists():
     logger.info("✅ Frontend build directory found")
