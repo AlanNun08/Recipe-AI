@@ -49,18 +49,31 @@ app = FastAPI(
 
 logger.info("🚀 Main FastAPI app created successfully")
 
-# Try to import the backend app (optional for basic functionality)
+# Try to import the backend app with better error handling
 backend_app = None
 backend_available = False
 
 try:
     logger.info("🔄 Attempting to import backend app...")
+    
+    # Check if backend directory exists
+    backend_dir = Path(__file__).parent / "backend"
+    if not backend_dir.exists():
+        raise ImportError("Backend directory not found")
+    
+    # Check if server.py exists
+    server_file = backend_dir / "server.py"
+    if not server_file.exists():
+        raise ImportError("Backend server.py not found")
+    
+    # Import the backend app
     from backend.server import app as imported_backend_app
     backend_app = imported_backend_app
     backend_available = True
     logger.info("✅ Backend app imported successfully")
+    
 except ImportError as e:
-    logger.warning(f"⚠️ Backend app not available: {e}")
+    logger.error(f"❌ Backend import failed: {e}")
     logger.info("📦 Creating minimal backend app...")
     
     # Create a minimal backend app if import fails
@@ -68,22 +81,52 @@ except ImportError as e:
     
     @backend_app.get("/")
     async def backend_status():
-        return {"status": "minimal", "message": "Backend features not available"}
+        return {"status": "minimal", "message": "Backend features not available", "error": str(e)}
     
     @backend_app.get("/health")
     async def backend_health():
         return {"status": "healthy", "mode": "minimal"}
     
+    # Add minimal auth endpoints to prevent 404 errors
+    @backend_app.post("/auth/login")
+    async def minimal_login():
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Backend authentication not available"}
+        )
+    
+    @backend_app.post("/auth/register")
+    async def minimal_register():
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Backend registration not available"}
+        )
+    
     backend_available = False
 
 except Exception as e:
     logger.error(f"❌ Unexpected error importing backend: {e}")
+    logger.error(f"❌ Error type: {type(e).__name__}")
+    logger.error(f"❌ Error details: {str(e)}")
+    
     # Still create minimal backend to prevent crash
     backend_app = FastAPI(title="Error Backend API")
     
     @backend_app.get("/")
     async def backend_error():
+        return {"status": "error", "message": str(e), "error_type": type(e).__name__}
+    
+    @backend_app.get("/health")
+    async def backend_error_health():
         return {"status": "error", "message": str(e)}
+    
+    # Add error auth endpoints
+    @backend_app.post("/auth/login")
+    async def error_login():
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Backend error: {str(e)}"}
+        )
     
     backend_available = False
 
@@ -111,6 +154,14 @@ async def disable_cache(request: Request, call_next):
 @app.get("/health")
 async def health_check():
     """Health check endpoint for Google Cloud Run"""
+    
+    # Check frontend build
+    FRONTEND_BUILD_DIR = None
+    if os.path.exists("/app/frontend/build"):
+        FRONTEND_BUILD_DIR = Path("/app/frontend/build")
+    else:
+        FRONTEND_BUILD_DIR = Path(__file__).parent / "frontend" / "build"
+    
     return JSONResponse(
         status_code=200,
         content={
@@ -120,11 +171,12 @@ async def health_check():
             "environment": os.getenv("NODE_ENV", "development"),
             "port": os.getenv("PORT", "8080"),
             "features": {
-                "frontend": FRONTEND_BUILD_DIR.exists() if 'FRONTEND_BUILD_DIR' in globals() else False,
+                "frontend": FRONTEND_BUILD_DIR.exists() if FRONTEND_BUILD_DIR else False,
                 "backend_api": backend_available,
                 "database": backend_available
             },
             "backend_status": "available" if backend_available else "minimal",
+            "backend_error": None if backend_available else "Backend import failed",
             "timestamp": datetime.utcnow().isoformat()
         }
     )
@@ -242,7 +294,7 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     
     logger.info(f"🌐 Starting on port {port}")
-    logger.info(f"📁 Frontend build dir exists: {FRONTEND_BUILD_DIR.exists()}")
+    logger.info(f"📁 Frontend build dir exists: {FRONTEND_BUILD_DIR.exists() if 'FRONTEND_BUILD_DIR' in locals() else False}")
     logger.info(f"🔧 Backend available: {backend_available}")
     
     # Cloud Run configuration (simplified for reliability)
