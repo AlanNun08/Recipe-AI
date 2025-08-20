@@ -31,10 +31,6 @@ from email.mime.multipart import MIMEMultipart
 # OpenAI imports
 from openai import OpenAI
 
-# HTTP client imports
-import httpx
-import aiohttp
-
 # Stripe imports
 import stripe
 
