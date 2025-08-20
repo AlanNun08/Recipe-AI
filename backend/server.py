@@ -303,17 +303,52 @@ async def register_user(registration: UserRegistration):
 
 @app.post("/auth/login")
 async def login_user(login: UserLogin):
-    """Login user"""
+    """Login user - handles both verified and unverified accounts"""
     try:
-        # Find user
+        # Find user by email
         user = await users_collection.find_one({"email": login.email})
         if not user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
-        # Verify password
+        # Verify password first (this ensures password is correct)
         if not verify_password(login.password, user["password"]):
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
+        # Password is correct, now check if user is verified
+        if not user.get("is_verified", False):
+            # User exists and password is correct, but account is not verified
+            # Generate a new verification code and send it
+            
+            # Delete any existing verification codes for this user
+            await verification_codes_collection.delete_many({"user_id": user["id"]})
+            
+            # Generate new verification code
+            code = generate_verification_code()
+            verification_data = {
+                "user_id": user["id"],
+                "code": code,
+                "expires_at": datetime.utcnow() + timedelta(hours=24),
+                "created_at": datetime.utcnow()
+            }
+            
+            await verification_codes_collection.insert_one(verification_data)
+            
+            # Send verification email
+            await send_verification_email(user["email"], code)
+            
+            # Return specific response for unverified account
+            return JSONResponse(
+                status_code=403,  # 403 Forbidden indicates valid credentials but account needs verification
+                content={
+                    "status": "verification_required",
+                    "message": "Account not verified. Please check your email for verification code.",
+                    "user_id": user["id"],
+                    "email": user["email"],
+                    "action": "verify_account"
+                }
+            )
+        
+        # User is verified, proceed with normal login
         # Remove password from response
         user_data = {k: v for k, v in user.items() if k != "password"}
         
@@ -321,6 +356,7 @@ async def login_user(login: UserLogin):
             status_code=200,
             content={
                 "status": "success",
+                "message": "Login successful",
                 "user": user_data
             }
         )
