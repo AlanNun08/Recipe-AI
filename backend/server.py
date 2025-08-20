@@ -68,7 +68,7 @@ app = FastAPI(
 # CORS middleware - properly configured for CORS preflight
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "http://localhost:8080", "*"],  # Allow both frontend and backend ports
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
