@@ -96,7 +96,7 @@ async def options_handler(full_path: str):
 
 # MongoDB setup with validation
 mongo_url = os.environ.get('MONGO_URL')
-db_name = os.environ.get('DB_NAME', 'buildyoursmartcart_development')
+db_name = os.environ.get('DB_NAME')  # Remove default since it's always set
 
 if not mongo_url:
     if os.getenv("NODE_ENV") == "production":
@@ -105,6 +105,10 @@ if not mongo_url:
     else:
         mongo_url = 'mongodb://localhost:27017'
         logger.warning("⚠️ MONGO_URL not set, using localhost default for development")
+
+if not db_name:
+    logger.error("❌ DB_NAME environment variable is required")
+    raise ValueError("DB_NAME environment variable is required")
 
 logger.info(f"📊 Connecting to MongoDB: {mongo_url.replace(mongo_url.split('@')[0].split('//')[1] if '@' in mongo_url else '', '***') if mongo_url else 'None'}")
 logger.info(f"📊 Database name: {db_name}")

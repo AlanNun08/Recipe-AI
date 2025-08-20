@@ -1,5 +1,9 @@
 steps:
-  # ...existing build steps...
+  # Build step
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/recipe-ai:$COMMIT_SHA', '.']
+  
+  # Deploy step - only set essential variables, use existing Cloud Run env vars for others
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
     - 'run'
@@ -11,3 +15,7 @@ steps:
     - '--set-env-vars'
     - 'NODE_ENV=production,PORT=8080'
     - '--allow-unauthenticated'
+
+# Substitution variables (set these in Cloud Build triggers)
+substitutions:
+  _MONGO_URL: 'mongodb+srv://your_username:your_password@cluster.mongodb.net/?retryWrites=true&w=majority'
