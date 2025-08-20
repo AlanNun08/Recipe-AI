@@ -25,50 +25,57 @@ export const authService = {
 
   // Login user with verification handling
   async login(credentials) {
-    const response = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
-    });
-    
-    const data = await response.json();
-    
-    if (response.status === 403 && data.status === 'verification_required') {
-      // User credentials are correct but account needs verification
-      // Store user data temporarily for verification process
-      localStorage.setItem('pendingVerification', JSON.stringify({
-        user_id: data.user_id,
-        email: data.email
-      }));
+    try {
+      const response = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
       
-      // Return special response to indicate verification needed
-      return {
-        status: 'verification_required',
-        message: data.message,
-        user_id: data.user_id,
-        email: data.email,
-        action: 'verify_account'
-      };
-    }
-    
-    if (!response.ok) {
-      throw new Error(data.detail || 'Login failed');
-    }
-    
-    // Successful login
-    if (data.status === 'success') {
-      // Store user data and token (if you add tokens later)
-      localStorage.setItem('user', JSON.stringify(data.user));
+      const data = await response.json();
       
-      // Clear any pending verification data
-      localStorage.removeItem('pendingVerification');
+      // Handle verification required (403 status)
+      if (response.status === 403 && data.status === 'verification_required') {
+        // Store user data temporarily for verification process
+        localStorage.setItem('pendingVerification', JSON.stringify({
+          user_id: data.user_id,
+          email: data.email
+        }));
+        
+        // Return the verification required response
+        return {
+          status: 'verification_required',
+          message: data.message,
+          user_id: data.user_id,
+          email: data.email,
+          action: 'verify_account'
+        };
+      }
       
-      return data;
+      // Handle other errors
+      if (!response.ok) {
+        throw new Error(data.detail || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      // Successful login
+      if (data.status === 'success') {
+        // Store user data
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Clear any pending verification data
+        localStorage.removeItem('pendingVerification');
+        
+        return data;
+      }
+      
+      throw new Error('Unexpected login response');
+      
+    } catch (error) {
+      console.error('Auth service login error:', error);
+      throw error;
     }
-    
-    throw new Error('Unexpected login response');
   },
 
   // Get current user
