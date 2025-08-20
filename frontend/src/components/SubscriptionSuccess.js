@@ -5,7 +5,8 @@ const SubscriptionSuccess = ({ onContinue }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  // Use environment variable
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
   useEffect(() => {
     // Get session_id from URL parameters

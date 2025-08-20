@@ -4,7 +4,8 @@ const SubscriptionGate = ({ user, children, featureName = "this premium feature"
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  // Use environment variable
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
   useEffect(() => {
     if (user?.id) {

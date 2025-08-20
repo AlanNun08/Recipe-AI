@@ -1,228 +1,133 @@
 import React, { useState } from 'react';
+import { authService } from '../services/auth';
 
-const WelcomeOnboarding = ({ user, setCurrentScreen, showNotification }) => {
+const WelcomeOnboarding = ({ onComplete, onSkip }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [userPreferences, setUserPreferences] = useState({
+    dietaryRestrictions: [],
+    cuisinePreferences: [],
+    cookingSkillLevel: '',
+    householdSize: 1,
+    weeklyBudget: '',
+    favoriteIngredients: []
+  });
 
   const steps = [
     {
-      title: "Welcome to AI Chef! 🍳",
-      content: (
-        <div className="text-center">
-          <div className="text-8xl mb-6">🎉</div>
-          <h2 className="text-4xl font-bold text-gray-800 mb-4">
-            Welcome, {user?.first_name}!
-          </h2>
-          <p className="text-xl text-gray-600 mb-6">
-            You've just joined the most exciting cooking adventure! 
-          </p>
-          <div className="bg-gradient-to-r from-orange-100 to-red-100 rounded-2xl p-6 mb-6">
-            <p className="text-lg text-gray-700 leading-relaxed">
-              AI Chef is your personal cooking assistant that generates <span className="font-bold text-orange-600">custom recipes</span>, 
-              creates <span className="font-bold text-green-600">Starbucks secret menu drinks</span>, 
-              and automatically builds <span className="font-bold text-blue-600">Walmart shopping carts</span> for you!
-            </p>
-          </div>
-          <p className="text-gray-600">Let's take a quick tour to get you started! 🚀</p>
-        </div>
-      )
+      title: "Welcome to BuildYourSmartCart! 🛒",
+      description: "Let's personalize your AI chef experience",
+      component: "welcome"
     },
     {
-      title: "🍝 AI Recipe Generator",
-      content: (
-        <div>
-          <div className="text-center mb-6">
-            <div className="text-6xl mb-4">🍳</div>
-            <h3 className="text-3xl font-bold text-gray-800 mb-4">Generate Amazing Recipes</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div className="text-center p-4 bg-orange-50 rounded-xl">
-              <div className="text-3xl mb-2">🍝</div>
-              <h4 className="font-bold text-gray-800">Cuisine</h4>
-              <p className="text-sm text-gray-600">Traditional dishes from around the world</p>
-            </div>
-            <div className="text-center p-4 bg-purple-50 rounded-xl">
-              <div className="text-3xl mb-2">🍪</div>
-              <h4 className="font-bold text-gray-800">Snacks</h4>
-              <p className="text-sm text-gray-600">Healthy bowls, treats, and bites</p>
-            </div>
-            <div className="text-center p-4 bg-blue-50 rounded-xl">
-              <div className="text-3xl mb-2">🧋</div>
-              <h4 className="font-bold text-gray-800">Beverages</h4>
-              <p className="text-sm text-gray-600">Boba, tea, and specialty drinks</p>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6">
-            <h4 className="font-bold text-gray-800 mb-3">✨ How it works:</h4>
-            <div className="space-y-2 text-gray-700">
-              <p>• 🎯 Choose your recipe category (Cuisine, Snacks, or Beverages)</p>
-              <p>• 🎨 Customize with dietary preferences, ingredients, and difficulty</p>
-              <p>• 🤖 AI generates a personalized recipe just for you</p>
-              <p>• 🛒 Automatically creates a Walmart shopping cart with all ingredients</p>
-              <p>• 🏪 One-click shopping - all ingredients ready to purchase!</p>
-            </div>
-          </div>
-        </div>
-      )
+      title: "Dietary Preferences 🥗",
+      description: "Tell us about your dietary needs",
+      component: "dietary"
     },
     {
-      title: "☕ Starbucks Secret Menu",
-      content: (
-        <div>
-          <div className="text-center mb-6">
-            <div className="text-6xl mb-4">☕</div>
-            <h3 className="text-3xl font-bold text-green-800 mb-4">Viral TikTok Drink Hacks</h3>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            <div className="text-center p-3 bg-green-50 rounded-lg">
-              <div className="text-2xl mb-1">🥤</div>
-              <p className="text-sm font-medium">Frappuccino</p>
-            </div>
-            <div className="text-center p-3 bg-green-50 rounded-lg">
-              <div className="text-2xl mb-1">🧊</div>
-              <p className="text-sm font-medium">Refresher</p>
-            </div>
-            <div className="text-center p-3 bg-green-50 rounded-lg">
-              <div className="text-2xl mb-1">🍋</div>
-              <p className="text-sm font-medium">Lemonade</p>
-            </div>
-            <div className="text-center p-3 bg-green-50 rounded-lg">
-              <div className="text-2xl mb-1">🍵</div>
-              <p className="text-sm font-medium">Matcha Latte</p>
-            </div>
-            <div className="text-center p-3 bg-green-50 rounded-lg">
-              <div className="text-2xl mb-1">🎲</div>
-              <p className="text-sm font-medium">Surprise Me!</p>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 mb-6">
-            <h4 className="font-bold text-gray-800 mb-3">🎯 What you get:</h4>
-            <div className="space-y-2 text-gray-700">
-              <p>• 🌟 Creative drink name (like "Unicorn Dreams Frappuccino")</p>
-              <p>• 📝 Exact drive-thru ordering script</p>
-              <p>• 🎨 Step-by-step modifications to request</p>
-              <p>• 💡 Pro tips for the best results</p>
-              <p>• 📱 Easy copy & share for TikTok</p>
-            </div>
-          </div>
-
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
-            <div className="flex items-start">
-              <div className="text-2xl mr-3">🎬</div>
-              <div>
-                <h4 className="font-bold text-gray-800">Drive-Thru Ready!</h4>
-                <p className="text-gray-700">Each drink comes with a perfect ordering script you can use at any Starbucks drive-thru. Just copy and paste!</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
+      title: "Cuisine Preferences 🍽️",
+      description: "What flavors do you love?",
+      component: "cuisine"
     },
     {
-      title: "🛒 Walmart Shopping Integration",
-      content: (
-        <div>
-          <div className="text-center mb-6">
-            <div className="text-6xl mb-4">🛒</div>
-            <h3 className="text-3xl font-bold text-blue-800 mb-4">Automatic Shopping Lists</h3>
-          </div>
-
-          <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-6 mb-6">
-            <h4 className="font-bold text-gray-800 mb-3">🔄 How it works:</h4>
-            <div className="space-y-3 text-gray-700">
-              <div className="flex items-start">
-                <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5">1</span>
-                <p>Generate a recipe with AI Chef</p>
-              </div>
-              <div className="flex items-start">
-                <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5">2</span>
-                <p>AI automatically finds all ingredients at Walmart</p>
-              </div>
-              <div className="flex items-start">
-                <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5">3</span>
-                <p>Choose your preferred products from multiple options</p>
-              </div>
-              <div className="flex items-start">
-                <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5">4</span>
-                <p>One-click to add everything to your Walmart cart</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-red-50 border-l-4 border-red-400 p-6 rounded-lg">
-            <div className="flex items-start">
-              <div className="text-2xl mr-3">⚠️</div>
-              <div>
-                <h4 className="font-bold text-red-800 mb-2">IMPORTANT: Walmart Login Required</h4>
-                <p className="text-red-700 mb-3">
-                  To add items to your Walmart cart, you must be logged into your Walmart account:
-                </p>
-                <div className="bg-white rounded-lg p-4 space-y-2">
-                  <p className="text-red-700">• 🔗 <strong>Open a new tab</strong> and go to <strong>walmart.com</strong></p>
-                  <p className="text-red-700">• 🔐 <strong>Log into your Walmart account</strong></p>
-                  <p className="text-red-700">• 🔙 <strong>Come back to AI Chef</strong> and click the Walmart link</p>
-                  <p className="text-red-700">• 🛒 <strong>Items will be added to your logged-in cart</strong></p>
-                </div>
-                <p className="text-red-600 mt-3 font-medium">
-                  Without logging in, the cart link won't work properly!
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
+      title: "Cooking Experience 👨‍🍳",
+      description: "How comfortable are you in the kitchen?",
+      component: "skill"
     },
     {
-      title: "🎯 Ready to Start!",
-      content: (
-        <div className="text-center">
-          <div className="text-8xl mb-6">🚀</div>
-          <h2 className="text-4xl font-bold text-gray-800 mb-4">
-            You're All Set, {user?.first_name}!
-          </h2>
-          <p className="text-xl text-gray-600 mb-6">
-            Time to create some amazing recipes and viral Starbucks drinks!
-          </p>
-          
-          <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-2xl p-6 mb-6">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">Quick Start Guide:</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-              <div className="bg-white rounded-lg p-4">
-                <h4 className="font-bold text-green-600 mb-2">🍳 For Recipes:</h4>
-                <p className="text-gray-700 text-sm">Click "Generate Recipe" → Choose category → Customize options → Get shopping list!</p>
-              </div>
-              <div className="bg-white rounded-lg p-4">
-                <h4 className="font-bold text-green-600 mb-2">☕ For Starbucks:</h4>
-                <p className="text-gray-700 text-sm">Click "Starbucks Secret Menu" → Pick drink type → Add flavor → Copy ordering script!</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-6">
-            <p className="text-gray-700">
-              <strong>💡 Pro Tip:</strong> Remember to log into Walmart in a separate tab before using shopping links!
-            </p>
-          </div>
-
-          <p className="text-gray-600 mb-6">
-            Ready to become a culinary master? Let's start cooking! 👨‍🍳👩‍🍳
-          </p>
-        </div>
-      )
+      title: "Household Setup 🏠",
+      description: "Help us plan the right portions",
+      component: "household"
     }
   ];
+
+  const dietaryOptions = [
+    'Vegetarian', 'Vegan', 'Gluten-Free', 'Keto', 'Paleo', 
+    'Low-Carb', 'Dairy-Free', 'Nut-Free', 'Low-Sodium'
+  ];
+
+  const cuisineOptions = [
+    'Italian', 'Mexican', 'Asian', 'Mediterranean', 'American',
+    'Indian', 'Thai', 'French', 'Japanese', 'Middle Eastern'
+  ];
+
+  const skillLevels = [
+    { value: 'beginner', label: 'Beginner - Simple recipes please!' },
+    { value: 'intermediate', label: 'Intermediate - I can handle some complexity' },
+    { value: 'advanced', label: 'Advanced - Bring on the challenge!' }
+  ];
+
+  const budgetRanges = [
+    { value: 'budget', label: '$50-100/week - Budget-friendly' },
+    { value: 'moderate', label: '$100-200/week - Moderate' },
+    { value: 'premium', label: '$200+/week - Premium ingredients' }
+  ];
+
+  const handleDietaryChange = (option) => {
+    const current = userPreferences.dietaryRestrictions;
+    const updated = current.includes(option)
+      ? current.filter(item => item !== option)
+      : [...current, option];
+    
+    setUserPreferences({
+      ...userPreferences,
+      dietaryRestrictions: updated
+    });
+  };
+
+  const handleCuisineChange = (option) => {
+    const current = userPreferences.cuisinePreferences;
+    const updated = current.includes(option)
+      ? current.filter(item => item !== option)
+      : [...current, option];
+    
+    setUserPreferences({
+      ...userPreferences,
+      cuisinePreferences: updated
+    });
+  };
+
+  const savePreferences = async () => {
+    try {
+      // Save preferences to backend
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.id) {
+        // Call API to save preferences
+        const response = await fetch('/api/user/preferences', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            preferences: userPreferences
+          }),
+        });
+
+        if (response.ok) {
+          console.log('Preferences saved successfully');
+        }
+      }
+      
+      // Store preferences locally as backup
+      localStorage.setItem('userPreferences', JSON.stringify(userPreferences));
+      
+      if (onComplete) {
+        onComplete(userPreferences);
+      }
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      // Still continue even if save fails
+      if (onComplete) {
+        onComplete(userPreferences);
+      }
+    }
+  };
 
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Mark user as onboarded and go to dashboard
-      localStorage.setItem(`user_${user?.id}_onboarded`, 'true');
-      setCurrentScreen('dashboard');
-      showNotification('🎉 Welcome to AI Chef! Ready to create amazing recipes!', 'success');
+      savePreferences();
     }
   };
 
@@ -232,70 +137,228 @@ const WelcomeOnboarding = ({ user, setCurrentScreen, showNotification }) => {
     }
   };
 
-  const skipTutorial = () => {
-    localStorage.setItem(`user_${user?.id}_onboarded`, 'true');
-    setCurrentScreen('dashboard');
-    showNotification('👋 Welcome! You can always access the tutorial from your dashboard.', 'info');
+  const renderStepContent = () => {
+    const step = steps[currentStep];
+    
+    switch (step.component) {
+      case 'welcome':
+        return (
+          <div className="text-center">
+            <div className="text-6xl mb-6">🤖👨‍🍳</div>
+            <h2 className="text-2xl font-bold mb-4">Meet Your AI Chef!</h2>
+            <p className="text-gray-600 mb-6">
+              I'll help you discover amazing recipes, plan your weekly meals, 
+              and create smart shopping lists that fit your lifestyle.
+            </p>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-blue-700">
+                ✨ This quick setup will personalize your experience in just 2 minutes!
+              </p>
+            </div>
+          </div>
+        );
+
+      case 'dietary':
+        return (
+          <div>
+            <h3 className="text-xl font-bold mb-4">Select your dietary preferences:</h3>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {dietaryOptions.map(option => (
+                <button
+                  key={option}
+                  onClick={() => handleDietaryChange(option)}
+                  className={`p-3 rounded-lg border-2 transition-all ${
+                    userPreferences.dietaryRestrictions.includes(option)
+                      ? 'border-green-500 bg-green-50 text-green-700'
+                      : 'border-gray-200 hover:border-green-300'
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+            <p className="text-sm text-gray-500">Select all that apply</p>
+          </div>
+        );
+
+      case 'cuisine':
+        return (
+          <div>
+            <h3 className="text-xl font-bold mb-4">What cuisines do you enjoy?</h3>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {cuisineOptions.map(option => (
+                <button
+                  key={option}
+                  onClick={() => handleCuisineChange(option)}
+                  className={`p-3 rounded-lg border-2 transition-all ${
+                    userPreferences.cuisinePreferences.includes(option)
+                      ? 'border-orange-500 bg-orange-50 text-orange-700'
+                      : 'border-gray-200 hover:border-orange-300'
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+            <p className="text-sm text-gray-500">Choose your favorites</p>
+          </div>
+        );
+
+      case 'skill':
+        return (
+          <div>
+            <h3 className="text-xl font-bold mb-4">What's your cooking skill level?</h3>
+            <div className="space-y-3">
+              {skillLevels.map(skill => (
+                <button
+                  key={skill.value}
+                  onClick={() => setUserPreferences({
+                    ...userPreferences,
+                    cookingSkillLevel: skill.value
+                  })}
+                  className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
+                    userPreferences.cookingSkillLevel === skill.value
+                      ? 'border-purple-500 bg-purple-50 text-purple-700'
+                      : 'border-gray-200 hover:border-purple-300'
+                  }`}
+                >
+                  {skill.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'household':
+        return (
+          <div>
+            <h3 className="text-xl font-bold mb-6">Household Details</h3>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">
+                How many people are you cooking for?
+              </label>
+              <select
+                value={userPreferences.householdSize}
+                onChange={(e) => setUserPreferences({
+                  ...userPreferences,
+                  householdSize: parseInt(e.target.value)
+                })}
+                className="w-full p-3 border border-gray-300 rounded-lg"
+              >
+                {[1,2,3,4,5,6,7,8].map(num => (
+                  <option key={num} value={num}>
+                    {num} {num === 1 ? 'person' : 'people'}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Weekly grocery budget:
+              </label>
+              <div className="space-y-2">
+                {budgetRanges.map(budget => (
+                  <button
+                    key={budget.value}
+                    onClick={() => setUserPreferences({
+                      ...userPreferences,
+                      weeklyBudget: budget.value
+                    })}
+                    className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
+                      userPreferences.weeklyBudget === budget.value
+                        ? 'border-green-500 bg-green-50 text-green-700'
+                        : 'border-gray-200 hover:border-green-300'
+                    }`}
+                  >
+                    {budget.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 p-4">
-      <div className="max-w-4xl mx-auto">
-        
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full">
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-600">Tutorial Progress</span>
-            <span className="text-sm font-medium text-gray-600">
-              {currentStep + 1} of {steps.length}
+            <span className="text-sm font-medium text-gray-700">
+              Step {currentStep + 1} of {steps.length}
+            </span>
+            <span className="text-sm text-gray-500">
+              {Math.round(((currentStep + 1) / steps.length) * 100)}% Complete
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
-              className="bg-gradient-to-r from-orange-500 to-red-500 h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500"
               style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
             ></div>
           </div>
         </div>
 
-        {/* Tutorial Content */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800">{steps[currentStep].title}</h1>
+        {/* Main Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">
+              {steps[currentStep].title}
+            </h1>
+            <p className="text-gray-600">
+              {steps[currentStep].description}
+            </p>
           </div>
-          
-          <div className="max-w-3xl mx-auto">
-            {steps[currentStep].content}
+
+          <div className="mb-8">
+            {renderStepContent()}
+          </div>
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between items-center">
+            <div>
+              {currentStep > 0 && (
+                <button
+                  onClick={prevStep}
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  ← Previous
+                </button>
+              )}
+            </div>
+
+            <div className="flex space-x-3">
+              {onSkip && (
+                <button
+                  onClick={onSkip}
+                  className="px-6 py-2 text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  Skip Setup
+                </button>
+              )}
+              
+              <button
+                onClick={nextStep}
+                className="px-8 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+              >
+                {currentStep === steps.length - 1 ? 'Complete Setup 🎉' : 'Next →'}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center">
-          <button
-            onClick={prevStep}
-            disabled={currentStep === 0}
-            className={`px-6 py-3 rounded-xl font-medium transition-all ${
-              currentStep === 0
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-gray-500 hover:bg-gray-600 text-white'
-            }`}
-          >
-            ← Previous
-          </button>
-
-          <button
-            onClick={skipTutorial}
-            className="px-6 py-3 rounded-xl bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium transition-all"
-          >
-            Skip Tutorial
-          </button>
-
-          <button
-            onClick={nextStep}
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-medium transition-all"
-          >
-            {currentStep === steps.length - 1 ? 'Start Cooking! 🍳' : 'Next →'}
-          </button>
+        {/* Footer */}
+        <div className="text-center mt-6">
+          <p className="text-gray-500 text-sm">
+            🔒 Your preferences are private and secure
+          </p>
         </div>
       </div>
     </div>

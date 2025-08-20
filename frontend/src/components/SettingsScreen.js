@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const SettingsScreen = ({ user, backendUrl, onClose, onLogout, showNotification }) => {
+const SettingsScreen = ({ user, onClose, onLogout, showNotification }) => {
   const [loading, setLoading] = useState(true);
   const [settingsData, setSettingsData] = useState(null);
   const [editMode, setEditMode] = useState(false);
@@ -10,6 +10,9 @@ const SettingsScreen = ({ user, backendUrl, onClose, onLogout, showNotification 
     dietary_preferences: []
   });
   const [processing, setProcessing] = useState(false);
+
+  // Use environment variable instead of prop
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
   const dietaryOptions = [
     'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'keto', 

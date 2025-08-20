@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) => {
-  const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+  const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
   
   const [currentPlan, setCurrentPlan] = useState(null);
   const [isLoading, setIsLoading] = useState(true);

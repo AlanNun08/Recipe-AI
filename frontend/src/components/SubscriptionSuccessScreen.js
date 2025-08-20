@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-const SubscriptionSuccessScreen = ({ onClose, showNotification, backendUrl }) => {
+const SubscriptionSuccessScreen = ({ onClose, showNotification }) => {
   const [paymentStatus, setPaymentStatus] = useState('checking');
   const [sessionId, setSessionId] = useState('');
   const [attempts, setAttempts] = useState(0);
+
+  // Use environment variable
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
   // Get session ID from URL parameters
   const getUrlParameter = (name) => {

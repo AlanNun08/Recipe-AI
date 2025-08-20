@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 // Starbucks Secret Menu Generator Screen with Community Features
-const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user, API }) => {
+const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) => {
+  // Use environment variable instead of prop
+  const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
+  
   const [drinkType, setDrinkType] = useState('');
   const [flavorInspiration, setFlavorInspiration] = useState('');
   const [generatedDrink, setGeneratedDrink] = useState(null);

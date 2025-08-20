@@ -6,7 +6,8 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [error, setError] = useState('');
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  // Use environment variable
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
   useEffect(() => {
     if (user?.id) {
