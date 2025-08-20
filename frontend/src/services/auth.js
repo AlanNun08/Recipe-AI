@@ -76,5 +76,31 @@ export const authService = {
   // Check if user is logged in
   isAuthenticated() {
     return !!localStorage.getItem('token');
+  },
+
+  // Test database connection
+  async testDatabase() {
+    try {
+      const response = await fetch(`${API_BASE}/db/test`);
+      const data = await response.json();
+      console.log('Database test result:', data);
+      return data;
+    } catch (error) {
+      console.error('Database test failed:', error);
+      throw error;
+    }
+  },
+
+  // Check API health
+  async checkHealth() {
+    try {
+      const response = await fetch(`${API_BASE}/health`);
+      const data = await response.json();
+      console.log('Health check result:', data);
+      return data;
+    } catch (error) {
+      console.error('Health check failed:', error);
+      throw error;
+    }
   }
 };
