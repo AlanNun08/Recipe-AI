@@ -180,16 +180,69 @@ def generate_verification_code() -> str:
 async def send_verification_email(email: str, code: str) -> bool:
     """Send verification email"""
     try:
-        # In development, just log the code
-        if not mailjet_api_key or 'your-' in mailjet_api_key or os.getenv("NODE_ENV") != "production":
+        # Get current environment
+        current_env = os.getenv("NODE_ENV", "development")
+        logger.info(f"📧 Current environment: {current_env}")
+        logger.info(f"📧 Mailjet API key set: {bool(mailjet_api_key and 'your-' not in mailjet_api_key)}")
+        
+        # In development OR if mailjet not configured, just log the code
+        if current_env != "production" or not mailjet_api_key or 'your-' in mailjet_api_key:
             logger.info(f"📧 [DEV MODE] Verification code for {email}: {code}")
+            logger.info(f"📧 Email would be sent in production with proper Mailjet configuration")
             return True
         
-        # In production, send actual email via Mailjet
-        logger.info(f"Would send verification email to {email} with code {code}")
-        return True
+        # In production with proper Mailjet config, send actual email
+        try:
+            from mailjet_rest import Client
+            
+            mailjet = Client(auth=(mailjet_api_key, mailjet_secret_key), version='v3.1')
+            
+            data = {
+                'Messages': [
+                    {
+                        "From": {
+                            "Email": sender_email,
+                            "Name": "BuildYourSmartCart"
+                        },
+                        "To": [
+                            {
+                                "Email": email,
+                                "Name": ""
+                            }
+                        ],
+                        "Subject": "Verify Your Email - BuildYourSmartCart",
+                        "TextPart": f"Your verification code is: {code}",
+                        "HTMLPart": f"""
+                        <h3>Welcome to BuildYourSmartCart!</h3>
+                        <p>Your verification code is: <strong>{code}</strong></p>
+                        <p>This code will expire in 24 hours.</p>
+                        <p>If you didn't request this, please ignore this email.</p>
+                        """
+                    }
+                ]
+            }
+            
+            result = mailjet.send.create(data=data)
+            
+            if result.status_code == 200:
+                logger.info(f"✅ Email sent successfully to {email}")
+                return True
+            else:
+                logger.error(f"❌ Failed to send email: {result.status_code} - {result.json()}")
+                return False
+                
+        except ImportError:
+            logger.error("❌ mailjet_rest not available, cannot send emails in production")
+            logger.info(f"📧 [FALLBACK] Verification code for {email}: {code}")
+            return False
+        except Exception as e:
+            logger.error(f"❌ Mailjet error: {e}")
+            logger.info(f"📧 [FALLBACK] Verification code for {email}: {code}")
+            return False
+        
     except Exception as e:
-        logger.error(f"Failed to send verification email: {e}")
+        logger.error(f"❌ Failed to send verification email: {e}")
+        logger.info(f"📧 [FALLBACK] Verification code for {email}: {code}")
         return False
 
 # Add database connection testing

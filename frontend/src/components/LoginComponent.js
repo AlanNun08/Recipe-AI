@@ -51,75 +51,34 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess }) => {
 
   return (
     <div style={{ maxWidth: '400px', margin: '0 auto', padding: '20px' }}>
-      <h2>Login to BuildYourSmartCart</h2>
+      <h2>Login</h2>
       
       {error && (
-        <div style={{ 
-          color: 'red', 
-          marginBottom: '15px',
-          backgroundColor: '#ffe6e6',
-          padding: '10px',
-          borderRadius: '5px',
-          border: '1px solid #ffb3b3'
-        }}>
+        <div style={{ color: 'red', marginBottom: '10px' }}>
           {error}
         </div>
       )}
       
       <form onSubmit={handleLogin}>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '5px', 
-            fontWeight: 'bold',
-            fontSize: '14px'
-          }}>
-            Email Address
-          </label>
+        <div style={{ marginBottom: '10px' }}>
           <input
             type="email"
-            placeholder="Enter your email"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={{ 
-              width: '100%', 
-              padding: '12px', 
-              fontSize: '16px',
-              border: '2px solid #ddd',
-              borderRadius: '5px',
-              outline: 'none'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#007bff'}
-            onBlur={(e) => e.target.style.borderColor = '#ddd'}
+            style={{ width: '100%', padding: '10px', fontSize: '16px' }}
           />
         </div>
         
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '5px', 
-            fontWeight: 'bold',
-            fontSize: '14px'
-          }}>
-            Password
-          </label>
+        <div style={{ marginBottom: '10px' }}>
           <input
             type="password"
-            placeholder="Enter your password"
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={{ 
-              width: '100%', 
-              padding: '12px', 
-              fontSize: '16px',
-              border: '2px solid #ddd',
-              borderRadius: '5px',
-              outline: 'none'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#007bff'}
-            onBlur={(e) => e.target.style.borderColor = '#ddd'}
+            style={{ width: '100%', padding: '10px', fontSize: '16px' }}
           />
         </div>
         
@@ -128,33 +87,17 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess }) => {
           disabled={loading}
           style={{ 
             width: '100%', 
-            padding: '12px', 
+            padding: '10px', 
             fontSize: '16px',
-            fontWeight: 'bold',
             backgroundColor: loading ? '#ccc' : '#007bff',
             color: 'white',
             border: 'none',
-            borderRadius: '5px',
             cursor: loading ? 'not-allowed' : 'pointer'
           }}
         >
           {loading ? 'Logging in...' : 'Login'}
         </button>
       </form>
-      
-      <div style={{ 
-        marginTop: '20px', 
-        textAlign: 'center',
-        fontSize: '14px',
-        color: '#666'
-      }}>
-        <p>
-          Don't have an account? <a href="/register" style={{ color: '#007bff' }}>Sign up</a>
-        </p>
-        <p>
-          <a href="/forgot-password" style={{ color: '#007bff' }}>Forgot your password?</a>
-        </p>
-      </div>
     </div>
   );
 };
