@@ -102,5 +102,42 @@ export const authService = {
       console.error('Health check failed:', error);
       throw error;
     }
+  },
+
+  // Resend verification code
+  async resendCode(email) {
+    const response = await fetch(`${API_BASE}/auth/resend-code`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to resend verification code');
+    }
+    
+    return response.json();
+  },
+
+  // Verify email with code
+  async verifyEmail(userId, code) {
+    const response = await fetch(`${API_BASE}/auth/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        user_id: userId, 
+        code: code 
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Verification failed');
+    }
+    
+    return response.json();
   }
 };

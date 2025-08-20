@@ -92,7 +92,7 @@ async def options_handler(full_path: str):
 
 # MongoDB setup with validation
 mongo_url = os.environ.get('MONGO_URL')
-db_name = os.environ.get('DB_NAME')  # Remove default since it's always set
+db_name = os.environ.get('DB_NAME')
 
 if not mongo_url:
     if os.getenv("NODE_ENV") == "production":
@@ -160,6 +160,9 @@ class VerificationRequest(BaseModel):
     user_id: str
     code: str
 
+class ResendCodeRequest(BaseModel):
+    email: EmailStr
+
 # Utility functions
 def hash_password(password: str) -> str:
     """Hash password using bcrypt"""
@@ -178,8 +181,8 @@ async def send_verification_email(email: str, code: str) -> bool:
     """Send verification email"""
     try:
         # In development, just log the code
-        if not mailjet_api_key or 'your-' in mailjet_api_key:
-            logger.info(f"Verification code for {email}: {code}")
+        if not mailjet_api_key or 'your-' in mailjet_api_key or os.getenv("NODE_ENV") != "production":
+            logger.info(f"📧 [DEV MODE] Verification code for {email}: {code}")
             return True
         
         # In production, send actual email via Mailjet
@@ -328,6 +331,89 @@ async def login_user(login: UserLogin):
         logger.error(f"Login error: {e}")
         raise HTTPException(status_code=500, detail="Login failed")
 
+# Add missing resend-code endpoint
+@app.post("/auth/resend-code")
+async def resend_verification_code(request: ResendCodeRequest):
+    """Resend verification code to user"""
+    try:
+        # Find user
+        user = await users_collection.find_one({"email": request.email})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        if user.get("is_verified", False):
+            raise HTTPException(status_code=400, detail="User already verified")
+        
+        # Delete old verification codes
+        await verification_codes_collection.delete_many({"user_id": user["id"]})
+        
+        # Generate new verification code
+        code = generate_verification_code()
+        verification_data = {
+            "user_id": user["id"],
+            "code": code,
+            "expires_at": datetime.utcnow() + timedelta(hours=24),
+            "created_at": datetime.utcnow()
+        }
+        
+        await verification_codes_collection.insert_one(verification_data)
+        
+        # Send verification email
+        email_sent = await send_verification_email(request.email, code)
+        
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": "Verification code sent successfully",
+                "email": request.email,
+                "code_sent": email_sent
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Resend code error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to resend verification code")
+
+# Add verification endpoint
+@app.post("/auth/verify")
+async def verify_email(verification: VerificationRequest):
+    """Verify user email with code"""
+    try:
+        # Find verification code
+        verification_doc = await verification_codes_collection.find_one({
+            "user_id": verification.user_id,
+            "code": verification.code
+        })
+        
+        if not verification_doc:
+            raise HTTPException(status_code=400, detail="Invalid verification code")
+        
+        # Check if code is expired
+        if datetime.utcnow() > verification_doc["expires_at"]:
+            raise HTTPException(status_code=400, detail="Verification code expired")
+        
+        # Update user as verified
+        await users_collection.update_one(
+            {"id": verification.user_id},
+            {"$set": {"is_verified": True, "updated_at": datetime.utcnow().isoformat()}}
+        )
+        
+        # Remove verification code
+        await verification_codes_collection.delete_one({"user_id": verification.user_id})
+        
+        return JSONResponse(
+            status_code=200,
+            content={"message": "Email verified successfully"}
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Verification error: {e}")
+        raise HTTPException(status_code=500, detail="Verification failed")
+
 # Add a dedicated database test endpoint
 @app.get("/db/test")
 async def test_database():
@@ -428,7 +514,7 @@ async def root():
         "version": "2.2.1",
         "status": "running",
         "endpoints": {
-            "auth": "/auth/login, /auth/register",
+            "auth": "/auth/login, /auth/register, /auth/resend-code, /auth/verify",
             "health": "/health",
             "docs": "/docs"
         }
