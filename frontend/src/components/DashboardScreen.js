@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { authService } from '../services/auth';
 
 const DashboardScreen = ({ 
   user, 
@@ -44,11 +43,11 @@ const DashboardScreen = ({
       title: '🍳 Generate Recipe',
       description: 'Create AI-powered recipes with Walmart shopping',
       gradient: 'from-orange-500 to-red-600',
-      action: () => setCurrentScreen('recipe-generation')
+      action: () => setCurrentScreen('recipe-generator')
     },
     {
       id: 'weekly-planner',
-      title: '📅 Weekly Planner',
+      title: '📅 Weekly Planner', 
       description: 'Plan your entire week with AI meal planning',
       gradient: 'from-green-500 to-blue-600',
       action: () => setCurrentScreen('weekly-recipes')
@@ -85,144 +84,105 @@ const DashboardScreen = ({
 
   if (loading) {
     return (
-      <div style={{ 
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{ color: 'white', fontSize: '18px' }}>
-          🔄 Loading your dashboard...
+      <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-pink-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mx-auto mb-4"></div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">🔄 Loading your dashboard...</h2>
+          <p className="text-gray-600">Getting everything ready for you!</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ 
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '20px'
-    }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-pink-100 p-4">
+      <div className="max-w-7xl mx-auto">
         
-        {/* Welcome Header */}
-        <div style={{
-          background: 'white',
-          borderRadius: '20px',
-          padding: '30px',
-          marginBottom: '30px',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-          textAlign: 'center'
-        }}>
-          <h1 style={{ 
-            fontSize: '3rem',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            marginBottom: '10px'
-          }}>
-            🤖 Welcome to BuildYourSmartCart!
+        {/* Header with Welcome Message */}
+        <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8 text-center">
+          <div className="text-8xl mb-4 animate-bounce">🤖</div>
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent mb-4">
+            Welcome to BuildYourSmartCart!
           </h1>
-          <p style={{ color: '#666', fontSize: '1.2rem', marginBottom: '10px' }}>
+          <p className="text-xl text-gray-600 mb-4">
             Your AI-powered recipe and grocery companion
           </p>
           {user && (
-            <p style={{ color: '#888', fontSize: '1rem' }}>
-              👋 Hello, {user.email}! Ready to cook something amazing?
-            </p>
+            <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-2xl p-4 mb-6 inline-block">
+              <p className="text-lg font-semibold text-gray-800">
+                👋 Hello, <span className="text-purple-600">{user.email}</span>!
+              </p>
+              <p className="text-gray-600">Ready to cook something amazing?</p>
+            </div>
           )}
         </div>
 
         {/* Quick Stats */}
         {dashboardStats && (
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-            gap: '20px', 
-            marginBottom: '30px' 
-          }}>
-            <div style={{
-              background: 'white',
-              borderRadius: '15px',
-              padding: '20px',
-              textAlign: 'center',
-              boxShadow: '0 5px 20px rgba(0,0,0,0.1)'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '10px' }}>🍳</div>
-              <h3 style={{ color: '#333', marginBottom: '5px' }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-2xl shadow-xl p-6 text-center hover:shadow-2xl transition-shadow duration-300">
+              <div className="text-4xl mb-3">🍳</div>
+              <h3 className="text-2xl font-bold text-orange-600 mb-2">
                 {dashboardStats.total_recipes || 0}
               </h3>
-              <p style={{ color: '#666', margin: 0 }}>Recipes Generated</p>
+              <p className="text-gray-600 font-medium">Recipes Generated</p>
             </div>
             
-            <div style={{
-              background: 'white',
-              borderRadius: '15px',
-              padding: '20px',
-              textAlign: 'center',
-              boxShadow: '0 5px 20px rgba(0,0,0,0.1)'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '10px' }}>☕</div>
-              <h3 style={{ color: '#333', marginBottom: '5px' }}>
+            <div className="bg-white rounded-2xl shadow-xl p-6 text-center hover:shadow-2xl transition-shadow duration-300">
+              <div className="text-4xl mb-3">☕</div>
+              <h3 className="text-2xl font-bold text-green-600 mb-2">
                 {dashboardStats.total_starbucks || 0}
               </h3>
-              <p style={{ color: '#666', margin: 0 }}>Starbucks Drinks</p>
+              <p className="text-gray-600 font-medium">Starbucks Drinks</p>
             </div>
             
-            <div style={{
-              background: 'white',
-              borderRadius: '15px',
-              padding: '20px',
-              textAlign: 'center',
-              boxShadow: '0 5px 20px rgba(0,0,0,0.1)'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '10px' }}>🛒</div>
-              <h3 style={{ color: '#333', marginBottom: '5px' }}>
+            <div className="bg-white rounded-2xl shadow-xl p-6 text-center hover:shadow-2xl transition-shadow duration-300">
+              <div className="text-4xl mb-3">🛒</div>
+              <h3 className="text-2xl font-bold text-blue-600 mb-2">
                 {dashboardStats.total_shopping_lists || 0}
               </h3>
-              <p style={{ color: '#666', margin: 0 }}>Shopping Lists</p>
+              <p className="text-gray-600 font-medium">Shopping Lists</p>
             </div>
             
-            <div style={{
-              background: 'white',
-              borderRadius: '15px',
-              padding: '20px',
-              textAlign: 'center',
-              boxShadow: '0 5px 20px rgba(0,0,0,0.1)'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '10px' }}>⭐</div>
-              <h3 style={{ color: '#333', marginBottom: '5px' }}>
+            <div className="bg-white rounded-2xl shadow-xl p-6 text-center hover:shadow-2xl transition-shadow duration-300">
+              <div className="text-4xl mb-3">⭐</div>
+              <h3 className="text-2xl font-bold text-purple-600 mb-2">
                 {user?.subscription?.status === 'trialing' ? 'Trial' : 'Premium'}
               </h3>
-              <p style={{ color: '#666', margin: 0 }}>Account Status</p>
+              <p className="text-gray-600 font-medium">Account Status</p>
             </div>
           </div>
         )}
 
         {/* User Info Card */}
         {user && (
-          <div style={{ 
-            background: 'white',
-            borderRadius: '15px',
-            padding: '25px',
-            marginBottom: '30px',
-            boxShadow: '0 5px 20px rgba(0,0,0,0.1)'
-          }}>
-            <h3 style={{ color: '#333', marginBottom: '15px' }}>👤 Account Information</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-              <div>
-                <strong>📧 Email:</strong> {user.email}
+          <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <span className="text-3xl mr-3">👤</span>
+              Account Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-4">
+                <div className="text-2xl mb-2">📧</div>
+                <div className="text-sm text-gray-600 mb-1">Email</div>
+                <div className="font-semibold text-gray-800">{user.email}</div>
               </div>
-              <div>
-                <strong>✅ Verified:</strong> {user.is_verified ? 'Yes' : 'No'}
+              <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-2xl p-4">
+                <div className="text-2xl mb-2">✅</div>
+                <div className="text-sm text-gray-600 mb-1">Verified</div>
+                <div className="font-semibold text-gray-800">{user.is_verified ? 'Yes' : 'No'}</div>
               </div>
-              <div>
-                <strong>💳 Subscription:</strong> {user.subscription?.status || 'Unknown'}
+              <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-2xl p-4">
+                <div className="text-2xl mb-2">💳</div>
+                <div className="text-sm text-gray-600 mb-1">Subscription</div>
+                <div className="font-semibold text-gray-800 capitalize">{user.subscription?.status || 'Unknown'}</div>
               </div>
-              <div>
-                <strong>📅 Joined:</strong> {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
+              <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-2xl p-4">
+                <div className="text-2xl mb-2">📅</div>
+                <div className="text-sm text-gray-600 mb-1">Joined</div>
+                <div className="font-semibold text-gray-800">
+                  {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
+                </div>
               </div>
             </div>
           </div>
@@ -230,121 +190,99 @@ const DashboardScreen = ({
 
         {/* Preferences Card */}
         {userPreferences && (
-          <div style={{ 
-            background: 'white',
-            borderRadius: '15px',
-            padding: '25px',
-            marginBottom: '30px',
-            boxShadow: '0 5px 20px rgba(0,0,0,0.1)'
-          }}>
-            <h3 style={{ color: '#333', marginBottom: '15px' }}>🎯 Your Preferences</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+          <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <span className="text-3xl mr-3">🎯</span>
+              Your Preferences
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {userPreferences.dietaryRestrictions?.length > 0 && (
-                <div>
-                  <strong>🥗 Dietary:</strong> {userPreferences.dietaryRestrictions.join(', ')}
+                <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-2xl p-4">
+                  <div className="text-2xl mb-2">🥗</div>
+                  <div className="text-sm text-gray-600 mb-1">Dietary</div>
+                  <div className="font-semibold text-gray-800">{userPreferences.dietaryRestrictions.join(', ')}</div>
                 </div>
               )}
               {userPreferences.cuisinePreferences?.length > 0 && (
-                <div>
-                  <strong>🍽️ Cuisines:</strong> {userPreferences.cuisinePreferences.join(', ')}
+                <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-2xl p-4">
+                  <div className="text-2xl mb-2">🍽️</div>
+                  <div className="text-sm text-gray-600 mb-1">Cuisines</div>
+                  <div className="font-semibold text-gray-800">{userPreferences.cuisinePreferences.join(', ')}</div>
                 </div>
               )}
               {userPreferences.cookingSkillLevel && (
-                <div>
-                  <strong>👨‍🍳 Skill Level:</strong> {userPreferences.cookingSkillLevel}
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-4">
+                  <div className="text-2xl mb-2">👨‍🍳</div>
+                  <div className="text-sm text-gray-600 mb-1">Skill Level</div>
+                  <div className="font-semibold text-gray-800">{userPreferences.cookingSkillLevel}</div>
                 </div>
               )}
               {userPreferences.householdSize && (
-                <div>
-                  <strong>🏠 Household:</strong> {userPreferences.householdSize} people
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-2xl p-4">
+                  <div className="text-2xl mb-2">🏠</div>
+                  <div className="text-sm text-gray-600 mb-1">Household</div>
+                  <div className="font-semibold text-gray-800">{userPreferences.householdSize} people</div>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Quick Actions Grid */}
-        <div style={{ 
-          background: 'white',
-          borderRadius: '20px',
-          padding: '30px',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-          marginBottom: '30px'
-        }}>
-          <h3 style={{ color: '#333', marginBottom: '25px', textAlign: 'center', fontSize: '1.5rem' }}>
-            🚀 What would you like to do today?
-          </h3>
+        {/* Main Actions Grid */}
+        <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8">
+          <div className="text-center mb-8">
+            <h3 className="text-3xl font-bold text-gray-800 mb-4 flex items-center justify-center">
+              <span className="text-4xl mr-3 animate-bounce">🚀</span>
+              What would you like to do today?
+            </h3>
+            <p className="text-gray-600 text-lg">Choose from our AI-powered features</p>
+          </div>
           
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-            gap: '20px' 
-          }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {quickActions.map((action) => (
               <button
                 key={action.id}
                 onClick={action.action}
-                style={{
-                  background: `linear-gradient(135deg, var(--tw-gradient-stops))`,
-                  backgroundImage: `linear-gradient(135deg, ${action.gradient.split(' ')[1]}, ${action.gradient.split(' ')[3]})`,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '15px',
-                  padding: '25px',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  textAlign: 'left',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 5px 15px rgba(0,0,0,0.1)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = 'translateY(-5px)';
-                  e.target.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'translateY(0px)';
-                  e.target.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
-                }}
+                className={`group relative overflow-hidden bg-gradient-to-br ${action.gradient} rounded-3xl p-8 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-left`}
               >
-                <div style={{ fontSize: '1.4rem', fontWeight: 'bold', marginBottom: '10px' }}>
-                  {action.title}
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-4 right-4 text-6xl">✨</div>
+                  <div className="absolute bottom-4 left-4 text-4xl">🌟</div>
                 </div>
-                <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
-                  {action.description}
+                
+                {/* Content */}
+                <div className="relative z-10">
+                  <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                    {action.title.split(' ')[0]}
+                  </div>
+                  <h4 className="text-xl font-bold mb-3 leading-tight">
+                    {action.title.substring(action.title.indexOf(' ') + 1)}
+                  </h4>
+                  <p className="text-white/90 text-sm leading-relaxed mb-4">
+                    {action.description}
+                  </p>
+                  <div className="flex items-center text-white/80 group-hover:text-white transition-colors duration-300">
+                    <span className="text-sm font-medium mr-2">Get Started</span>
+                    <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
+                  </div>
                 </div>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Logout Button */}
-        <div style={{ textAlign: 'center' }}>
-          <button 
-            onClick={onLogout}
-            style={{
-              padding: '15px 30px',
-              background: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              boxShadow: '0 5px 15px rgba(220, 53, 69, 0.3)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 8px 20px rgba(220, 53, 69, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0px)';
-              e.target.style.boxShadow = '0 5px 15px rgba(220, 53, 69, 0.3)';
-            }}
-          >
-            🚪 Logout
-          </button>
+        {/* Footer with Logout */}
+        <div className="text-center">
+          <div className="bg-white rounded-3xl shadow-2xl p-6 inline-block">
+            <button 
+              onClick={onLogout}
+              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center"
+            >
+              <span className="text-2xl mr-3">🚪</span>
+              Logout
+            </button>
+          </div>
         </div>
       </div>
     </div>

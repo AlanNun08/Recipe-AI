@@ -43,10 +43,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY backend/ ./backend/
 COPY main.py ./
 
-# Copy environment file if it exists (create backend directory first if needed)
-RUN mkdir -p ./backend/
-COPY backend/.env ./backend/.env
-
 # Copy built frontend from previous stage
 COPY --from=frontend-builder /app/frontend/build/ ./frontend/build/
 

@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-const API = process.env.REACT_APP_BACKEND_URL;
+const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
 function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onViewStarbucksRecipe }) {
   const [recipes, setRecipes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [apiStatus, setApiStatus] = useState('checking');
+
+  // Use ref to prevent duplicate API calls
+  const hasFetched = useRef(false);
 
   const filterOptions = [
     { id: 'all', label: 'All Recipes', icon: '🍽️' },
@@ -16,32 +20,80 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
 
   useEffect(() => {
     const fetchRecipes = async () => {
-      if (!user?.id) {
-        setError('User not found');
-        setIsLoading(false);
+      // Prevent duplicate calls
+      if (!user?.user_id || hasFetched.current) {
+        if (!user?.user_id) {
+          setError('User not found');
+          setIsLoading(false);
+        }
         return;
       }
 
-      try {
-        const response = await fetch(`${API}/api/recipes/history/${user.id}`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to load: ${response.status}`);
-        }
+      hasFetched.current = true;
 
-        const data = await response.json();
-        setRecipes(data.recipes || []);
+      try {
+        console.log('🔍 Fetching real recipe history for user:', user.user_id);
+        setApiStatus('checking');
+        
+        const response = await fetch(`${API}/api/recipes/history/${user.user_id}`);
+        
+        console.log('📡 API Response status:', response.status);
+        
+        if (response.status === 404 || response.status === 405) {
+          // API endpoint not implemented yet
+          console.log('⚠️ Recipe History API not implemented yet');
+          setApiStatus('unavailable');
+          setError('Recipe history API not available yet');
+          setRecipes([]);
+          showNotification('📝 Recipe history API not implemented yet', 'warning');
+        } else if (!response.ok) {
+          throw new Error(`API Error: ${response.status} - ${response.statusText}`);
+        } else {
+          // API is available and working
+          const data = await response.json();
+          console.log('✅ Real recipe data received:', data);
+          
+          setApiStatus('available');
+          
+          // Handle different possible response formats
+          if (data.recipes && Array.isArray(data.recipes)) {
+            setRecipes(data.recipes);
+            console.log(`📊 Loaded ${data.recipes.length} real recipes from MongoDB`);
+          } else if (Array.isArray(data)) {
+            setRecipes(data);
+            console.log(`📊 Loaded ${data.length} real recipes from MongoDB`);
+          } else {
+            console.warn('⚠️ Unexpected response format:', data);
+            setRecipes([]);
+          }
+          
+          if (recipes.length === 0) {
+            showNotification('📝 No recipes found - start by generating your first recipe!', 'info');
+          } else {
+            showNotification(`📚 Loaded ${recipes.length} recipes from your history`, 'success');
+          }
+        }
         
       } catch (error) {
-        setError(error.message);
-        showNotification(`Error loading recipes: ${error.message}`, 'error');
+        console.error('❌ Error fetching real recipe history:', error);
+        setApiStatus('error');
+        setError(`Failed to load recipes: ${error.message}`);
+        setRecipes([]);
+        showNotification(`❌ Error loading recipes: ${error.message}`, 'error');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchRecipes();
-  }, [user?.id]);
+  }, []); // Empty dependency array to prevent re-runs
+
+  // Reset the hasFetched ref when user changes
+  useEffect(() => {
+    if (user?.user_id && hasFetched.current) {
+      hasFetched.current = false;
+    }
+  }, [user?.user_id]);
 
   const filteredRecipes = recipes.filter(recipe => {
     if (selectedFilter === 'all') return true;
@@ -59,16 +111,28 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
   };
 
   const handleDelete = async (recipeId) => {
-    if (!confirm('Delete this recipe?')) return;
+    if (!confirm('Delete this recipe from your history?')) return;
     
     try {
-      const response = await fetch(`${API}/api/recipes/${recipeId}`, { method: 'DELETE' });
+      console.log('🗑️ Deleting recipe:', recipeId);
+      const response = await fetch(`${API}/api/recipes/${recipeId}`, { 
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
       if (response.ok) {
+        // Remove from local state
         setRecipes(prev => prev.filter(r => r.id !== recipeId));
-        showNotification('Recipe deleted', 'success');
+        showNotification('✅ Recipe deleted from your history', 'success');
+        console.log('✅ Recipe deleted successfully');
+      } else {
+        throw new Error(`Delete failed: ${response.status}`);
       }
     } catch (error) {
-      showNotification('Delete failed', 'error');
+      console.error('❌ Delete failed:', error);
+      showNotification('❌ Failed to delete recipe', 'error');
     }
   };
 
@@ -77,8 +141,8 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <h2 className="text-xl font-bold text-gray-800">🆕 Loading NEW Recipe History</h2>
-          <p className="text-gray-600">Fetching your recipes...</p>
+          <h2 className="text-xl font-bold text-gray-800">📚 Loading Your Recipe History</h2>
+          <p className="text-gray-600">Fetching recipes from MongoDB...</p>
         </div>
       </div>
     );
@@ -88,7 +152,7 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-lg p-8 text-center max-w-md">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">🆕 NEW Recipe History - Error</h2>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">⚠️ Unable to Load Recipes</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
@@ -120,12 +184,12 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
         </button>
         
         <div className="text-center bg-white rounded-lg shadow-lg p-8 mb-8">
-          <div className="text-6xl mb-4">🆕</div>
+          <div className="text-6xl mb-4">📚</div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-4">
-            NEW Recipe History
+            Recipe History
           </h1>
           <p className="text-lg text-gray-600 mb-4">
-            Completely rebuilt from scratch with clean architecture!
+            Your collection of AI-generated recipes from MongoDB
           </p>
           <div className="text-sm text-green-600 font-medium">
             📊 Total: {recipes.length} | Shown: {filteredRecipes.length}
@@ -173,7 +237,7 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-2xl">{isStarbucks ? '☕' : '🍳'}</span>
                       <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded">
-                        🆕 {isStarbucks ? 'Starbucks' : 'Recipe'}
+                        {isStarbucks ? 'Drink' : 'Recipe'}
                       </span>
                     </div>
                     <h3 className="text-lg font-bold">

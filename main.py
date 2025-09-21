@@ -3,13 +3,17 @@
 Production-ready FastAPI + React app optimized for Google Cloud Run
 Serves both backend API and frontend static files
 """
-
 import os
-import logging
-import signal
 import sys
+import signal
+import uvicorn
+import logging
 from pathlib import Path
 from datetime import datetime
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 # Configure logging for Cloud Run FIRST
 logging.basicConfig(
@@ -19,24 +23,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Load environment variables from backend/.env if it exists
-try:
-    from dotenv import load_dotenv
-    backend_env_path = Path(__file__).parent / "backend" / ".env"
-    if backend_env_path.exists():
-        load_dotenv(backend_env_path)
-        logger.info(f"✅ Loaded environment variables from {backend_env_path}")
-    else:
-        logger.info("📝 No backend/.env file found, using system environment variables")
-except ImportError:
-    # python-dotenv not installed, skip loading .env file
-    logger.info("📝 python-dotenv not available, using system environment variables")
+# Load environment variables from .env file for local development
+from dotenv import load_dotenv
+if os.getenv("NODE_ENV") != "production":
+    load_dotenv()
+    logger.info("🔑 Loaded environment variables from .env file")
+else:
+    logger.info("🔑 Using system environment variables only (production mode)")
 
-import uvicorn
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse, Response
-from starlette.exceptions import HTTPException as StarletteHTTPException
+# Debug environment variables before importing backend
+logger.info("🔍 Environment check before backend import:")
+logger.info(f"  OPENAI_API_KEY: {'✅ Set' if os.environ.get('OPENAI_API_KEY') else '❌ Missing'}")
+logger.info(f"  MONGO_URL: {'✅ Set' if os.environ.get('MONGO_URL') else '❌ Missing'}")
+logger.info(f"  DB_NAME: {'✅ Set' if os.environ.get('DB_NAME') else '❌ Missing'}")
 
 # Create main FastAPI app first (always succeeds)
 app = FastAPI(
@@ -59,12 +58,15 @@ try:
     # Check if backend directory exists
     backend_dir = Path(__file__).parent / "backend"
     if not backend_dir.exists():
-        raise ImportError("Backend directory not found")
+        raise ImportError(f"Backend directory not found at: {backend_dir}")
     
     # Check if server.py exists
     server_file = backend_dir / "server.py"
     if not server_file.exists():
-        raise ImportError("Backend server.py not found")
+        raise ImportError(f"Backend server.py not found at: {server_file}")
+    
+    logger.info(f"✅ Backend directory found: {backend_dir}")
+    logger.info(f"✅ Server file found: {server_file}")
     
     # Import the backend app
     from backend.server import app as imported_backend_app
@@ -72,63 +74,31 @@ try:
     backend_available = True
     logger.info("✅ Backend app imported successfully")
     
+    # Check if routes are registered
+    route_count = len(backend_app.routes)
+    logger.info(f"📋 Backend app has {route_count} routes registered")
+    
+    # Log some key routes for debugging
+    for route in backend_app.routes[:10]:  # Show first 10 routes
+        if hasattr(route, 'methods') and hasattr(route, 'path'):
+            logger.info(f"  📌 {list(route.methods)} {route.path}")
+    
 except ImportError as e:
     logger.error(f"❌ Backend import failed: {e}")
-    logger.info("📦 Creating minimal backend app...")
-    
-    # Create a minimal backend app if import fails
-    backend_app = FastAPI(title="Minimal Backend API")
-    
-    @backend_app.get("/")
-    async def backend_status():
-        return {"status": "minimal", "message": "Backend features not available", "error": str(e)}
-    
-    @backend_app.get("/health")
-    async def backend_health():
-        return {"status": "healthy", "mode": "minimal"}
-    
-    # Add minimal auth endpoints to prevent 404 errors
-    @backend_app.post("/auth/login")
-    async def minimal_login():
-        return JSONResponse(
-            status_code=503,
-            content={"detail": "Backend authentication not available"}
-        )
-    
-    @backend_app.post("/auth/register")
-    async def minimal_register():
-        return JSONResponse(
-            status_code=503,
-            content={"detail": "Backend registration not available"}
-        )
-    
+    logger.info("📦 Will create minimal backend fallback...")
     backend_available = False
+    backend_app = None
 
 except Exception as e:
     logger.error(f"❌ Unexpected error importing backend: {e}")
     logger.error(f"❌ Error type: {type(e).__name__}")
-    logger.error(f"❌ Error details: {str(e)}")
     
-    # Still create minimal backend to prevent crash
-    backend_app = FastAPI(title="Error Backend API")
-    
-    @backend_app.get("/")
-    async def backend_error():
-        return {"status": "error", "message": str(e), "error_type": type(e).__name__}
-    
-    @backend_app.get("/health")
-    async def backend_error_health():
-        return {"status": "error", "message": str(e)}
-    
-    # Add error auth endpoints
-    @backend_app.post("/auth/login")
-    async def error_login():
-        return JSONResponse(
-            status_code=500,
-            content={"detail": f"Backend error: {str(e)}"}
-        )
+    # Log the full stack trace for debugging
+    import traceback
+    logger.error(f"❌ Stack trace: {traceback.format_exc()}")
     
     backend_available = False
+    backend_app = None
 
 # 🚀 CACHE BUSTING MIDDLEWARE FOR GOOGLE CLOUD RUN
 @app.middleware("http")
@@ -137,7 +107,7 @@ async def disable_cache(request: Request, call_next):
     Cache busting middleware for Google Cloud Run deployment.
     Ensures users always get the latest version after deployment.
     """
-    response: Response = await call_next(request)
+    response = await call_next(request)
     
     # Add cache-control headers to prevent browser caching
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -181,10 +151,45 @@ async def health_check():
         }
     )
 
-# Mount the backend API with /api prefix (always mount, even if minimal)
-if backend_app:
+# Mount the backend API with /api prefix - ONLY if we successfully imported it
+if backend_app and backend_available:
     app.mount("/api", backend_app)
-    logger.info(f"✅ Backend API mounted at /api (mode: {'full' if backend_available else 'minimal'})")
+    logger.info(f"✅ Full backend API mounted at /api with {len(backend_app.routes)} routes")
+    
+    # Log the actual auth endpoints
+    for route in backend_app.routes:
+        if hasattr(route, 'path') and 'auth' in route.path:
+            methods = list(getattr(route, 'methods', ['N/A']))
+            logger.info(f"  🔐 {methods} /api{route.path}")
+            
+else:
+    # Create minimal fallback API if backend import failed
+    logger.warning("⚠️ Creating minimal API fallback due to backend import failure")
+    
+    from fastapi import FastAPI as MinimalFastAPI
+    minimal_backend = MinimalFastAPI(title="Minimal Backend API")
+    
+    @minimal_backend.get("/")
+    async def minimal_root():
+        return {
+            "status": "minimal", 
+            "message": "Backend features not available", 
+            "backend_available": backend_available,
+            "import_error": "Backend import failed"
+        }
+    
+    @minimal_backend.get("/health")
+    async def minimal_health():
+        return {
+            "status": "minimal", 
+            "backend_available": False,
+            "message": "Backend import failed"
+        }
+    
+    # No auth endpoints in minimal backend to avoid conflicts
+    
+    app.mount("/api", minimal_backend)
+    logger.warning("⚠️ Minimal fallback API mounted at /api")
 
 # Root API endpoint
 @app.get("/api")
@@ -225,21 +230,21 @@ if FRONTEND_BUILD_DIR.exists():
     async def manifest():
         manifest_path = FRONTEND_BUILD_DIR / "manifest.json"
         if manifest_path.exists():
-            return FileResponse(manifest_path, media_type="application/json")
+            return FileResponse(manifest_path)
         raise HTTPException(status_code=404, detail="Manifest not found")
     
     @app.get("/favicon.ico")
     async def favicon():
         favicon_path = FRONTEND_BUILD_DIR / "favicon.ico"
         if favicon_path.exists():
-            return FileResponse(favicon_path, media_type="image/x-icon")
+            return FileResponse(favicon_path)
         raise HTTPException(status_code=404, detail="Favicon not found")
     
     @app.get("/sw.js")
     async def service_worker():
         sw_path = FRONTEND_BUILD_DIR / "sw.js"
         if sw_path.exists():
-            return FileResponse(sw_path, media_type="application/javascript")
+            return FileResponse(sw_path)
         raise HTTPException(status_code=404, detail="Service worker not found")
     
     # Serve React app for all other routes
@@ -247,15 +252,12 @@ if FRONTEND_BUILD_DIR.exists():
     async def not_found_handler(request: Request, exc: HTTPException):
         # Don't serve React app for API routes
         if request.url.path.startswith("/api/"):
-            return JSONResponse(
-                status_code=404,
-                content={"detail": "API endpoint not found"}
-            )
+            return JSONResponse(status_code=404, content={"detail": "API endpoint not found"})
         
         # Serve React app for frontend routes
         index_path = FRONTEND_BUILD_DIR / "index.html"
         if index_path.exists():
-            return FileResponse(index_path, media_type="text/html")
+            return FileResponse(index_path)
         
         return JSONResponse(
             status_code=404,
@@ -267,7 +269,7 @@ if FRONTEND_BUILD_DIR.exists():
         """Serve the React application"""
         index_path = FRONTEND_BUILD_DIR / "index.html"
         if index_path.exists():
-            return FileResponse(index_path, media_type="text/html")
+            return FileResponse(index_path)
         raise HTTPException(status_code=500, detail="Frontend not available")
 
 else:
@@ -277,8 +279,10 @@ else:
     async def api_only():
         return JSONResponse({
             "message": "buildyoursmartcart.com API",
+            "status": "API Only - Frontend not built",
+            "version": "2.2.0",
             "docs": "/api/docs",
-            "status": "running"
+            "health": "/health"
         })
 
 # Graceful shutdown handler
@@ -312,8 +316,8 @@ if __name__ == "__main__":
     # Production optimizations
     if os.getenv("NODE_ENV") == "production":
         uvicorn_config.update({
-            "log_level": "info",  # Keep info level for debugging
-            "access_log": True,   # Keep access logs for now
+            "log_level": "info",
+            "access_log": True,
         })
         logger.info("🌐 Production mode enabled")
     

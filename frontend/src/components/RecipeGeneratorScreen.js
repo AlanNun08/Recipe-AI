@@ -136,50 +136,73 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
   };
 
   const generateRecipe = async () => {
-    setIsGenerating(true);
-    setGeneratedRecipe(null);
+    if (!formData.cuisine || !formData.meal_type || !formData.difficulty) {
+      showNotification('Please complete the required fields!', 'error');
+      return;
+    }
 
+    setIsGenerating(true);
+    
     try {
-      const response = await axios.post(`${API}/api/recipes/generate`, {
-        user_id: user.id,
-        cuisine_type: formData.cuisine,                    // Fixed: was 'cuisine'
-        recipe_category: 'cuisine',                        // Added: missing field
+      console.log('🤖 Generating recipe with OpenAI API...');
+      console.log('👤 Current user:', user);
+      showNotification('🤖 Generating your recipe with AI...', 'info');
+      
+      // Send properly formatted request to backend - FIX: Use correct user_id
+      const requestData = {
+        user_id: user?.user_id || user?.id || 'demo_user', // FIX: Use the correct user ID field
+        cuisine_type: formData.cuisine,
         meal_type: formData.meal_type,
         difficulty: formData.difficulty,
-        prep_time_max: formData.prep_time ? parseInt(formData.prep_time) : null,  // Fixed: was 'prep_time'
-        dietary_preferences: formData.dietary_restrictions ? formData.dietary_restrictions.split(',').map(d => d.trim()) : [],  // Fixed: was 'dietary_restrictions'
-        ingredients_on_hand: formData.ingredients ? formData.ingredients.split(',').map(i => i.trim()) : [],  // Fixed: was 'ingredients'
         servings: parseInt(formData.servings) || 4,
-        is_healthy: false,                                 // Added: default value
-        max_calories_per_serving: null,                    // Added: default value
-        is_budget_friendly: false,                         // Added: default value
-        max_budget: null                                   // Added: default value
-      });
+        prep_time_max: formData.prep_time ? parseInt(formData.prep_time.split(' ')[0]) : null,
+        dietary_preferences: formData.dietary_restrictions ? 
+          formData.dietary_restrictions.split(',').map(d => d.trim()).filter(d => d) : [],
+        ingredients_on_hand: formData.ingredients ? 
+          formData.ingredients.split(',').map(i => i.trim()).filter(i => i) : []
+      };
 
+      console.log('📤 Sending request to API:', requestData);
+
+      const response = await axios.post(`${API}/api/recipes/generate`, requestData);
+
+      console.log('📥 Received response from API:', response.data);
+      
+      // Validate the response has required data
+      if (!response.data.name || !response.data.ingredients || !response.data.instructions) {
+        throw new Error('Invalid recipe data received from API');
+      }
+
+      // Store the generated recipe
       setGeneratedRecipe(response.data);
-      showNotification('🎉 Recipe generated successfully!', 'success');
-      setCurrentStep(5); // Move to results step
+      showNotification('🎉 Recipe generated successfully with AI!', 'success');
+      
+      // Move to results step
+      setCurrentStep(5);
 
     } catch (error) {
       console.error('❌ Error generating recipe:', error);
       
-      // Check if it's a usage limit error (status 429)
-      if (error.response?.status === 429) {
+      if (error.response?.status === 503) {
+        showNotification('❌ AI recipe generation is currently unavailable. Please contact support.', 'error');
+      } else if (error.response?.status === 500) {
+        // NEW: Handle 500 errors specifically
+        const errorDetail = error.response?.data?.detail || 'Internal server error';
+        console.error('🔥 Server error details:', errorDetail);
+        showNotification(`❌ Server error: ${errorDetail}`, 'error');
+      } else if (error.response?.status === 429) {
         const errorData = error.response.data.detail;
         
         if (typeof errorData === 'object' && errorData.upgrade_required) {
-          // Show usage limit reached message and redirect to upgrade
           showNotification(
             `⚠️ ${errorData.message} Redirecting to upgrade...`, 
             'warning'
           );
           
-          // Redirect to subscription screen after a short delay
           setTimeout(() => {
             if (onBack) {
-              onBack(); // Go back to dashboard first
+              onBack();
               setTimeout(() => {
-                // Trigger subscription screen (this would need to be passed as a prop)
                 showNotification('💎 Upgrade to continue generating recipes!', 'info');
               }, 500);
             }
@@ -187,10 +210,10 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
           
           return;
         }
+      } else {
+        const errorMessage = error.response?.data?.detail || 'Failed to generate recipe. Please try again.';
+        showNotification(`❌ ${errorMessage}`, 'error');
       }
-      
-      const errorMessage = error.response?.data?.detail || 'Failed to generate recipe. Please try again.';
-      showNotification(`❌ ${errorMessage}`, 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -198,7 +221,12 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
 
   const viewRecipeDetail = () => {
     if (generatedRecipe && onViewRecipe) {
+      console.log('👀 Viewing recipe detail:', generatedRecipe.id);
+      // FIX: Ensure we navigate to recipe detail properly
       onViewRecipe(generatedRecipe.id, 'generated');
+    } else {
+      console.error('❌ No generated recipe or onViewRecipe callback missing');
+      showNotification('❌ Cannot view recipe details', 'error');
     }
   };
 
@@ -528,6 +556,11 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
             <div className="text-center">
               <h2 className="text-3xl font-bold text-gray-800 mb-4">🎉 Recipe Ready!</h2>
               <p className="text-gray-600 text-lg">Your personalized recipe has been generated</p>
+              {generatedRecipe?.ai_generated && (
+                <div className="inline-block bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-bold mt-2">
+                  ✨ AI-Generated Recipe
+                </div>
+              )}
             </div>
 
             {generatedRecipe && (
@@ -535,7 +568,7 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
                 {/* Recipe Header */}
                 <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-6 border border-green-200 mb-6">
                   <h3 className="text-3xl font-bold text-gray-800 mb-4 text-center">
-                    {generatedRecipe.title}
+                    {generatedRecipe.name}
                   </h3>
                   <p className="text-gray-600 leading-relaxed mb-6 text-center text-lg">
                     {generatedRecipe.description}
@@ -546,39 +579,62 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
                       <div className="text-3xl mb-2">⏱️</div>
                       <div className="text-xs text-gray-500">Prep Time</div>
                       <div className="font-bold text-gray-800">
-                        {generatedRecipe.prep_time ? `${generatedRecipe.prep_time} min` : 'N/A'}
+                        {generatedRecipe.prep_time || 'N/A'}
+                      </div>
+                    </div>
+                    <div className="text-center bg-white rounded-xl p-4 shadow-sm">
+                      <div className="text-3xl mb-2">🔥</div>
+                      <div className="text-xs text-gray-500">Cook Time</div>
+                      <div className="font-bold text-gray-800">
+                        {generatedRecipe.cook_time || 'N/A'}
                       </div>
                     </div>
                     <div className="text-center bg-white rounded-xl p-4 shadow-sm">
                       <div className="text-3xl mb-2">👥</div>
                       <div className="text-xs text-gray-500">Servings</div>
                       <div className="font-bold text-gray-800">
-                        {generatedRecipe.servings || formData.servings || '4'}
+                        {generatedRecipe.servings}
                       </div>
                     </div>
-                    {generatedRecipe.cook_time && (
-                      <div className="text-center bg-white rounded-xl p-4 shadow-sm">
-                        <div className="text-3xl mb-2">🔥</div>
-                        <div className="text-xs text-gray-500">Cook Time</div>
-                        <div className="font-bold text-gray-800">
-                          {generatedRecipe.cook_time} min
-                        </div>
+                    <div className="text-center bg-white rounded-xl p-4 shadow-sm">
+                      <div className="text-3xl mb-2">🏷️</div>
+                      <div className="text-xs text-gray-500">Cuisine</div>
+                      <div className="font-bold text-gray-800">
+                        {generatedRecipe.cuisine_type}
                       </div>
-                    )}
-                    {generatedRecipe.calories_per_serving && (
-                      <div className="text-center bg-white rounded-xl p-4 shadow-sm">
-                        <div className="text-3xl mb-2">🔥</div>
-                        <div className="text-xs text-gray-500">Calories</div>
-                        <div className="font-bold text-gray-800">
-                          {generatedRecipe.calories_per_serving}
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
+
+                  {/* Nutrition Info - Only show if exists */}
+                  {generatedRecipe.nutrition && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                      <div className="text-center bg-yellow-50 rounded-xl p-3 shadow-sm">
+                        <div className="text-2xl mb-1">🔥</div>
+                        <div className="text-xs text-gray-500">Calories</div>
+                        <div className="font-bold text-gray-800">{generatedRecipe.nutrition.calories}</div>
+                      </div>
+                      <div className="text-center bg-red-50 rounded-xl p-3 shadow-sm">
+                        <div className="text-2xl mb-1">🥩</div>
+                        <div className="text-xs text-gray-500">Protein</div>
+                        <div className="font-bold text-gray-800">{generatedRecipe.nutrition.protein}</div>
+                      </div>
+                      <div className="text-center bg-orange-50 rounded-xl p-3 shadow-sm">
+                        <div className="text-2xl mb-1">🍞</div>
+                        <div className="text-xs text-gray-500">Carbs</div>
+                        <div className="font-bold text-gray-800">{generatedRecipe.nutrition.carbs}</div>
+                      </div>
+                      <div className="text-center bg-green-50 rounded-xl p-3 shadow-sm">
+                        <div className="text-2xl mb-1">🥑</div>
+                        <div className="text-xs text-gray-500">Fat</div>
+                        <div className="font-bold text-gray-800">{generatedRecipe.nutrition.fat}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
+                {/* Recipe Details Display - Show REAL data */}
                 <div className="grid md:grid-cols-2 gap-6">
-                  {/* Ingredients */}
+                  {/* Real Ingredients */}
                   <div className="bg-amber-50 rounded-2xl p-6 border border-amber-200">
                     <h4 className="font-bold text-gray-800 mb-4 flex items-center text-lg">
                       <span className="mr-2 text-2xl">🥘</span>
@@ -586,15 +642,20 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
                     </h4>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {generatedRecipe.ingredients?.map((ingredient, index) => (
-                        <div key={index} className="flex items-start text-sm text-gray-700">
+                        <div key={index} className="flex items-start text-sm text-gray-700 bg-white rounded-lg p-3 shadow-sm">
                           <span className="w-2 h-2 bg-amber-500 rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                          <span className="leading-relaxed">{ingredient}</span>
+                          <span className="leading-relaxed font-medium">{ingredient}</span>
                         </div>
-                      )) || <p className="text-gray-500">No ingredients available</p>}
+                      )) || (
+                        <div className="text-center py-8">
+                          <div className="text-4xl mb-4">🤔</div>
+                          <p className="text-gray-600">No ingredients available</p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Instructions */}
+                  {/* Real Instructions */}
                   <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
                     <h4 className="font-bold text-gray-800 mb-4 flex items-center text-lg">
                       <span className="mr-2 text-2xl">📋</span>
@@ -602,33 +663,71 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
                     </h4>
                     <div className="space-y-3 max-h-48 overflow-y-auto">
                       {generatedRecipe.instructions?.map((instruction, index) => (
-                        <div key={index} className="flex items-start text-sm text-gray-700">
+                        <div key={index} className="flex items-start text-sm text-gray-700 bg-white rounded-lg p-3 shadow-sm">
                           <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5 flex-shrink-0">
                             {index + 1}
                           </span>
-                          <span className="leading-relaxed">{instruction}</span>
+                          <span className="leading-relaxed font-medium">{instruction}</span>
                         </div>
-                      )) || <p className="text-gray-500">No instructions available</p>}
+                      )) || (
+                        <div className="text-center py-8">
+                          <div className="text-4xl mb-4">🤔</div>
+                          <p className="text-gray-600">No instructions available</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* Shopping List */}
-                {generatedRecipe.shopping_list && generatedRecipe.shopping_list.length > 0 && (
+                {/* Cooking Tips - Only show if exists */}
+                {generatedRecipe.cooking_tips && generatedRecipe.cooking_tips.length > 0 && (
                   <div className="bg-purple-50 rounded-2xl p-6 border border-purple-200 mt-6">
                     <h4 className="font-bold text-gray-800 mb-4 flex items-center text-lg">
-                      <span className="mr-2 text-2xl">🛒</span>
-                      Shopping List ({generatedRecipe.shopping_list.length} items)
+                      <span className="mr-2 text-2xl">💡</span>
+                      Cooking Tips
                     </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {generatedRecipe.shopping_list.map((item, index) => (
-                        <span key={index} className="px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-full font-medium">
-                          {item}
-                        </span>
+                    <div className="space-y-2">
+                      {generatedRecipe.cooking_tips.map((tip, index) => (
+                        <div key={index} className="flex items-start text-sm text-gray-700 bg-white rounded-lg p-3 shadow-sm">
+                          <span className="text-purple-500 mr-2 text-lg">💡</span>
+                          <span className="leading-relaxed font-medium">{tip}</span>
+                        </div>
                       ))}
                     </div>
                   </div>
                 )}
+
+                {/* Recipe Summary */}
+                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 mt-6">
+                  <h4 className="font-bold text-gray-800 mb-4 flex items-center text-lg">
+                    <span className="mr-2 text-2xl">📊</span>
+                    Recipe Summary
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    {generatedRecipe.estimated_cost && (
+                      <div className="bg-white rounded-xl p-4 shadow-sm">
+                        <div className="text-2xl mb-2">💰</div>
+                        <div className="text-sm text-gray-600">Estimated Cost</div>
+                        <div className="font-bold text-green-600">${generatedRecipe.estimated_cost.toFixed(2)}</div>
+                      </div>
+                    )}
+                    <div className="bg-white rounded-xl p-4 shadow-sm">
+                      <div className="text-2xl mb-2">⭐</div>
+                      <div className="text-sm text-gray-600">Difficulty</div>
+                      <div className="font-bold text-purple-600 capitalize">{generatedRecipe.difficulty}</div>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 shadow-sm">
+                      <div className="text-2xl mb-2">⏱️</div>
+                      <div className="text-sm text-gray-600">Total Time</div>
+                      <div className="font-bold text-blue-600">{generatedRecipe.total_time || 'N/A'}</div>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 shadow-sm">
+                      <div className="text-2xl mb-2">🎯</div>
+                      <div className="text-sm text-gray-600">Meal Type</div>
+                      <div className="font-bold text-orange-600 capitalize">{generatedRecipe.meal_type}</div>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Action Buttons */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">

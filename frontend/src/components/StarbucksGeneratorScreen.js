@@ -80,45 +80,63 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
       return;
     }
 
+    // Check if user is logged in
+    if (!user || !user.id) {
+      showNotification('Please log in to generate Starbucks drinks!', 'error');
+      setTimeout(() => {
+        if (setCurrentScreen) {
+          setCurrentScreen('login');
+        }
+      }, 1500);
+      return;
+    }
+
     setIsGenerating(true);
     
     try {
+      console.log('☕ Generating Starbucks drink with OpenAI API...');
+      showNotification('☕ Creating your unique Starbucks drink with AI...', 'info');
+      
       const response = await axios.post(`${API}/api/generate-starbucks-drink`, {
-        user_id: user?.id || 'demo_user',
+        user_id: user.id,
         drink_type: drinkType,
         flavor_inspiration: flavorInspiration || null
       });
 
+      console.log('✅ Starbucks drink generated successfully:', response.data);
       setGeneratedDrink(response.data);
       showNotification('🎉 Your secret menu drink is ready!', 'success');
     } catch (error) {
       console.error('Failed to generate Starbucks drink:', error);
       
-      // Check if it's a usage limit error (status 429)
-      if (error.response?.status === 429) {
+      if (error.response?.status === 503) {
+        // OpenAI API not configured
+        showNotification('❌ AI drink generation is currently unavailable. Please contact support.', 'error');
+      } else if (error.response?.status === 429) {
+        // Usage limit error
         const errorData = error.response.data.detail;
         
         if (typeof errorData === 'object' && errorData.upgrade_required) {
-          // Show usage limit reached message and redirect to upgrade
           showNotification(
             `⚠️ ${errorData.message} Redirecting to upgrade...`, 
             'warning'
           );
           
-          // Redirect to subscription screen after a short delay
           setTimeout(() => {
-            setCurrentScreen('dashboard');
-            setTimeout(() => {
-              showNotification('💎 Upgrade to generate more Starbucks drinks!', 'info');
-            }, 500);
+            if (setCurrentScreen) {
+              setCurrentScreen('dashboard');
+              setTimeout(() => {
+                showNotification('💎 Upgrade to generate more Starbucks drinks!', 'info');
+              }, 500);
+            }
           }, 2000);
           
           return;
         }
+      } else {
+        const errorMessage = error.response?.data?.detail || 'Failed to generate drink. Please try again.';
+        showNotification(`❌ ${errorMessage}`, 'error');
       }
-      
-      const errorMessage = error.response?.data?.detail || 'Failed to generate drink. Please try again.';
-      showNotification(`❌ ${errorMessage}`, 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -532,7 +550,7 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
         {/* Back Button */}
         <div className="text-center mt-8">
           <button
-            onClick={() => setCurrentScreen('dashboard')}
+            onClick={() => setCurrentScreen && setCurrentScreen('dashboard')}
             className="bg-gray-500 hover:bg-gray-600 text-white px-8 py-3 rounded-xl font-bold transition-all duration-200"
           >
             ← Back to Dashboard
@@ -678,6 +696,11 @@ const DrinkCard = ({
   const category = drink.category || "unknown";
   const baseDrink = drink.base_drink || "";
   const modifications = drink.modifications || [];
+  const estimatedPrice = drink.estimated_price || 0;
+  const flavorProfile = drink.flavor_profile || "";
+  const color = drink.color || "";
+  const bestSeason = drink.best_season || "";
+  const difficultyLevel = drink.difficulty_level || "";
   
   // Get category emoji
   const getCategoryEmoji = (category) => {
@@ -704,6 +727,13 @@ const DrinkCard = ({
       
       {/* Main Card */}
       <div className="bg-white rounded-3xl shadow-2xl p-8 border-4 border-gradient-to-r from-purple-200 to-pink-200 relative overflow-hidden">
+        {/* AI Generated Badge */}
+        {drink.ai_generated && (
+          <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+            ✨ AI Generated
+          </div>
+        )}
+        
         {/* Magical Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 left-4 text-4xl text-purple-400 animate-pulse">✨</div>
@@ -723,17 +753,61 @@ const DrinkCard = ({
           <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent mb-4">
             {drinkName}
           </h2>
-          <p className="text-xl text-gray-600 italic font-medium mb-4">"{description}"</p>
-          <div className="inline-block bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-full text-lg font-bold shadow-lg animate-pulse">
-            ✨ {category.charAt(0).toUpperCase() + category.slice(1)} ✨
+          <p className="text-gray-600 italic mb-6 text-lg">"{description}"</p>
+          
+          <div className="flex justify-center flex-wrap gap-3 mb-6">
+            <div className="inline-block bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-4 py-2 rounded-full text-sm font-bold">
+              ✨ {category.charAt(0).toUpperCase() + category.slice(1)} ✨
+            </div>
+            {estimatedPrice > 0 && (
+              <div className="inline-block bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-full text-sm font-bold">
+                💰 ~${estimatedPrice.toFixed(2)}
+              </div>
+            )}
+            {difficultyLevel && (
+              <div className={`inline-block px-4 py-2 rounded-full text-sm font-bold text-white ${
+                difficultyLevel === 'easy' ? 'bg-gradient-to-r from-green-400 to-green-500' :
+                difficultyLevel === 'medium' ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' :
+                'bg-gradient-to-r from-red-400 to-red-500'
+              }`}>
+                🎯 {difficultyLevel.charAt(0).toUpperCase() + difficultyLevel.slice(1)}
+              </div>
+            )}
           </div>
+          
+          {/* Drink Details */}
+          {(flavorProfile || color || bestSeason) && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              {flavorProfile && (
+                <div className="bg-gradient-to-r from-orange-100 to-yellow-100 rounded-xl p-4">
+                  <div className="text-2xl mb-2">👅</div>
+                  <div className="text-xs text-gray-600 font-medium">Flavor Profile</div>
+                  <div className="text-sm font-bold text-gray-800">{flavorProfile}</div>
+                </div>
+              )}
+              {color && (
+                <div className="bg-gradient-to-r from-pink-100 to-purple-100 rounded-xl p-4">
+                  <div className="text-2xl mb-2">🎨</div>
+                  <div className="text-xs text-gray-600 font-medium">Appearance</div>
+                  <div className="text-sm font-bold text-gray-800">{color}</div>
+                </div>
+              )}
+              {bestSeason && (
+                <div className="bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl p-4">
+                  <div className="text-2xl mb-2">🗓️</div>
+                  <div className="text-xs text-gray-600 font-medium">Best Season</div>
+                  <div className="text-sm font-bold text-gray-800">{bestSeason}</div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
-        {/* Enhanced Ingredients */}
+        {/* Enhanced Base Drink */}
         {baseDrink && (
           <div className="mb-8">
             <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-              <span className="text-3xl mr-3 animate-bounce">🥤</span>
+              <span className="text-3xl mr-3 animate-bounce">☕</span>
               Base Drink
             </h3>
             <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-4 rounded-2xl border-2 border-blue-200">
@@ -742,16 +816,22 @@ const DrinkCard = ({
           </div>
         )}
         
+        {/* Enhanced Modifications */}
         {modifications.length > 0 && (
           <div className="mb-8">
             <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
               <span className="text-3xl mr-3 animate-pulse">✨</span>
-              Magical Modifications
+              Magical Modifications ({modifications.length})
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {modifications.map((mod, index) => (
                 <div key={index} className="bg-gradient-to-r from-purple-100 to-pink-100 p-4 rounded-2xl border-2 border-purple-200 transform hover:scale-105 transition-all duration-300">
-                  <span className="text-purple-800 font-medium">{mod}</span>
+                  <div className="flex items-center">
+                    <span className="text-purple-600 text-xl mr-3">
+                      {index === 0 ? '🌟' : index === 1 ? '✨' : index === 2 ? '💫' : '⭐'}
+                    </span>
+                    <span className="text-purple-800 font-medium">{mod}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -765,17 +845,22 @@ const DrinkCard = ({
             How to Order This Magic
           </h3>
           <div className="bg-gradient-to-r from-yellow-100 to-orange-100 p-6 rounded-2xl border-l-4 border-yellow-500 shadow-inner">
-            <p className="text-gray-700 text-lg leading-relaxed">
-              {showFullScript ? orderScript : `${orderScript.substring(0, 120)}...`}
-            </p>
+            <div className="bg-white p-4 rounded-xl mb-4">
+              <p className="text-gray-700 text-lg leading-relaxed italic font-medium">
+                {showFullScript ? orderScript : `${orderScript.substring(0, 120)}...`}
+              </p>
+            </div>
             {orderScript.length > 120 && (
               <button 
                 onClick={() => setShowFullScript(!showFullScript)}
-                className="text-blue-600 hover:text-blue-800 text-sm mt-3 font-medium underline"
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium underline"
               >
                 {showFullScript ? 'Show less' : 'Show full script'}
               </button>
             )}
+            <div className="text-xs text-orange-700 mt-3 font-medium">
+              💡 Pro tip: Smile and be patient with your barista!
+            </div>
           </div>
         </div>
         
@@ -792,7 +877,7 @@ const DrinkCard = ({
                 className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-3"
               >
                 <span className="text-2xl animate-bounce">📋</span>
-                Copy Order
+                Copy Order Script
               </button>
               
               <button
@@ -800,7 +885,7 @@ const DrinkCard = ({
                 className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-3"
               >
                 <span className="text-2xl animate-pulse">🔗</span>
-                Share
+                Share This Drink
               </button>
               
               {onGenerateAnother && (

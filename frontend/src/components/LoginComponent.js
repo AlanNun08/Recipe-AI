@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { authService } from '../services/auth';
 
-const LoginComponent = ({ onVerificationRequired, onLoginSuccess }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
+
+const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPassword }) => {
+  const [email, setEmail] = useState('fresh@test.com'); // Pre-fill test credentials
+  const [password, setPassword] = useState('password123'); // Pre-fill test credentials
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -13,146 +16,261 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess }) => {
     setError('');
     
     try {
-      const result = await authService.login({ email, password });
-      
-      console.log('Login result:', result); // Debug log
-      
-      if (result.status === 'verification_required') {
-        // Password was correct but account needs verification
-        console.log('Verification required, navigating to verification page');
-        
-        // Call callback to navigate to verification page
+      console.log('🔐 Attempting login for:', email);
+      console.log('🔗 API URL:', `${API}/api/auth/login`);
+
+      // Call the backend login endpoint
+      const response = await fetch(`${API}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password
+        }),
+      });
+
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+
+      const data = await response.json();
+      console.log('📥 Login response:', data);
+
+      // Handle different response cases
+      if (response.status === 403 && data.status === 'verification_required') {
+        console.log('⚠️ Verification required');
         if (onVerificationRequired) {
-          onVerificationRequired(result);
+          onVerificationRequired(data);
         } else {
-          // Default navigation
-          window.location.href = '/verify';
+          setError('Account not verified. Please check your email for verification code.');
         }
         
-      } else if (result.status === 'success') {
-        // Login successful
-        console.log('Login successful:', result);
+      } else if (response.ok && data.status === 'success') {
+        console.log('✅ Login successful:', data);
         
+        const userData = {
+          user_id: data.user_id,
+          email: data.email,
+          name: data.name,
+          verified: data.verified,
+          subscription_status: data.subscription_status
+        };
+
+        // Store with remember me preference
+        if (rememberMe) {
+          localStorage.setItem('user', JSON.stringify(userData));
+          localStorage.setItem('rememberMe', 'true');
+        } else {
+          sessionStorage.setItem('user', JSON.stringify(userData));
+        }
+
         if (onLoginSuccess) {
-          onLoginSuccess(result);
-        } else {
-          // Default navigation
-          alert('Login successful!');
-          window.location.href = '/dashboard';
+          onLoginSuccess(userData);
         }
+        
+      } else if (response.status === 503) {
+        // Backend not available
+        console.error('❌ Backend service unavailable');
+        setError('Authentication service is temporarily unavailable. Please try again later.');
+        
+      } else if (response.status === 501) {
+        // Not implemented
+        console.error('❌ Authentication endpoint not implemented');
+        setError('Authentication system is not configured. Please contact support.');
+        
+      } else if (response.status === 401) {
+        // Invalid credentials
+        console.error('❌ Invalid credentials');
+        setError('Invalid email or password. Please check your credentials.');
+        
+      } else if (response.status === 500) {
+        // Server error
+        console.error('❌ Server error:', data);
+        if (data.error === 'password_hash_missing') {
+          setError('Account setup incomplete. Please contact support or try registering again.');
+        } else {
+          setError(data.detail || 'Server error. Please try again.');
+        }
+        
+      } else {
+        // Other error
+        console.error('❌ Login failed:', response.status, data);
+        setError(data.detail || data.message || 'Login failed. Please try again.');
       }
+      
     } catch (error) {
-      console.error('Login error:', error);
-      setError('Login failed: ' + error.message);
+      console.error('❌ Network error during login:', error);
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSocialLogin = (provider) => {
+    console.log(`Social login with ${provider}`);
+    setError(`${provider} login coming soon!`);
+  };
+
+  const testAPIConnection = async () => {
+    try {
+      console.log('🧪 Testing API connection...');
+      const response = await fetch(`${API}/api/health`);
+      const data = await response.json();
+      console.log('🧪 API Health:', data);
+      
+      if (response.ok) {
+        setError('✅ API connection successful! Try logging in again.');
+      } else {
+        setError('⚠️ API is responding but may have issues.');
+      }
+    } catch (error) {
+      console.error('🧪 API test failed:', error);
+      setError('❌ Cannot connect to API server.');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="text-8xl mb-6 animate-bounce">🔐</div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-4">
-            Welcome Back!
-          </h1>
-          <p className="text-lg text-gray-600">
-            Sign in to your AI Chef account
-          </p>
-        </div>
+    <div className="space-y-6">
+      {/* Welcome Message */}
+      <div className="text-center">
+        <div className="text-4xl mb-3">👋</div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome Back!</h2>
+        <p className="text-gray-600">Ready to plan some delicious meals?</p>
+      </div>
 
-        {/* Login Form Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <div className="flex items-center">
-                <span className="text-2xl mr-3">❌</span>
-                <div>
-                  <h4 className="font-bold text-red-800 mb-1">Login Failed</h4>
-                  <p className="text-red-700 text-sm">{error}</p>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <form onSubmit={handleLogin} className="space-y-6">
-            {/* Email Field */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                📧 Email Address
-              </label>
-              <input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all duration-200 text-gray-700 bg-white text-lg"
-              />
-            </div>
-            
-            {/* Password Field */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                🔒 Password
-              </label>
-              <input
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all duration-200 text-gray-700 bg-white text-lg"
-              />
-            </div>
-            
-            {/* Login Button */}
-            <button 
-              type="submit" 
-              disabled={loading}
-              className={`w-full font-bold py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center text-lg shadow-lg ${
-                loading
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
-                  : 'bg-gradient-to-r from-orange-500 to-red-600 text-white hover:shadow-xl transform hover:-translate-y-1 hover:from-orange-600 hover:to-red-700'
-              }`}
-            >
-              {loading ? (
-                <>
-                  <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
-                  Signing you in...
-                </>
-              ) : (
-                <>
-                  <span className="mr-3 text-2xl">✨</span>
-                  Sign In to AI Chef
-                </>
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-start">
+            <span className="text-red-500 mr-2">⚠️</span>
+            <div className="flex-1">
+              <p className="text-red-700 text-sm">{error}</p>
+              {error.includes('Network') && (
+                <button
+                  onClick={testAPIConnection}
+                  className="mt-2 text-blue-600 hover:text-blue-800 text-sm underline"
+                >
+                  Test API Connection
+                </button>
               )}
-            </button>
-          </form>
-
-          {/* Additional Info */}
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <div className="flex items-start">
-                <span className="text-2xl mr-3">💡</span>
-                <div>
-                  <h4 className="font-bold text-blue-800 mb-1">First time here?</h4>
-                  <p className="text-blue-700 text-sm">
-                    Create your account and start generating amazing recipes with AI Chef!
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
+      )}
+      
+      <form onSubmit={handleLogin} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            📧 Email
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            placeholder="email@example.com"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            🔒 Password
+          </label>
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              placeholder="••••••••••••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? '🙈' : '👁'}
+            </button>
+          </div>
+        </div>
 
-        {/* Footer */}
-        <div className="text-center mt-6">
-          <p className="text-gray-500 text-sm">
-            🔒 Your data is secure and protected
-          </p>
+        <div className="flex items-center justify-between">
+          <label className="flex items-center text-sm">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mr-2"
+            />
+            <span className="text-gray-700">☑️ Keep me logged in</span>
+          </label>
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            🔗 Forgot password?
+          </button>
+        </div>
+        
+        <button 
+          type="submit" 
+          disabled={loading}
+          className={`w-full py-3 px-4 rounded-lg font-bold text-white transition-all duration-200 ${
+            loading 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:shadow-lg transform hover:-translate-y-1'
+          }`}
+        >
+          {loading ? (
+            <div className="flex items-center justify-center">
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+              Signing in...
+            </div>
+          ) : (
+            '🚀 Login to Dashboard'
+          )}
+        </button>
+      </form>
+
+      {/* Social Login */}
+      <div className="space-y-4">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">or continue with</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <button
+            type="button"
+            onClick={() => handleSocialLogin('Google')}
+            className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-lg">📱</span>
+            <span className="ml-2 text-sm font-medium">Google</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSocialLogin('Facebook')}
+            className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-lg">📘</span>
+            <span className="ml-2 text-sm font-medium">Facebook</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSocialLogin('Apple')}
+            className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-lg">🍎</span>
+            <span className="ml-2 text-sm font-medium">Apple</span>
+          </button>
         </div>
       </div>
     </div>

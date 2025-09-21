@@ -1,199 +1,364 @@
 import React, { useState, useEffect } from 'react';
+import WelcomeOnboarding from './components/WelcomeOnboarding';
 import LoginComponent from './components/LoginComponent';
 import VerificationPage from './components/VerificationPage';
-import WelcomeOnboarding from './components/WelcomeOnboarding';
 import DashboardScreen from './components/DashboardScreen';
-import { authService } from './services/auth';
+import RecipeDetailScreen from './components/RecipeDetailScreen';
+import RecipeGeneratorScreen from './components/RecipeGeneratorScreen';
+import WeeklyRecipesScreen from './components/WeeklyRecipesScreen';
+import StarbucksGeneratorScreen from './components/StarbucksGeneratorScreen';
+import RecipeHistoryScreen from './components/RecipeHistoryScreen';
 import './App.css';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('login'); // 'login', 'verify', 'onboarding', 'dashboard'
+  const [currentView, setCurrentView] = useState('welcome'); // Start with welcome/onboarding
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [userPreferences, setUserPreferences] = useState(null);
-  const [notifications, setNotifications] = useState([]);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [notification, setNotification] = useState(null);
+  const [verificationEmail, setVerificationEmail] = useState('');
 
+  // Check for existing user session on app load
   useEffect(() => {
-    // Check if user is already logged in
-    const storedUser = localStorage.getItem('user');
-    const storedPreferences = localStorage.getItem('userPreferences');
-    
-    if (storedUser) {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
       try {
-        const userData = JSON.parse(storedUser);
+        const userData = JSON.parse(savedUser);
         setUser(userData);
-        
-        // Check if user has completed onboarding
-        if (storedPreferences) {
-          setUserPreferences(JSON.parse(storedPreferences));
-          setCurrentPage('dashboard');
-        } else {
-          // User is logged in but hasn't completed onboarding
-          setCurrentPage('onboarding');
-        }
+        setCurrentView('dashboard');
+        console.log('🔄 Restored user session:', userData.email);
       } catch (error) {
-        console.error('Error parsing stored user data:', error);
+        console.error('Error parsing saved user data:', error);
         localStorage.removeItem('user');
-        localStorage.removeItem('userPreferences');
-      }
-    } else {
-      // Check if there's pending verification
-      const pendingVerification = authService.getPendingVerification();
-      if (pendingVerification) {
-        setCurrentPage('verify');
       }
     }
-    setLoading(false);
-  }, []);
+  }, []); // Keep empty dependency array
+
+  // Expose setCurrentView globally for dashboard navigation
+  useEffect(() => {
+    window.setCurrentScreen = setCurrentView;
+    window.setSelectedRecipe = setSelectedRecipe;
+  }, []); // Keep this cleanup as it's for globals
 
   const showNotification = (message, type = 'info') => {
-    const id = Date.now();
-    const notification = { id, message, type };
-    setNotifications(prev => [...prev, notification]);
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 5000);
+  };
+
+  const handleLoginSuccess = (userData) => {
+    console.log('✅ Login successful, saving user data:', userData);
     
-    // Auto-remove notification after 5 seconds
-    setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    }, 5000);
-  };
-
-  const handleVerificationRequired = (verificationData) => {
-    console.log('Navigating to verification page:', verificationData);
-    setCurrentPage('verify');
-  };
-
-  const handleLoginSuccess = (loginData) => {
-    console.log('Login successful, navigating to onboarding:', loginData);
-    setUser(loginData.user);
+    // FIX: Ensure consistent user object structure
+    const normalizedUser = {
+      user_id: userData.user_id,
+      id: userData.user_id, // Add both fields for compatibility
+      email: userData.email,
+      name: userData.name,
+      verified: userData.verified,
+      subscription_status: userData.subscription_status
+    };
     
-    // Check if user has existing preferences
-    const storedPreferences = localStorage.getItem('userPreferences');
-    if (storedPreferences) {
-      setUserPreferences(JSON.parse(storedPreferences));
-      setCurrentPage('dashboard');
-    } else {
-      setCurrentPage('onboarding');
-    }
+    setUser(normalizedUser);
+    localStorage.setItem('user', JSON.stringify(normalizedUser));
+    setCurrentView('dashboard');
+    showNotification(`Welcome back, ${userData.name || userData.email}!`, 'success');
   };
 
-  const handleVerificationSuccess = (verificationData) => {
-    console.log('Verification successful, navigating to onboarding:', verificationData);
+  const handleVerificationRequired = (data) => {
+    console.log('⚠️ Verification required:', data);
+    setVerificationEmail(data.email);
+    setCurrentView('verification');
+    showNotification('Please check your email for verification code.', 'info');
+  };
+
+  const handleVerificationSuccess = (data) => {
+    console.log('✅ Email verified successfully:', data);
+    showNotification('Email verified! You can now log in.', 'success');
+    setCurrentView('login');
+    setVerificationEmail('');
+  };
+
+  const handleRegistrationComplete = (userData) => {
+    console.log('✅ Registration complete, saving user data:', userData);
     
-    // Check if user has existing preferences
-    const storedPreferences = localStorage.getItem('userPreferences');
-    if (storedPreferences) {
-      setUserPreferences(JSON.parse(storedPreferences));
-      setCurrentPage('dashboard');
-    } else {
-      setCurrentPage('onboarding');
-    }
-  };
-
-  const handleOnboardingComplete = (preferences) => {
-    console.log('Onboarding completed:', preferences);
-    setUserPreferences(preferences);
-    setCurrentPage('dashboard');
-  };
-
-  const handleOnboardingSkip = () => {
-    console.log('Onboarding skipped');
-    setCurrentPage('dashboard');
-  };
-
-  const handleBackToLogin = () => {
-    console.log('Navigating back to login');
-    setCurrentPage('login');
+    // FIX: Ensure consistent user object structure
+    const normalizedUser = {
+      user_id: userData.user_id,
+      id: userData.user_id, // Add both fields for compatibility
+      email: userData.email,
+      name: userData.name,
+      verified: userData.verified || false,
+      subscription_status: userData.subscription_status || 'free'
+    };
+    
+    setUser(normalizedUser);
+    localStorage.setItem('user', JSON.stringify(normalizedUser));
+    setCurrentView('dashboard');
+    showNotification('Welcome! Your account has been created.', 'success');
   };
 
   const handleLogout = () => {
-    authService.logout();
+    console.log('🚪 Logging out user');
     setUser(null);
-    setUserPreferences(null);
+    localStorage.removeItem('user');
     localStorage.removeItem('userPreferences');
-    setCurrentPage('login');
+    setCurrentView('welcome');
+    showNotification('You have been logged out.', 'info');
   };
 
-  if (loading) {
-    return (
-      <div className="App" style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      }}>
-        <div style={{ color: 'white', fontSize: '18px' }}>
-          🔄 Loading your AI Chef experience...
-        </div>
-      </div>
-    );
-  }
+  const handleRecipeSelect = (recipe) => {
+    setSelectedRecipe(recipe);
+    setCurrentView('recipe-detail');
+  };
 
-  // Render current page
+  const handleBackFromRecipe = () => {
+    setSelectedRecipe(null);
+    setCurrentView('dashboard');
+  };
+
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'welcome':
+        return (
+          <WelcomeOnboarding
+            onComplete={handleRegistrationComplete}
+            onSkip={() => setCurrentView('login')}
+            showLoginOption={true}
+            onLoginClick={() => setCurrentView('login')}
+          />
+        );
+
+      case 'login':
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+            <div className="max-w-md w-full">
+              {/* Back to Welcome Button */}
+              <button
+                onClick={() => setCurrentView('welcome')}
+                className="mb-4 flex items-center text-blue-600 hover:text-blue-800 font-medium"
+              >
+                <span className="mr-2">←</span>
+                Back to Welcome
+              </button>
+
+              {/* Login Card */}
+              <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+                <div className="text-center mb-6">
+                  <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome Back!</h1>
+                  <p className="text-gray-600">Sign in to your account</p>
+                </div>
+
+                <LoginComponent
+                  onLoginSuccess={handleLoginSuccess}
+                  onVerificationRequired={handleVerificationRequired}
+                  onForgotPassword={() => {
+                    showNotification('Password reset coming soon!', 'info');
+                  }}
+                />
+
+                {/* Register Option */}
+                <div className="mt-6 text-center">
+                  <p className="text-gray-600">
+                    Don't have an account?{' '}
+                    <button
+                      onClick={() => setCurrentView('welcome')}
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Create one here
+                    </button>
+                  </p>
+                </div>
+
+                {/* Test Credentials Helper */}
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
+                  <p className="text-yellow-800 text-sm font-medium">🧪 Test Credentials:</p>
+                  <p className="text-yellow-700 text-xs mt-1">
+                    Email: fresh@test.com<br/>
+                    Password: password123
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'verification':
+        return (
+          <VerificationPage
+            email={verificationEmail}
+            onVerificationSuccess={handleVerificationSuccess}
+            onBackToLogin={() => setCurrentView('login')}
+          />
+        );
+
+      case 'dashboard':
+        return (
+          <DashboardScreen
+            user={user}
+            onLogout={handleLogout}
+            onRecipeSelect={handleRecipeSelect}
+            showNotification={showNotification}
+            setCurrentScreen={setCurrentView}
+          />
+        );
+
+      case 'recipe-generator':
+        return (
+          <RecipeGeneratorScreen
+            user={user}
+            onBack={() => setCurrentView('dashboard')}
+            showNotification={showNotification}
+            onViewRecipe={(recipeId, source) => {
+              setSelectedRecipe({ id: recipeId, source });
+              setCurrentView('recipe-detail');
+            }}
+          />
+        );
+
+      case 'weekly-recipes':
+        return (
+          <WeeklyRecipesScreen
+            user={user}
+            onBack={() => setCurrentView('dashboard')}
+            showNotification={showNotification}
+            onViewRecipe={(recipeId, source) => {
+              setSelectedRecipe({ id: recipeId, source });
+              setCurrentView('recipe-detail');
+            }}
+          />
+        );
+
+      case 'starbucks-generator':
+        return (
+          <StarbucksGeneratorScreen
+            user={user}
+            setCurrentScreen={setCurrentView}
+            showNotification={showNotification}
+          />
+        );
+
+      case 'recipe-history':
+        return (
+          <RecipeHistoryScreen
+            user={user}
+            onBack={() => setCurrentView('dashboard')}
+            showNotification={showNotification}
+            onViewRecipe={(recipeId, source) => {
+              setSelectedRecipe({ id: recipeId, source });
+              setCurrentView('recipe-detail');
+            }}
+            onViewStarbucksRecipe={(recipe) => {
+              setSelectedRecipe(recipe);
+              setCurrentView('starbucks-detail');
+            }}
+          />
+        );
+
+      case 'recipe-detail':
+        return selectedRecipe ? (
+          <RecipeDetailScreen
+            recipeId={selectedRecipe.id}
+            recipeSource={selectedRecipe.source || "generated"}
+            onBack={() => {
+              // FIX: Better back navigation based on source
+              if (selectedRecipe.source === 'generated') {
+                setCurrentView('recipe-generator');
+              } else {
+                setCurrentView('dashboard');
+              }
+            }}
+            showNotification={showNotification}
+          />
+        ) : (
+          <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+              <div className="text-4xl mb-4">❌</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Recipe Not Found</h2>
+              <p className="text-gray-600 mb-6">The recipe you're looking for could not be loaded.</p>
+              <button
+                onClick={() => setCurrentView('dashboard')}
+                className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                ← Back to Dashboard
+              </button>
+            </div>
+          </div>
+        );
+
+      case 'settings':
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+              <div className="text-4xl mb-4">⚙️</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Settings</h2>
+              <p className="text-gray-600 mb-6">User settings and preferences coming soon!</p>
+              <button
+                onClick={() => setCurrentView('dashboard')}
+                className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                ← Back to Dashboard
+              </button>
+            </div>
+          </div>
+        );
+
+      case 'shopping-list':
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+              <div className="text-4xl mb-4">🛒</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Shopping List</h2>
+              <p className="text-gray-600 mb-6">Smart shopping list features coming soon!</p>
+              <button
+                onClick={() => setCurrentView('dashboard')}
+                className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors"
+              >
+                ← Back to Dashboard
+              </button>
+            </div>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Page Not Found</h2>
+              <button
+                onClick={() => setCurrentView('welcome')}
+                className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600"
+              >
+                Go to Welcome
+              </button>
+            </div>
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="App">
-      {/* Notifications */}
-      {notifications.length > 0 && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
-        }}>
-          {notifications.map(notification => (
-            <div
-              key={notification.id}
-              style={{
-                padding: '15px 20px',
-                borderRadius: '10px',
-                color: 'white',
-                fontWeight: 'bold',
-                background: notification.type === 'error' ? '#dc3545' :
-                           notification.type === 'warning' ? '#ffc107' :
-                           notification.type === 'success' ? '#28a745' : '#007bff',
-                boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
-                maxWidth: '300px'
-              }}
+      {/* Global Notification */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${
+          notification.type === 'success' ? 'bg-green-500 text-white' :
+          notification.type === 'error' ? 'bg-red-500 text-white' :
+          notification.type === 'warning' ? 'bg-yellow-500 text-white' :
+          'bg-blue-500 text-white'
+        }`}>
+          <div className="flex items-center justify-between">
+            <span>{notification.message}</span>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-4 text-white hover:text-gray-200"
             >
-              {notification.message}
-            </div>
-          ))}
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
-      {currentPage === 'verify' && (
-        <VerificationPage
-          onVerificationSuccess={handleVerificationSuccess}
-          onBackToLogin={handleBackToLogin}
-        />
-      )}
-      
-      {currentPage === 'onboarding' && (
-        <WelcomeOnboarding
-          onComplete={handleOnboardingComplete}
-          onSkip={handleOnboardingSkip}
-        />
-      )}
-      
-      {currentPage === 'dashboard' && (
-        <DashboardScreen
-          user={user}
-          userPreferences={userPreferences}
-          onLogout={handleLogout}
-          showNotification={showNotification}
-          setCurrentScreen={setCurrentPage}
-        />
-      )}
-      
-      {currentPage === 'login' && (
-        <LoginComponent
-          onVerificationRequired={handleVerificationRequired}
-          onLoginSuccess={handleLoginSuccess}
-        />
-      )}
+      {/* Main Content */}
+      {renderCurrentView()}
     </div>
   );
 }

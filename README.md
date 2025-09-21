@@ -1,389 +1,290 @@
-# buildyoursmartcart.com
+# BuildYourSmartCart.com - AI-Powered Recipe & Meal Planning Platform
 
-**AI Recipe + Grocery Delivery App - Weekly Meal Planning & Walmart Integration**
+A comprehensive meal planning and recipe generation platform powered by AI, featuring Walmart integration for seamless grocery shopping and Starbucks secret menu generation.
 
-A comprehensive full-stack application that combines AI-powered recipe generation with grocery delivery integration, featuring weekly meal planning, individual recipe creation, and Starbucks secret menu generation.
+## 🌟 Features
 
-## 🚀 Features
+### Core Features
+- **AI Recipe Generation**: Create personalized recipes using OpenAI's GPT models
+- **Weekly Meal Planning**: Generate complete weekly meal plans with balanced nutrition
+- **Starbucks Secret Menu Generator**: Create unique Starbucks drinks with AI
+- **Smart Walmart Shopping**: Automatic product matching and cart creation
+- **User Authentication**: Secure MongoDB-based user system with email verification
+- **Recipe Management**: Save, edit, and organize your favorite recipes
 
-- **AI Recipe Generation**: Create personalized recipes using OpenAI GPT
-- **Weekly Meal Planning**: Generate 7-day meal plans with grocery integration
-- **Walmart Shopping Integration**: Direct product links and cart generation
-- **Starbucks Secret Menu**: Curated and AI-generated drink recipes
-- **User Authentication**: Secure registration, login, and email verification
-- **Subscription Management**: Free trial + premium monthly subscription
-- **Usage Limits**: Controlled access to premium features
-- **Mobile Responsive**: Optimized for all devices
+### Advanced Features
+- **Community Features**: Share recipes and discover community creations
+- **Curated Collections**: Hand-picked Starbucks recipes from our team
+- **Nutritional Analysis**: Detailed nutritional information for all recipes
+- **Dietary Preferences**: Support for various dietary restrictions
+- **Cost Estimation**: Real-time Walmart pricing and budget planning
+- **Mobile Responsive**: Optimized for all device types with PWA support
 
-## 🏗️ Architecture
+## 🛠️ Technology Stack
 
-### Technology Stack
+### Backend
+- **FastAPI**: Modern Python web framework with async support
+- **MongoDB**: NoSQL database with Motor async driver
+- **OpenAI API**: GPT-3.5/4 for recipe and drink generation
+- **Walmart Open API**: Real-time product search and pricing
+- **Pydantic**: Data validation and serialization
+- **CORS**: Cross-origin resource sharing support
 
-**Backend:**
-- FastAPI (Python 3.9+)
-- MongoDB with Motor (async driver)
-- OpenAI API for recipe generation
-- Stripe for payments
-- Mailjet for email services
-- Walmart API for product search
+### Frontend
+- **React 18**: Modern React with hooks and context
+- **Tailwind CSS**: Utility-first CSS framework with custom animations
+- **Axios**: HTTP client for API communication
+- **Context API**: Global state management
+- **PWA Support**: Service workers and offline capabilities
 
-**Frontend:**
-- React 18
-- Tailwind CSS
-- Axios for API communication
-- Responsive design
-
-**Infrastructure:**
-- Google Cloud Run (production)
-- Docker containerization
-- Environment-based configuration
-
-### Project Structure
-
-```
-/app/
-├── src/backend/              # Backend application
-│   ├── api/                  # API route handlers
-│   │   ├── auth.py          # Authentication routes
-│   │   └── recipes.py       # Recipe routes
-│   ├── models/              # Data models
-│   │   ├── user.py          # User-related models
-│   │   ├── recipe.py        # Recipe models
-│   │   └── payment.py       # Payment models
-│   ├── services/            # Business logic
-│   │   ├── auth.py          # Authentication service
-│   │   ├── recipe.py        # Recipe generation service
-│   │   ├── database.py      # Database service
-│   │   ├── email.py         # Email service
-│   │   └── stripe.py        # Payment service
-│   └── main.py             # FastAPI application
-├── frontend/                # React frontend
-│   ├── src/
-│   │   ├── components/      # React components
-│   │   └── index.js         # App entry point
-│   └── public/             # Static assets
-├── tests/                   # Test suite
-│   ├── unit/               # Unit tests
-│   ├── integration/        # Integration tests
-│   └── e2e/               # End-to-end tests
-├── config/                 # Configuration
-│   └── settings.py         # Application settings
-├── main.py                 # Production server
-├── Dockerfile              # Container configuration
-└── pyproject.toml          # Project configuration
-```
+### Infrastructure
+- **Google Cloud Run**: Serverless container deployment
+- **Docker**: Multi-stage containerization
+- **Environment Variables**: Secure configuration management
+- **Static File Serving**: Optimized React build serving
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-
 - Python 3.9+
-- Node.js 18+
-- MongoDB
-- Docker (optional)
+- Node.js 16+
+- MongoDB instance (local or Atlas)
+- OpenAI API key
+- Walmart API credentials (Consumer ID & Private Key)
 
-### Environment Setup
+### Installation
 
-1. **Clone and Setup:**
+1. **Clone the repository**
 ```bash
-git clone <repository>
-cd buildyoursmartcart
+git clone https://github.com/yourusername/Recipe-AI.git
+cd Recipe-AI
 ```
 
-2. **Backend Environment:**
-```bash
-# Install Python dependencies
-pip install -e ".[dev,test]"
-
-# Create backend environment file
-cp src/backend/.env.example src/backend/.env
-```
-
-3. **Frontend Environment:**
-```bash
-cd frontend
-yarn install
-
-# Create frontend environment file
-cp .env.example .env
-```
-
-### Environment Variables
-
-**Backend (.env):**
-```bash
-# Database
+2. **Environment Setup**
+Create a `.env` file in the root directory:
+```env
+# Database Configuration
 MONGO_URL=mongodb://localhost:27017
-DB_NAME=buildyoursmartcart_development
+# Or MongoDB Atlas: mongodb+srv://username:password@cluster.mongodb.net/
+DB_NAME=recipe_ai_dev
 
 # API Keys
-OPENAI_API_KEY=your-openai-api-key-here
-STRIPE_API_KEY=your-stripe-secret-key-here
-STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key-here
-MAILJET_API_KEY=your-mailjet-api-key-here
-MAILJET_SECRET_KEY=your-mailjet-secret-key-here
-WALMART_CONSUMER_ID=your-walmart-consumer-id-here
-WALMART_PRIVATE_KEY=your-walmart-private-key-here
+OPENAI_API_KEY=sk-your_openai_api_key_here
+WALMART_CONSUMER_ID=your_walmart_consumer_id_uuid
+WALMART_PRIVATE_KEY=your_base64_encoded_private_key
+WALMART_KEY_VERSION=1
 
-# Email
-SENDER_EMAIL=noreply@buildyoursmartcart.com
+# Optional API Keys (for future features)
+STRIPE_SECRET_KEY=sk_test_your_stripe_key
+MAILJET_API_KEY=your_mailjet_api_key
+MAILJET_SECRET_KEY=your_mailjet_secret_key
 
-# Security
-SECRET_KEY=your-secret-key-for-jwt-here
+# Development Settings
+NODE_ENV=development
+PORT=8080
 ```
 
-**Frontend (.env):**
+3. **Backend Setup**
 ```bash
-REACT_APP_BACKEND_URL=http://localhost:8001
+# Install Python dependencies
+pip install -r requirements.txt
 ```
 
-### Running the Application
-
-**Development Mode:**
+4. **Frontend Setup**
 ```bash
-# Terminal 1: Backend
-make dev
-# or
-cd src && uvicorn backend.main:app --host 0.0.0.0 --port 8001 --reload
-
-# Terminal 2: Frontend
-cd frontend && yarn start
-
-# Terminal 3: MongoDB (if running locally)
-mongod
+cd frontend
+npm install
+npm run build
+cd ..
 ```
 
-**Production Mode:**
+5. **Run the Application**
 ```bash
-make run
-# or
 python main.py
 ```
 
-**Using Docker:**
-```bash
-make docker-build
-make docker-run
+Visit `http://localhost:8080` to access the application.
+
+## 📁 Project Structure
+
+```
+Recipe-AI/
+├── main.py                    # Application entry point with static file serving
+├── backend/
+│   ├── server.py             # FastAPI application with all endpoints
+│   ├── models.py             # Pydantic request/response models
+│   └── services/
+│       ├── openai_service.py # OpenAI integration
+│       └── walmart_service.py # Walmart API integration
+├── frontend/
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   │   ├── LoginScreen.js
+│   │   │   ├── DashboardScreen.js
+│   │   │   ├── RecipeGeneratorScreen.js
+│   │   │   ├── WeeklyPlanningScreen.js
+│   │   │   ├── StarbucksGeneratorScreen.js
+│   │   │   └── RecipeDetailScreen.js
+│   │   ├── context/          # Context providers
+│   │   └── App.js           # Main App with routing
+│   └── build/               # Production build
+├── .env                     # Environment variables
+├── requirements.txt         # Python dependencies
+├── Dockerfile              # Container configuration
+└── README.md
 ```
 
-## 🧪 Testing
+## 🔧 API Endpoints
 
-### Running Tests
+### Authentication
+- `POST /api/auth/register` - User registration with email verification
+- `POST /api/auth/login` - User login with MongoDB validation
+- `POST /api/auth/verify` - Email verification
+- `POST /api/auth/resend-verification` - Resend verification email
 
+### Recipe Management
+- `POST /api/recipes/generate` - Generate new recipe with OpenAI
+- `GET /api/recipes/history/{user_id}` - Get user's recipe history
+- `GET /api/recipes/{recipe_id}/detail` - Get detailed recipe information
+- `DELETE /api/recipes/{recipe_id}` - Delete recipe
+
+### Weekly Meal Planning
+- `POST /api/weekly-recipes/generate` - Generate complete weekly meal plan
+- `GET /api/weekly-recipes/current/{user_id}` - Get current weekly plan
+
+### Starbucks Secret Menu
+- `POST /api/generate-starbucks-drink` - Generate unique Starbucks drinks
+- `GET /api/curated-starbucks-recipes` - Get curated drink collection
+- `GET /api/shared-recipes` - Get community shared recipes
+
+### Smart Shopping (Walmart Integration)
+- `GET /api/recipes/{recipe_id}/cart-options` - Get Walmart products for recipe ingredients
+- Real-time product search and pricing
+- Automatic cart URL generation
+
+### User Management
+- `GET /api/user/dashboard/{user_id}` - Get comprehensive dashboard data
+- `POST /api/user/preferences` - Save user dietary preferences
+- `GET /api/user/trial-status/{user_id}` - Get trial and subscription status
+
+## 🌟 Key Features Explained
+
+### AI Recipe Generation
+- Uses OpenAI GPT models for creative recipe creation
+- Supports dietary restrictions and preferences
+- Generates nutritional information and cooking tips
+- Estimates ingredient costs
+
+### Walmart Smart Shopping
+- Real-time product matching for recipe ingredients
+- Price comparison and best value selection
+- Automatic cart creation with direct Walmart links
+- Support for pickup and delivery options
+
+### Starbucks Secret Menu Generator
+- AI-powered drink creation with customizable parameters
+- Community sharing and rating system
+- Curated collections from drink experts
+- Detailed ordering instructions for baristas
+
+### Weekly Meal Planning
+- Balanced nutrition across the week
+- Variety in cuisines and meal types
+- Shopping list generation
+- Cost optimization
+
+## 🌍 Deployment
+
+### Local Development
 ```bash
-# All tests
-make test
+# Start development server
+python main.py
 
-# Unit tests only
-make test-unit
-
-# Integration tests only
-make test-integration
-
-# End-to-end tests only
-make test-e2e
-
-# With coverage
-make test-coverage
+# Frontend development (separate terminal)
+cd frontend
+npm start  # Runs on port 3000
 ```
 
-### Test Structure
+### Google Cloud Run Deployment
 
-- **Unit Tests**: Test individual functions and classes in isolation
-- **Integration Tests**: Test API endpoints and service interactions
-- **E2E Tests**: Test complete user workflows
-
-## 🚢 Deployment
-
-### Google Cloud Run
-
-1. **Build and Deploy:**
+1. **Prepare for deployment**
 ```bash
-# Set environment variables in Google Cloud
-gcloud run services update buildyoursmartcart \
-  --set-env-vars MONGO_URL=your-production-mongo-url \
-  --set-env-vars OPENAI_API_KEY=your-production-openai-key \
-  --set-env-vars STRIPE_API_KEY=your-production-stripe-key \
-  --region us-central1
+# Build frontend
+cd frontend && npm run build && cd ..
+```
 
-# Deploy
+2. **Deploy to Cloud Run**
+```bash
 gcloud run deploy buildyoursmartcart \
   --source . \
   --platform managed \
   --region us-central1 \
-  --allow-unauthenticated
+  --allow-unauthenticated \
+  --set-env-vars NODE_ENV=production
 ```
 
-2. **Environment Variables Required for Production:**
-- `NODE_ENV=production`
-- `MONGO_URL` (production MongoDB connection)
-- `DB_NAME=buildyoursmartcart_production`
-- All API keys with production values
-
-### Production Checklist
-
-- [ ] Environment variables configured
-- [ ] Database backups configured
-- [ ] Monitoring and logging set up
-- [ ] SSL certificates configured
-- [ ] CORS properly configured
-- [ ] Rate limiting enabled
-- [ ] Security headers configured
-
-## 🔧 Development
-
-### Code Quality
-
+3. **Set environment variables**
 ```bash
-# Format code
-make format
-
-# Check formatting
-make format-check
-
-# Lint code
-make lint
-
-# Run all validation
-make validate
+gcloud run services update buildyoursmartcart \
+  --set-env-vars OPENAI_API_KEY=your_key,MONGO_URL=your_mongo_url,WALMART_CONSUMER_ID=your_id
 ```
 
-### API Documentation
+## 🔐 Authentication & Security
 
-When running in development mode, API documentation is available at:
-- Swagger UI: http://localhost:8001/docs
-- ReDoc: http://localhost:8001/redoc
+- **Secure Password Hashing**: Uses bcrypt for password security
+- **Email Verification**: Required for account activation
+- **User Session Management**: Secure user context and state
+- **Environment Variable Protection**: Sensitive data stored securely
+- **CORS Configuration**: Proper cross-origin request handling
 
-### Database Schema
+## 🛒 Walmart Integration Details
 
-**Users Collection:**
-```javascript
-{
-  id: "uuid",
-  email: "user@example.com",
-  password: "hashed_password",
-  is_verified: true,
-  subscription: {
-    status: "trialing|active|expired|cancelled",
-    trial_starts_at: "ISO_date",
-    trial_ends_at: "ISO_date",
-    customer_id: "stripe_customer_id"
-  },
-  usage_limits: {
-    weekly_recipes: {used: 0, limit: 2},
-    individual_recipes: {used: 0, limit: 10},
-    starbucks_drinks: {used: 0, limit: 10}
-  }
-}
-```
+The Walmart integration provides:
+- **Product Search**: Real-time ingredient-to-product matching
+- **Price Comparison**: Best value product selection
+- **Availability Check**: Stock status and store availability
+- **Cart Generation**: Direct links to Walmart cart with selected items
+- **Multiple Options**: 3 product alternatives per ingredient
 
-**Recipes Collection:**
-```javascript
-{
-  id: "uuid",
-  user_id: "user_uuid",
-  name: "Recipe Name",
-  description: "Recipe description",
-  ingredients: ["ingredient1", "ingredient2"],
-  instructions: ["step1", "step2"],
-  prep_time: "15 minutes",
-  cook_time: "30 minutes",
-  servings: 4,
-  difficulty: "easy|medium|hard",
-  cuisine_type: "italian",
-  calories: 500,
-  created_at: "ISO_date"
-}
-```
+## ☕ Starbucks Features
 
-## 📊 Usage Limits
-
-### Free Trial (7 days)
-- Weekly meal plans: 2 per month
-- Individual recipes: 10 per month
-- Starbucks drinks: 10 per month
-
-### Premium Subscription ($9.99/month)
-- Weekly meal plans: 8 per month
-- Individual recipes: 30 per month
-- Starbucks drinks: 30 per month
-
-## 🔐 Security
-
-### Best Practices Implemented
-
-1. **Environment Variables**: All sensitive data in environment variables
-2. **Password Hashing**: Bcrypt for password security
-3. **Input Validation**: Pydantic models for request validation
-4. **CORS Configuration**: Properly configured allowed origins
-5. **Rate Limiting**: API rate limiting (configurable)
-6. **Secure Headers**: Security headers in production
-7. **Database Security**: Parameterized queries, no SQL injection
-
-### Security Validation
-
-```bash
-# Run security scan
-make security-scan
-```
+- **Drink Type Selection**: Frappuccinos, Refreshers, Lattes, Lemonades
+- **Flavor Inspiration**: Custom flavor combinations
+- **Ordering Scripts**: Detailed instructions for baristas
+- **Community Sharing**: User-generated drink recipes
+- **Curated Collections**: Expert-selected favorites
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make changes with tests
-4. Run validation: `make validate`
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-### Development Guidelines
+## 📝 License
 
-- Follow PEP 8 for Python code
-- Use TypeScript for complex frontend logic
-- Write tests for new features
-- Update documentation
-- Use conventional commits
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📈 Monitoring and Analytics
+## 🔗 Links
 
-### Health Checks
+- [Live Demo](https://buildyoursmartcart.com)
+- [API Documentation](https://buildyoursmartcart.com/api/docs)
+- [Issue Tracker](https://github.com/yourusername/Recipe-AI/issues)
 
-- **API Health**: `/health` endpoint
-- **Database Health**: MongoDB connection status
-- **External APIs**: OpenAI, Stripe, Walmart connectivity
+## 📧 Support
 
-### Logging
+For support, email support@buildyoursmartcart.com
 
-- Structured logging with Python logging
-- Request/response logging
-- Error tracking and alerting
+## 🚀 Recent Updates
 
-## 🆘 Troubleshooting
-
-### Common Issues
-
-1. **Database Connection**: Check MONGO_URL and database accessibility
-2. **API Keys**: Ensure all API keys are valid and not placeholders
-3. **CORS Issues**: Verify allowed origins configuration
-4. **Port Conflicts**: Ensure ports 8001 (backend) and 3000 (frontend) are available
-
-### Debug Mode
-
-```bash
-# Enable debug logging
-export LOG_LEVEL=DEBUG
-make dev
-```
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
-## 📞 Support
-
-- Email: support@buildyoursmartcart.com
-- Documentation: This README
-- Issues: GitHub Issues (if applicable)
+- ✅ **Fixed Authentication**: MongoDB-based user system working
+- ✅ **Starbucks Generator**: AI-powered drink generation operational
+- ✅ **Walmart Integration**: Real-time product matching and cart creation
+- ✅ **Recipe Management**: Full CRUD operations with detailed views
+- ✅ **Weekly Planning**: Complete meal planning with shopping integration
+- ✅ **Mobile Responsive**: Optimized for all devices
 
 ---
 
-**buildyoursmartcart.com** - Simplifying meal planning with AI-powered recipes and grocery integration.
+Built with ❤️ using React, FastAPI, MongoDB, and OpenAI • **BuildYourSmartCart.com**

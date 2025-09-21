@@ -1,0 +1,10 @@
+# Quick Git Commit Commands
+# Run these commands in your terminal to commit all changes
+
+cd /Users/alannunezsilva/Documents/Recipe-AI
+
+# Make the commit script executable
+chmod +x commit_changes.sh
+
+# Run the commit script
+./commit_changes.sh

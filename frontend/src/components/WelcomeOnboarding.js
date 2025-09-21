@@ -1,368 +1,428 @@
 import React, { useState } from 'react';
-import { authService } from '../services/auth';
 
-const WelcomeOnboarding = ({ onComplete, onSkip }) => {
+const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
+
+const WelcomeOnboarding = ({ onComplete, onSkip, showLoginOption = false, onLoginClick }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [showDemo, setShowDemo] = useState(false);
+  const [sampleRecipe, setSampleRecipe] = useState(null);
   const [userPreferences, setUserPreferences] = useState({
+    quickPrefs: [],
+    budget: '',
     dietaryRestrictions: [],
     cuisinePreferences: [],
     cookingSkillLevel: '',
-    householdSize: 1,
-    weeklyBudget: '',
-    favoriteIngredients: []
+    householdSize: 4,
+    weeklyBudget: ''
+  });
+
+  const [registrationData, setRegistrationData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    agreeTerms: false,
+    emailUpdates: true
   });
 
   const steps = [
-    {
-      title: "Welcome to BuildYourSmartCart! 🛒",
-      description: "Let's personalize your AI chef experience",
-      component: "welcome"
-    },
-    {
-      title: "Dietary Preferences 🥗",
-      description: "Tell us about your dietary needs",
-      component: "dietary"
-    },
-    {
-      title: "Cuisine Preferences 🍽️",
-      description: "What flavors do you love?",
-      component: "cuisine"
-    },
-    {
-      title: "Cooking Experience 👨‍🍳",
-      description: "How comfortable are you in the kitchen?",
-      component: "skill"
-    },
-    {
-      title: "Household Setup 🏠",
-      description: "Help us plan the right portions",
-      component: "household"
-    }
+    { id: 'hero', title: 'Welcome', component: 'hero' },
+    { id: 'demo', title: 'Try It', component: 'demo' },
+    { id: 'register', title: 'Sign Up', component: 'register' },
+    { id: 'preferences', title: 'Personalize', component: 'preferences' }
   ];
 
-  const dietaryOptions = [
-    'Vegetarian', 'Vegan', 'Gluten-Free', 'Keto', 'Paleo', 
-    'Low-Carb', 'Dairy-Free', 'Nut-Free', 'Low-Sodium'
+  const quickPrefOptions = [
+    { id: 'comfort', label: '🍕 Comfort Food', desc: 'Mac & cheese, burgers, pizza' },
+    { id: 'healthy', label: '🥗 Healthy', desc: 'Fresh, nutritious, balanced' },
+    { id: 'international', label: '🌮 International', desc: 'Global flavors & cuisines' },
+    { id: 'meat', label: '🥩 Meat Lover', desc: 'Beef, chicken, pork dishes' },
+    { id: 'vegetarian', label: '🌱 Vegetarian', desc: 'Plant-based goodness' },
+    { id: 'quick', label: '⚡ Quick Meals', desc: '30 minutes or less' }
   ];
 
-  const cuisineOptions = [
-    'Italian', 'Mexican', 'Asian', 'Mediterranean', 'American',
-    'Indian', 'Thai', 'French', 'Japanese', 'Middle Eastern'
+  const budgetOptions = [
+    { value: 'budget', label: '$50', desc: 'Budget-friendly' },
+    { value: 'moderate', label: '$100', desc: 'Balanced choices' },
+    { value: 'premium', label: '$150', desc: 'Premium ingredients' },
+    { value: 'custom', label: 'Other', desc: 'Custom amount' }
   ];
 
-  const skillLevels = [
-    { value: 'beginner', label: 'Beginner - Simple recipes please!' },
-    { value: 'intermediate', label: 'Intermediate - I can handle some complexity' },
-    { value: 'advanced', label: 'Advanced - Bring on the challenge!' }
-  ];
-
-  const budgetRanges = [
-    { value: 'budget', label: '$50-100/week - Budget-friendly' },
-    { value: 'moderate', label: '$100-200/week - Moderate' },
-    { value: 'premium', label: '$200+/week - Premium ingredients' }
-  ];
-
-  const handleDietaryChange = (option) => {
-    const current = userPreferences.dietaryRestrictions;
-    const updated = current.includes(option)
-      ? current.filter(item => item !== option)
-      : [...current, option];
-    
-    setUserPreferences({
-      ...userPreferences,
-      dietaryRestrictions: updated
+  const generateSampleRecipe = () => {
+    // Simulate instant recipe generation for demo
+    setSampleRecipe({
+      name: "One-Pan Honey Garlic Chicken",
+      time: "25 minutes",
+      cost: "$12.50 for 4 people",
+      ingredients: ["Chicken thighs", "Honey", "Garlic", "Vegetables"],
+      image: "🍗"
     });
   };
 
-  const handleCuisineChange = (option) => {
-    const current = userPreferences.cuisinePreferences;
-    const updated = current.includes(option)
-      ? current.filter(item => item !== option)
-      : [...current, option];
-    
-    setUserPreferences({
-      ...userPreferences,
-      cuisinePreferences: updated
-    });
+  const handleQuickPrefToggle = (prefId) => {
+    setUserPreferences(prev => ({
+      ...prev,
+      quickPrefs: prev.quickPrefs.includes(prefId)
+        ? prev.quickPrefs.filter(id => id !== prefId)
+        : [...prev.quickPrefs, prefId]
+    }));
   };
 
-  const savePreferences = async () => {
-    try {
-      // Save preferences to backend
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (user.id) {
-        // Call API to save preferences
-        const response = await fetch('/api/user/preferences', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: user.id,
-            preferences: userPreferences
-          }),
-        });
+  const renderHeroStep = () => (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+      <div className="max-w-4xl w-full text-center">
+        {/* Login Option */}
+        {showLoginOption && (
+          <div className="mb-6">
+            <button
+              onClick={onLoginClick}
+              className="text-blue-600 hover:text-blue-800 font-medium text-sm underline"
+            >
+              Already have an account? Sign in here
+            </button>
+          </div>
+        )}
 
-        if (response.ok) {
-          console.log('Preferences saved successfully');
-        }
-      }
-      
-      // Store preferences locally as backup
-      localStorage.setItem('userPreferences', JSON.stringify(userPreferences));
-      
-      if (onComplete) {
-        onComplete(userPreferences);
-      }
-    } catch (error) {
-      console.error('Error saving preferences:', error);
-      // Still continue even if save fails
-      if (onComplete) {
-        onComplete(userPreferences);
-      }
-    }
-  };
+        {/* Hero Section */}
+        <div className="bg-white rounded-3xl shadow-2xl p-12 mb-8">
+          <div className="text-6xl mb-6">🍳</div>
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent mb-6">
+            Turn $50 into a week of amazing meals
+          </h1>
+          <p className="text-xl text-gray-600 mb-8">
+            ⭐ Join 12,847 families saving money on groceries with AI-powered meal planning
+          </p>
 
-  const nextStep = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      savePreferences();
-    }
-  };
+          <div className="flex flex-col md:flex-row gap-4 justify-center mb-8">
+            <button
+              onClick={() => setShowDemo(true)}
+              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-8 py-4 rounded-xl font-bold text-lg hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200"
+            >
+              🎬 Watch 30-sec Demo
+            </button>
+            <button
+              onClick={() => setCurrentStep(1)}
+              className="bg-gradient-to-r from-green-500 to-teal-500 text-white px-8 py-4 rounded-xl font-bold text-lg hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200"
+            >
+              🚀 Start Free Trial
+            </button>
+          </div>
 
-  const prevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
+          <div className="text-center space-y-2">
+            <p className="text-green-600 font-bold">💰 Average savings: $89/month</p>
+            <p className="text-blue-600 font-bold">⏱️ Setup time: 2 minutes</p>
+          </div>
+        </div>
 
-  const renderStepContent = () => {
-    const step = steps[currentStep];
-    
-    switch (step.component) {
-      case 'welcome':
-        return (
+        {/* Quick Benefits */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white rounded-2xl p-6 shadow-lg">
+            <div className="text-3xl mb-3">✅</div>
+            <h3 className="font-bold text-lg mb-2">AI Recipes for Your Budget</h3>
+            <p className="text-gray-600">Smart recipes that fit your spending plan</p>
+          </div>
+          <div className="bg-white rounded-2xl p-6 shadow-lg">
+            <div className="text-3xl mb-3">🛒</div>
+            <h3 className="font-bold text-lg mb-2">One-Click Walmart Shopping</h3>
+            <p className="text-gray-600">Auto-generated shopping lists with best prices</p>
+          </div>
+          <div className="bg-white rounded-2xl p-6 shadow-lg">
+            <div className="text-3xl mb-3">⏰</div>
+            <h3 className="font-bold text-lg mb-2">Save 3 Hours Per Week</h3>
+            <p className="text-gray-600">No more meal planning stress</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderDemoStep = () => (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full">
+        <div className="bg-white rounded-3xl shadow-2xl p-8">
+          <h2 className="text-3xl font-bold text-center mb-6">
+            Try it: Generate your first recipe!
+          </h2>
+          
+          <div className="bg-gray-50 rounded-2xl p-6 mb-6">
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="text-center">
+                <label className="block text-sm font-medium mb-2">💰 Budget</label>
+                <select className="w-full p-2 border rounded-lg">
+                  <option>$20</option>
+                  <option>$30</option>
+                  <option>$40</option>
+                </select>
+              </div>
+              <div className="text-center">
+                <label className="block text-sm font-medium mb-2">👨‍👩‍👧‍👦 People</label>
+                <select className="w-full p-2 border rounded-lg">
+                  <option>4</option>
+                  <option>2</option>
+                  <option>6</option>
+                </select>
+              </div>
+              <div className="text-center">
+                <label className="block text-sm font-medium mb-2">⏱️ Time</label>
+                <select className="w-full p-2 border rounded-lg">
+                  <option>30min</option>
+                  <option>45min</option>
+                  <option>60min</option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              onClick={generateSampleRecipe}
+              className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-lg font-bold text-lg hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200"
+            >
+              ✨ Generate Sample Recipe
+            </button>
+          </div>
+
+          {sampleRecipe && (
+            <div className="bg-green-50 border border-green-200 rounded-2xl p-6 mb-6">
+              <div className="flex items-center mb-4">
+                <span className="text-4xl mr-4">{sampleRecipe.image}</span>
+                <div>
+                  <h3 className="font-bold text-lg">{sampleRecipe.name}</h3>
+                  <p className="text-green-600 font-medium">{sampleRecipe.time} • {sampleRecipe.cost}</p>
+                </div>
+              </div>
+              <div className="text-sm text-gray-600">
+                <strong>Ingredients:</strong> {sampleRecipe.ingredients.join(', ')}
+              </div>
+              <div className="mt-4 p-3 bg-white rounded-lg">
+                <p className="text-sm">🛒 <strong>Shopping list auto-generated!</strong></p>
+                <p className="text-xs text-gray-500">Ready to add to Walmart cart with 1 click</p>
+              </div>
+            </div>
+          )}
+
           <div className="text-center">
-            <div className="text-6xl mb-6">🤖👨‍🍳</div>
-            <h2 className="text-2xl font-bold mb-4">Meet Your AI Chef!</h2>
-            <p className="text-gray-600 mb-6">
-              I'll help you discover amazing recipes, plan your weekly meals, 
-              and create smart shopping lists that fit your lifestyle.
-            </p>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-blue-700">
-                ✨ This quick setup will personalize your experience in just 2 minutes!
-              </p>
-            </div>
+            <p className="text-lg font-medium mb-4">Like what you see? Create your free account!</p>
+            <button
+              onClick={() => setCurrentStep(2)}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-3 rounded-lg font-bold hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200"
+            >
+              🚀 Get Started Free
+            </button>
           </div>
-        );
+        </div>
+      </div>
+    </div>
+  );
 
-      case 'dietary':
-        return (
-          <div>
-            <h3 className="text-xl font-bold mb-4">Select your dietary preferences:</h3>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              {dietaryOptions.map(option => (
-                <button
-                  key={option}
-                  onClick={() => handleDietaryChange(option)}
-                  className={`p-3 rounded-lg border-2 transition-all ${
-                    userPreferences.dietaryRestrictions.includes(option)
-                      ? 'border-green-500 bg-green-50 text-green-700'
-                      : 'border-gray-200 hover:border-green-300'
-                  }`}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-            <p className="text-sm text-gray-500">Select all that apply</p>
+  const renderRegisterStep = () => (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="bg-white rounded-3xl shadow-2xl p-8">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold mb-2">Join BuildYourSmartCart</h2>
+            <p className="text-lg text-gray-600">🎉 Start saving money on groceries today!</p>
+            <p className="text-sm text-gray-500">⭐ Join 12,847+ families already saving</p>
           </div>
-        );
 
-      case 'cuisine':
-        return (
-          <div>
-            <h3 className="text-xl font-bold mb-4">What cuisines do you enjoy?</h3>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              {cuisineOptions.map(option => (
-                <button
-                  key={option}
-                  onClick={() => handleCuisineChange(option)}
-                  className={`p-3 rounded-lg border-2 transition-all ${
-                    userPreferences.cuisinePreferences.includes(option)
-                      ? 'border-orange-500 bg-orange-50 text-orange-700'
-                      : 'border-gray-200 hover:border-orange-300'
-                  }`}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-            <p className="text-sm text-gray-500">Choose your favorites</p>
-          </div>
-        );
-
-      case 'skill':
-        return (
-          <div>
-            <h3 className="text-xl font-bold mb-4">What's your cooking skill level?</h3>
-            <div className="space-y-3">
-              {skillLevels.map(skill => (
-                <button
-                  key={skill.value}
-                  onClick={() => setUserPreferences({
-                    ...userPreferences,
-                    cookingSkillLevel: skill.value
-                  })}
-                  className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
-                    userPreferences.cookingSkillLevel === skill.value
-                      ? 'border-purple-500 bg-purple-50 text-purple-700'
-                      : 'border-gray-200 hover:border-purple-300'
-                  }`}
-                >
-                  {skill.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'household':
-        return (
-          <div>
-            <h3 className="text-xl font-bold mb-6">Household Details</h3>
-            
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">
-                How many people are you cooking for?
-              </label>
-              <select
-                value={userPreferences.householdSize}
-                onChange={(e) => setUserPreferences({
-                  ...userPreferences,
-                  householdSize: parseInt(e.target.value)
-                })}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-              >
-                {[1,2,3,4,5,6,7,8].map(num => (
-                  <option key={num} value={num}>
-                    {num} {num === 1 ? 'person' : 'people'}
-                  </option>
-                ))}
-              </select>
+          <form className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">👤 First Name</label>
+                <input
+                  type="text"
+                  value={registrationData.firstName}
+                  onChange={(e) => setRegistrationData({...registrationData, firstName: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="John"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">👤 Last Name</label>
+                <input
+                  type="text"
+                  value={registrationData.lastName}
+                  onChange={(e) => setRegistrationData({...registrationData, lastName: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Smith"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Weekly grocery budget:
+              <label className="block text-sm font-medium mb-1">📧 Email Address</label>
+              <input
+                type="email"
+                value={registrationData.email}
+                onChange={(e) => setRegistrationData({...registrationData, email: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="john.smith@email.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">🔒 Create Password</label>
+              <input
+                type="password"
+                value={registrationData.password}
+                onChange={(e) => setRegistrationData({...registrationData, password: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="••••••••••••••••••"
+              />
+              <p className="text-xs text-gray-500 mt-1">💪 Strong password (8+ chars, mix of letters/numbers)</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="flex items-center text-sm">
+                <input
+                  type="checkbox"
+                  checked={registrationData.agreeTerms}
+                  onChange={(e) => setRegistrationData({...registrationData, agreeTerms: e.target.checked})}
+                  className="mr-2"
+                />
+                I agree to Terms & Privacy Policy
               </label>
-              <div className="space-y-2">
-                {budgetRanges.map(budget => (
+              <label className="flex items-center text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={registrationData.emailUpdates}
+                  onChange={(e) => setRegistrationData({...registrationData, emailUpdates: e.target.checked})}
+                  className="mr-2"
+                />
+                Send me weekly meal planning tips (optional)
+              </label>
+            </div>
+
+            <button
+              onClick={() => setCurrentStep(3)}
+              disabled={!registrationData.agreeTerms}
+              className="w-full bg-gradient-to-r from-green-500 to-teal-500 text-white py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200"
+            >
+              🚀 Create Free Account
+            </button>
+          </form>
+
+          <div className="text-center mt-6">
+            <p className="text-sm text-gray-600">
+              Already have account?{' '}
+              <button onClick={onLoginClick} className="text-blue-600 font-medium">
+                🔑 Login here
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPreferencesStep = () => (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full">
+        <div className="bg-white rounded-3xl shadow-2xl p-8">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold mb-2">Let's personalize your experience</h2>
+            <p className="text-gray-600">Skip anytime - you can change these later</p>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-bold mb-4">🍽️ What do you like to eat?</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {quickPrefOptions.map(option => (
                   <button
-                    key={budget.value}
-                    onClick={() => setUserPreferences({
-                      ...userPreferences,
-                      weeklyBudget: budget.value
-                    })}
-                    className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
-                      userPreferences.weeklyBudget === budget.value
+                    key={option.id}
+                    onClick={() => handleQuickPrefToggle(option.id)}
+                    className={`p-4 rounded-xl border-2 text-left transition-all ${
+                      userPreferences.quickPrefs.includes(option.id)
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 hover:border-blue-300'
+                    }`}
+                  >
+                    <div className="font-medium">{option.label}</div>
+                    <div className="text-xs text-gray-500">{option.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-bold mb-4">💰 Typical weekly grocery budget?</h3>
+              <div className="grid grid-cols-4 gap-3">
+                {budgetOptions.map(option => (
+                  <button
+                    key={option.value}
+                    onClick={() => setUserPreferences({...userPreferences, budget: option.value})}
+                    className={`p-3 rounded-lg border-2 text-center transition-all ${
+                      userPreferences.budget === option.value
                         ? 'border-green-500 bg-green-50 text-green-700'
                         : 'border-gray-200 hover:border-green-300'
                     }`}
                   >
-                    {budget.label}
+                    <div className="font-bold">{option.label}</div>
+                    <div className="text-xs text-gray-500">{option.desc}</div>
                   </button>
                 ))}
               </div>
             </div>
           </div>
-        );
 
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full">
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-700">
-              Step {currentStep + 1} of {steps.length}
-            </span>
-            <span className="text-sm text-gray-500">
-              {Math.round(((currentStep + 1) / steps.length) * 100)}% Complete
-            </span>
+          <div className="flex justify-between mt-8">
+            <button
+              onClick={onSkip}
+              className="px-6 py-2 text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              Skip for now
+            </button>
+            <button
+              onClick={() => onComplete(registrationData)}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-3 rounded-lg font-bold hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200"
+            >
+              Save & Continue →
+            </button>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500"
-              style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-            ></div>
-          </div>
-        </div>
-
-        {/* Main Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">
-              {steps[currentStep].title}
-            </h1>
-            <p className="text-gray-600">
-              {steps[currentStep].description}
-            </p>
-          </div>
-
-          <div className="mb-8">
-            {renderStepContent()}
-          </div>
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between items-center">
-            <div>
-              {currentStep > 0 && (
-                <button
-                  onClick={prevStep}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  ← Previous
-                </button>
-              )}
-            </div>
-
-            <div className="flex space-x-3">
-              {onSkip && (
-                <button
-                  onClick={onSkip}
-                  className="px-6 py-2 text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  Skip Setup
-                </button>
-              )}
-              
-              <button
-                onClick={nextStep}
-                className="px-8 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
-              >
-                {currentStep === steps.length - 1 ? 'Complete Setup 🎉' : 'Next →'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-6">
-          <p className="text-gray-500 text-sm">
-            🔒 Your preferences are private and secure
-          </p>
         </div>
       </div>
     </div>
   );
+
+  // Show demo modal if requested
+  if (showDemo) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-2xl p-8 max-w-md w-full">
+          <h3 className="text-xl font-bold mb-4">🎬 Quick Demo</h3>
+          <div className="bg-gray-100 rounded-lg p-6 mb-4 text-center">
+            <div className="text-4xl mb-2">▶️</div>
+            <p className="text-gray-600">30-second demo video would play here</p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowDemo(false)}
+              className="flex-1 py-2 border border-gray-300 rounded-lg"
+            >
+              Close
+            </button>
+            <button
+              onClick={() => {
+                setShowDemo(false);
+                setCurrentStep(1);
+              }}
+              className="flex-1 bg-blue-500 text-white py-2 rounded-lg"
+            >
+              Get Started
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Render current step
+  switch (currentStep) {
+    case 0: return renderHeroStep();
+    case 1: return renderDemoStep();
+    case 2: return renderRegisterStep();
+    case 3: return renderPreferencesStep();
+    default: return renderHeroStep();
+  }
 };
 
 export default WelcomeOnboarding;

@@ -55,55 +55,57 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
     }
   };
 
-  const generateWeeklyPlan = async (e) => {
-    e.preventDefault();
+  const generateWeeklyPlan = async () => {
     setIsGenerating(true);
     
     try {
-      const requestData = {
+      console.log('📅 Generating weekly plan with OpenAI API...');
+      showNotification('📅 Creating your weekly meal plan with AI...', 'info');
+      
+      const response = await axios.post(`${API}/api/weekly-recipes/generate`, {
         user_id: user.id,
         family_size: parseInt(formData.family_size),
-        dietary_preferences: formData.dietary_preferences,
-        cuisines: formData.cuisines,
-        budget: formData.budget ? parseFloat(formData.budget) : null
-      };
+        budget: parseFloat(formData.budget),
+        dietary_preferences: formData.dietary_preferences.length > 0 ? formData.dietary_preferences : [],
+        cuisines: formData.cuisines.length > 0 ? formData.cuisines : [],
+        meal_types: ['breakfast', 'lunch', 'dinner'], // Default meal types
+        cooking_time_preference: 'medium'
+      });
 
-      const response = await axios.post(`${API}/api/weekly-recipes/generate`, requestData);
+      console.log('✅ Weekly plan generated successfully:', response.data);
       setCurrentPlan(response.data);
+      showNotification('🎉 Weekly meal plan generated successfully!', 'success');
       setShowGenerator(false);
-      showNotification('🎉 Your weekly meal plan is ready!', 'success');
-    } catch (error) {
-      console.error('Failed to generate weekly plan:', error);
       
-      // Check if it's a usage limit error (status 429)
-      if (error.response?.status === 429) {
+    } catch (error) {
+      console.error('❌ Error generating weekly plan:', error);
+      
+      if (error.response?.status === 503) {
+        // OpenAI API not configured
+        showNotification('❌ AI meal planning is currently unavailable. Please contact support.', 'error');
+      } else if (error.response?.status === 429) {
+        // Usage limit error
         const errorData = error.response.data.detail;
         
         if (typeof errorData === 'object' && errorData.upgrade_required) {
-          // Show usage limit reached message and redirect to upgrade
           showNotification(
             `⚠️ ${errorData.message} Redirecting to upgrade...`, 
             'warning'
           );
           
-          // Redirect to subscription screen after a short delay
           setTimeout(() => {
             if (onBack) {
-              onBack(); // Go back to dashboard first
+              onBack();
               setTimeout(() => {
-                showNotification('💎 Upgrade to get more weekly recipe plans!', 'info');
+                showNotification('💎 Upgrade to continue generating meal plans!', 'info');
               }, 500);
             }
           }, 2000);
           
           return;
         }
-      }
-      
-      if (error.response?.status === 402) {
-        showNotification('❌ Premium feature: Upgrade to access weekly meal plans!', 'error');
       } else {
-        const errorMessage = error.response?.data?.detail || 'Failed to generate meal plan. Please try again.';
+        const errorMessage = error.response?.data?.detail || 'Failed to generate weekly plan. Please try again.';
         showNotification(`❌ ${errorMessage}`, 'error');
       }
     } finally {
@@ -191,8 +193,19 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
                 <div>
                   <h2 className="text-2xl font-bold text-gray-800">This Week's Meals</h2>
                   <p className="text-gray-600">Week of {currentPlan.week_of}</p>
+                  {currentPlan.ai_generated && (
+                    <div className="inline-block bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-bold mt-2">
+                      ✨ AI-Generated Plan
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center space-x-3">
+                  {currentPlan.total_estimated_cost && (
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">${currentPlan.total_estimated_cost.toFixed(2)}</div>
+                      <div className="text-sm text-gray-500">Total Cost</div>
+                    </div>
+                  )}
                   <button
                     onClick={() => setShowGenerator(true)}
                     className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all"
@@ -219,16 +232,26 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-sm text-gray-500">
                         <span className="mr-2">⏱️</span>
-                        Prep: {meal.prep_time}min | Cook: {meal.cook_time}min
+                        Prep: {meal.prep_time} | Cook: {meal.cook_time}
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <span className="mr-2">👥</span>
                         Serves {meal.servings} | {meal.cuisine_type}
                       </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <span className="mr-2">⭐</span>
+                        {meal.difficulty} difficulty
+                      </div>
                       {meal.calories_per_serving && (
                         <div className="flex items-center text-sm text-gray-500">
                           <span className="mr-2">🔥</span>
                           {meal.calories_per_serving} calories/serving
+                        </div>
+                      )}
+                      {meal.estimated_cost && (
+                        <div className="flex items-center text-sm text-green-600 font-medium">
+                          <span className="mr-2">💰</span>
+                          ~${meal.estimated_cost.toFixed(2)}
                         </div>
                       )}
                     </div>
@@ -246,7 +269,10 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
                     
                     {/* Ingredients Preview */}
                     <div className="mb-4">
-                      <div className="font-semibold text-gray-700 mb-2">Ingredients:</div>
+                      <div className="font-semibold text-gray-700 mb-2 flex items-center">
+                        <span className="mr-2">🥘</span>
+                        Ingredients ({meal.ingredients?.length || 0}):
+                      </div>
                       <div className="text-sm text-gray-600">
                         {meal.ingredients?.slice(0, 3).join(', ')}
                         {meal.ingredients?.length > 3 && `... +${meal.ingredients.length - 3} more`}
@@ -255,21 +281,40 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
                     
                     {/* Instructions Preview */}
                     <div className="mb-4">
-                      <div className="font-semibold text-gray-700 mb-2">Instructions:</div>
+                      <div className="font-semibold text-gray-700 mb-2 flex items-center">
+                        <span className="mr-2">📋</span>
+                        Instructions ({meal.instructions?.length || 0} steps):
+                      </div>
                       <div className="text-sm text-gray-600">
                         {meal.instructions?.[0] || 'Cooking instructions included'}
                         {meal.instructions?.length > 1 && ` (+${meal.instructions.length - 1} more steps)`}
                       </div>
                     </div>
+
+                    {/* Nutrition Preview */}
+                    {meal.nutrition && (
+                      <div className="mb-4">
+                        <div className="font-semibold text-gray-700 mb-2 flex items-center">
+                          <span className="mr-2">📊</span>
+                          Nutrition:
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <span className="bg-red-50 text-red-700 px-2 py-1 rounded">🥩 {meal.nutrition.protein}</span>
+                          <span className="bg-orange-50 text-orange-700 px-2 py-1 rounded">🍞 {meal.nutrition.carbs}</span>
+                          <span className="bg-green-50 text-green-700 px-2 py-1 rounded">🥑 {meal.nutrition.fat}</span>
+                          <span className="bg-yellow-50 text-yellow-700 px-2 py-1 rounded">🔥 {meal.nutrition.calories}</span>
+                        </div>
+                      </div>
+                    )}
                     
                     {/* View Recipe Button */}
                     <button
-                      onClick={() => onViewRecipe(meal.id)}
+                      onClick={() => onViewRecipe(meal.id, 'weekly')}
                       className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white font-bold py-3 px-4 rounded-xl hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
                     >
                       <span className="flex items-center justify-center">
                         <span className="mr-2">📖</span>
-                        View Full Recipe
+                        View Full Recipe & Walmart Shopping
                         <span className="ml-2">🛒</span>
                       </span>
                     </button>
@@ -277,6 +322,38 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
                 </div>
               ))}
             </div>
+
+            {/* Shopping List Summary */}
+            {currentPlan.shopping_list && currentPlan.shopping_list.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-xl p-6">
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                  <span className="mr-3">🛒</span>
+                  Master Shopping List ({currentPlan.shopping_list.length} items)
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mb-4">
+                  {currentPlan.shopping_list.slice(0, 20).map((item, index) => (
+                    <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full font-medium">
+                      {item}
+                    </span>
+                  ))}
+                  {currentPlan.shopping_list.length > 20 && (
+                    <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full font-medium">
+                      +{currentPlan.shopping_list.length - 20} more
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    const shoppingList = `Weekly Shopping List\nWeek of ${currentPlan.week_of}\n\n${currentPlan.shopping_list.map(item => `• ${item}`).join('\n')}\n\nGenerated by BuildYourSmartCart`;
+                    navigator.clipboard.writeText(shoppingList);
+                    showNotification('📋 Shopping list copied to clipboard!', 'success');
+                  }}
+                  className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
+                >
+                  📋 Copy Complete Shopping List
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           /* No Plan - Show Generator */
