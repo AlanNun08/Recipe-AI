@@ -1559,47 +1559,69 @@ async def get_recipe_cart_options(recipe_id: str):
         )
 
 def clean_ingredient_for_search(ingredient: str) -> str:
-    """Clean ingredient name for better Walmart search results"""
-    # Remove common measurement words and quantities
-    exclude_words = [
-        'cups?', 'cup', 'tablespoons?', 'tbsp', 'teaspoons?', 'tsp', 
-        'pounds?', 'lbs?', 'lb', 'ounces?', 'oz', 'grams?', 'g',
-        'cloves?', 'clove', 'pieces?', 'piece', 'slices?', 'slice',
-        'large', 'medium', 'small', 'fresh', 'dried', 'ground',
-        'chopped', 'diced', 'minced', 'crushed', 'whole',
-        'to taste', 'optional', 'or substitute'
-    ]
-    
-    # Remove numbers and measurements
+    """Clean ingredient name for Walmart search - extract core ingredient name only."""
     import re
-    cleaned = re.sub(r'\d+(\.\d+)?', '', ingredient)  # Remove numbers
-    cleaned = re.sub(r'\b(' + '|'.join(exclude_words) + r')\b', '', cleaned, flags=re.IGNORECASE)
     
-    # Remove extra spaces and parentheses content
-    cleaned = re.sub(r'\([^)]*\)', '', cleaned)  # Remove parentheses
-    cleaned = re.sub(r'\s+', ' ', cleaned).strip()  # Normalize spaces
+    # Step 1: Remove everything after comma (descriptors like "boneless and skinless")
+    cleaned = ingredient.split(',')[0].strip()
     
-    # Handle common ingredient mappings
+    # Step 2: Remove measurements and quantities at the start (e.g., "2 cups", "1 lb")
+    # Match patterns like "2 cups", "1 lb", "3 tbsp", etc.
+    cleaned = re.sub(r'^\d+(?:\.\d+)?\s*(?:cups?|tablespoons?|tbsp|teaspoons?|tsp|pounds?|lbs?|lb|ounces?|oz|grams?|g|ml|l|pints?|quarts?|gallons?)\s+', '', cleaned, flags=re.IGNORECASE)
+    
+    # Step 3: Remove descriptor words (fresh, dried, ground, boneless, etc.)
+    descriptor_words = [
+        'fresh', 'dried', 'ground', 'boneless', 'skinless', 'seedless', 'seeded',
+        'chopped', 'diced', 'minced', 'sliced', 'crushed', 'whole', 'raw', 'cooked',
+        'ripe', 'unripe', 'canned', 'frozen', 'thawed', 'raw', 'roasted'
+    ]
+    for desc in descriptor_words:
+        cleaned = re.sub(r'\b' + desc + r'\b', '', cleaned, flags=re.IGNORECASE)
+    
+    # Step 4: Remove common conjunctions and prepositions
+    cleaned = re.sub(r'\b(and|or|with|of)\b', '', cleaned, flags=re.IGNORECASE)
+    
+    # Step 5: Clean up extra spaces
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    
+    # Step 6: Handle common multi-word ingredients (before and after cleaning)
     ingredient_mappings = {
-        'all-purpose flour': 'flour',
-        'olive oil': 'olive oil',
-        'vegetable oil': 'cooking oil',
+        'bell pepper': 'bell pepper',
+        'red bell pepper': 'bell pepper',
+        'green bell pepper': 'bell pepper',
+        'yellow bell pepper': 'bell pepper',
         'chicken breast': 'chicken breast',
+        'chicken thigh': 'chicken',
         'ground beef': 'ground beef',
-        'yellow onion': 'onion',
-        'red onion': 'red onion',
-        'garlic': 'garlic',
-        'tomatoes': 'tomatoes',
-        'bell pepper': 'bell peppers',
-        'mushrooms': 'mushrooms'
+        'olive oil': 'olive oil',
+        'vegetable oil': 'oil',
+        'sesame oil': 'sesame oil',
+        'soy sauce': 'soy sauce',
+        'fish sauce': 'fish sauce',
+        'coconut milk': 'coconut milk',
+        'tomato paste': 'tomato paste',
+        'tomato sauce': 'tomato sauce',
+        'saffron thread': 'saffron',
+        'shiitake mushroom': 'mushroom',
+        'oyster mushroom': 'mushroom'
     }
     
-    # Check for direct mappings
+    # Check if cleaned ingredient matches any mapping
+    cleaned_lower = cleaned.lower()
     for key, value in ingredient_mappings.items():
-        if key.lower() in cleaned.lower():
+        if key.lower() in cleaned_lower:
             return value
     
-    return cleaned if cleaned else ingredient
+    # Step 7: Return result (or fallback to first word if over-cleaned)
+    if len(cleaned) < 2:
+        # Over-cleaned; extract first meaningful word from original
+        words = ingredient.split()
+        for word in words:
+            if len(word) > 2 and word.lower() not in ['the', 'and', 'or', 'with', 'of', 'cups', 'tbsp', 'tsp', 'lbs', 'oz', 'cup', 'tbsp']:
+                return word
+        return ingredient
+    
+    return cleaned
 
 def generate_walmart_signature(consumer_id: str, private_key: str, timestamp: str) -> str:
     """Generate Walmart API signature for authentication following the exact Java logic"""
