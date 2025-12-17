@@ -648,6 +648,10 @@ async def generate_recipe(request: RecipeGenerationRequest):
     try:
         logger.info(f"🤖 Recipe generation request for user: {request.user_id}")
         logger.info(f"🍳 Recipe details: {request.cuisine_type} {request.meal_type} ({request.difficulty})")
+        logger.info(f"📊 Request object received: {request.dict()}")
+        logger.info(f"📊 Servings: {request.servings}, Prep time max: {request.prep_time_max}")
+        logger.info(f"🥗 Dietary preferences: {request.dietary_preferences}")
+        logger.info(f"🥘 Ingredients on hand: {request.ingredients_on_hand}")
         
         if not openai_client:
             logger.error("❌ OpenAI client not available")
@@ -680,8 +684,8 @@ CRITICAL: You must respond with a valid JSON object with EXACTLY these fields:
     "cook_time": "X minutes",
     "total_time": "X minutes",
     "servings": {request.servings},
-    "ingredients": ["1 lb beef sirloin, thinly sliced", "2 tbsp sesame oil", "4 cups spinach"],
-    "ingredients_clean": ["beef sirloin", "sesame oil", "spinach"],
+    "ingredients": ["ingredient 1", "ingredient 2", "ingredient 3"],
+    "ingredients_clean": ["ingredient clean 1", "ingredient clean 2", "ingredient clean 3"],
     "instructions": ["step 1", "step 2", "step 3"],
     "nutrition": {{"calories": "X per serving", "protein": "Xg", "carbs": "Xg", "fat": "Xg"}},
     "cooking_tips": ["tip 1", "tip 2"],
@@ -696,10 +700,6 @@ IMPORTANT INSTRUCTIONS FOR ingredients_clean:
 - Keep: the actual ingredient name that can be searched on Walmart.com
 - Examples:
   * "1 lb beef sirloin, thinly sliced" → "beef sirloin"
-  * "2 tbsp fresh minced garlic" → "garlic"
-  * "4 cups fresh spinach, chopped" → "spinach"
-  * "3/4 cup coconut aminos" → "coconut aminos"
-  * "1/2 red bell pepper, julienned" → "bell pepper"
 """
 
         logger.info("🤖 Sending request to OpenAI with explicit instructions for ingredients_clean...")
@@ -717,9 +717,13 @@ IMPORTANT INSTRUCTIONS FOR ingredients_clean:
             )
             
             logger.info("✅ OpenAI response received")
+            logger.info(f"📊 OpenAI response object: {response}")
+            logger.info(f"📊 OpenAI response choices: {len(response.choices)} choices")
+            logger.info(f"📊 OpenAI response usage: {response.usage}")
             
         except Exception as openai_error:
             logger.error(f"❌ OpenAI API error: {openai_error}")
+            logger.error(f"❌ OpenAI error type: {type(openai_error).__name__}")
             return JSONResponse(
                 status_code=500,
                 content={"detail": f"OpenAI API error: {str(openai_error)}"}
@@ -728,6 +732,8 @@ IMPORTANT INSTRUCTIONS FOR ingredients_clean:
         # Parse response
         recipe_text = response.choices[0].message.content.strip()
         logger.info(f"📝 Raw AI response length: {len(recipe_text)} characters")
+        logger.info(f"📝 First 300 chars of response: {recipe_text[:300]}")
+        logger.info(f"📝 Last 300 chars of response: {recipe_text[-300:]}")
         
         # Clean up JSON (remove markdown formatting if present)
         if recipe_text.startswith("```json"):
@@ -777,6 +783,10 @@ IMPORTANT INSTRUCTIONS FOR ingredients_clean:
         })
         
         logger.info(f"💾 Saving recipe to database: {recipe_data.get('name', 'Unknown')}")
+        logger.info(f"💾 Recipe data keys before save: {list(recipe_data.keys())}")
+        logger.info(f"💾 Recipe ingredients count: {len(recipe_data.get('ingredients', []))}")
+        logger.info(f"💾 Recipe ingredients_clean count: {len(recipe_data.get('ingredients_clean', []))}")
+        logger.info(f"💾 Recipe instructions count: {len(recipe_data.get('instructions', []))}")
         
         # DEBUG: Check recipe_data BEFORE database operation
         logger.info("🔍 DEBUG: recipe_data keys BEFORE database save:")
@@ -796,6 +806,7 @@ IMPORTANT INSTRUCTIONS FOR ingredients_clean:
             # Save to database - this should only affect db_recipe_data
             result = await recipes_collection.insert_one(db_recipe_data)
             logger.info(f"✅ Recipe saved to database with ObjectId: {result.inserted_id}")
+            logger.info(f"✅ Inserted ID type: {type(result.inserted_id)}")
             
             # DEBUG: Check both objects AFTER database operation
             logger.info("🔍 DEBUG: AFTER database save:")
@@ -816,6 +827,7 @@ IMPORTANT INSTRUCTIONS FOR ingredients_clean:
             
         except Exception as db_error:
             logger.error(f"❌ Database save failed: {db_error}")
+            logger.error(f"❌ Database error type: {type(db_error).__name__}")
             # Continue anyway - we can still return the recipe even if save fails
             logger.warning("⚠️ Continuing without database save")
         
@@ -826,16 +838,22 @@ IMPORTANT INSTRUCTIONS FOR ingredients_clean:
         logger.info(f"  Has ingredients: {'ingredients' in recipe_data}")
         logger.info(f"  Has ingredients_clean: {'ingredients_clean' in recipe_data}")
         if 'ingredients' in recipe_data:
-            logger.info(f"  ingredients: {recipe_data['ingredients']}")
+            logger.info(f"  ingredients count: {len(recipe_data['ingredients'])}")
+            logger.info(f"  ingredients sample: {recipe_data['ingredients'][:2] if recipe_data['ingredients'] else []}")
         if 'ingredients_clean' in recipe_data:
-            logger.info(f"  ingredients_clean: {recipe_data['ingredients_clean']}")
+            logger.info(f"  ingredients_clean count: {len(recipe_data['ingredients_clean'])}")
+            logger.info(f"  ingredients_clean sample: {recipe_data['ingredients_clean'][:2] if recipe_data['ingredients_clean'] else []}")
         else:
             logger.error("⚠️ WARNING: ingredients_clean field is missing! ChatGPT may not have returned it")
         
+        logger.info(f"✅ About to return recipe: {recipe_data['name']}")
+        logger.info(f"✅ Recipe ID: {recipe_data.get('id')}")
+        logger.info(f"✅ User ID: {recipe_data.get('user_id')}")
+        
         # Test JSON serialization before returning
         try:
-            json.dumps(recipe_data, default=str)
-            logger.info("✅ JSON serialization test passed")
+            test_json = json.dumps(recipe_data, default=str)
+            logger.info(f"✅ JSON serialization test passed, size: {len(test_json)} bytes")
         except Exception as json_test_error:
             logger.error(f"❌ JSON serialization test FAILED: {json_test_error}")
             logger.error(f"  Error type: {type(json_test_error).__name__}")
@@ -847,7 +865,7 @@ IMPORTANT INSTRUCTIONS FOR ingredients_clean:
                     json.dumps({key: value}, default=str)
                 except:
                     problematic_keys.append(key)
-                    logger.error(f"  Problematic key: {key} = {type(value)} = {value}")
+                    logger.error(f"  Problematic key: {key} = {type(value)} = {str(value)[:100]}")
             
             if problematic_keys:
                 logger.error(f"❌ Problematic keys found: {problematic_keys}")
@@ -857,6 +875,7 @@ IMPORTANT INSTRUCTIONS FOR ingredients_clean:
                 logger.info("🔧 FIX: Removed problematic keys")
         
         logger.info(f"✅ Recipe generated and saved: {recipe_data['name']}")
+        logger.info(f"✅ Returning response with status 200")
         
         # Return the clean recipe data
         return JSONResponse(

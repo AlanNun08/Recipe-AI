@@ -163,10 +163,33 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
       };
 
       console.log('📤 Sending request to API:', requestData);
+      console.log('📤 Request payload keys:', Object.keys(requestData));
+      console.log('📤 Request validation:', {
+        has_user_id: !!requestData.user_id,
+        has_cuisine_type: !!requestData.cuisine_type,
+        has_meal_type: !!requestData.meal_type,
+        has_difficulty: !!requestData.difficulty,
+        has_servings: !!requestData.servings
+      });
 
+      const startTime = Date.now();
+      console.log(`⏱️ Request started at: ${new Date().toISOString()}`);
+      
       const response = await axios.post(`${API}/api/recipes/generate`, requestData);
-
+      
+      const elapsedTime = Date.now() - startTime;
+      console.log(`✅ Response received after ${elapsedTime}ms`);
       console.log('📥 Received response from API:', response.data);
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response headers:', response.headers);
+      console.log('📥 Response validation:', {
+        has_name: !!response.data.name,
+        has_ingredients: !!response.data.ingredients,
+        has_instructions: !!response.data.instructions,
+        has_id: !!response.data.id,
+        ingredients_count: response.data.ingredients?.length || 0,
+        instructions_count: response.data.instructions?.length || 0
+      });
       
       // Validate the response has required data
       if (!response.data.name || !response.data.ingredients || !response.data.instructions) {
@@ -188,6 +211,28 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
 
     } catch (error) {
       console.error('❌ Error generating recipe:', error);
+      console.error('❌ Error stack trace:', error.stack);
+      
+      // Log request and response details
+      if (error.request) {
+        console.error('❌ Request details:', {
+          method: error.request.method,
+          url: error.request.url,
+          status: error.request.status,
+          statusText: error.request.statusText,
+          readyState: error.request.readyState
+        });
+      }
+      
+      if (error.response) {
+        console.error('❌ Response details:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          headers: error.response.headers,
+          data: error.response.data,
+          config: error.response.config
+        });
+      }
       
       if (error.response?.status === 503) {
         showNotification('❌ AI recipe generation is currently unavailable. Please contact support.', 'error');
