@@ -50,25 +50,29 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
   }, [recipeId]); // Keep recipeId dependency
 
   const fetchCartOptions = async () => {
-    if (!recipeId || cartLoadedRef.current) return;
+    if (!recipeId || cartLoadedRef.current) {
+      console.log('🛒 Cart fetch early return: recipeId=', recipeId, 'cartLoadedRef.current=', cartLoadedRef.current);
+      return;
+    }
 
     try {
       setIsLoadingCart(true);
       cartLoadedRef.current = true;
 
-
+      console.log('🛒 Loading cart options for:', recipeId);
       const response = await fetch(`${API}/api/recipes/${recipeId}/cart-options`);
-    
+      console.log('📊 Cart options response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
-    
+        console.log('📦 Cart options data:', data);
         
         // NEW: Handle the enhanced data structure with multiple products per ingredient
         const walmartOption = data.cart_options?.[0]; // Get the Walmart store option
         
         if (walmartOption && walmartOption.products) {
-        
+          console.log('✅ Found Walmart products:', walmartOption.products.length);
+          
           // Group products by ingredient for the new UI
           const productsByIngredient = {};
           walmartOption.products.forEach(product => {
@@ -79,7 +83,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
             productsByIngredient[ingredient].push(product);
           });
           
-      
+          console.log('🛒 Products grouped by ingredient:', Object.keys(productsByIngredient).length, 'ingredients');
           
           // Update cart options with the enhanced structure
           setCartOptions([{
@@ -90,11 +94,16 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
           // Auto-add best price items for each ingredient (first product in each group)
           autoAddBestPriceItemsEnhanced(productsByIngredient);
         } else {
+          console.warn('⚠️ No Walmart products found in response, walmartOption=', walmartOption);
           setCartOptions(data.cart_options || []);
         }
-
-  
-      } 
+      } else {
+        console.error('❌ Cart options response not ok:', response.status, response.statusText);
+        const errorData = await response.text();
+        console.error('❌ Error body:', errorData);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching cart options:', error);
     } finally {
       setIsLoadingCart(false);
     }

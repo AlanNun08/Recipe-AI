@@ -177,8 +177,14 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
       setGeneratedRecipe(response.data);
       showNotification('🎉 Recipe generated successfully with AI!', 'success');
       
-      // Move to results step
-      setCurrentStep(5);
+      // Auto-navigate to detail screen to fetch cart options immediately
+      console.log('📱 Auto-navigating to recipe detail to fetch Walmart items...');
+      if (onViewRecipe) {
+        onViewRecipe(response.data.id, 'generated');
+      } else {
+        // Fallback: show results step if onViewRecipe not available
+        setCurrentStep(5);
+      }
 
     } catch (error) {
       console.error('❌ Error generating recipe:', error);
