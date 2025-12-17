@@ -679,12 +679,18 @@ Please respond with a JSON object containing:
     "cook_time": "X minutes",
     "total_time": "X minutes",
     "servings": {request.servings},
-    "ingredients": ["ingredient 1", "ingredient 2", ...],
+    "ingredients": ["ingredient 1", "ingredient 2", "ingredient 3", ...],
+    "ingredients_clean": ["clean ingredient 1", "clean ingredient 2", "clean ingredient 3", ...],
     "instructions": ["step 1", "step 2", ...],
     "nutrition": {{"calories": "X per serving", "protein": "Xg", "carbs": "Xg", "fat": "Xg"}},
     "cooking_tips": ["tip 1", "tip 2"],
     "estimated_cost": 12.50
-}}"""
+}}
+
+IMPORTANT: Create two ingredient lists:
+- "ingredients": Full ingredient names with quantities and descriptors (for user display)
+- "ingredients_clean": Simplified ingredient names ONLY (no quantities, no measurements, no descriptors) - these are used for Walmart product search. Examples: "chicken", "bell pepper", "olive oil", "soy sauce", not "1 lb boneless chicken thighs" or "2 tbsp extra virgin olive oil"
+"""
 
         logger.info("🤖 Sending request to OpenAI...")
         
@@ -1398,7 +1404,11 @@ async def get_recipe_cart_options(recipe_id: str):
                 content={"detail": "Recipe not found"}
             )
         
-        ingredients = recipe.get("ingredients", [])
+        ingredients = recipe.get("ingredients_clean") or recipe.get("ingredients", [])
+        
+        # For logging and response, we also want to show user-friendly ingredient names
+        display_ingredients = recipe.get("ingredients", [])
+        
         if not ingredients:
             return JSONResponse(
                 status_code=200,
@@ -1457,11 +1467,11 @@ async def get_recipe_cart_options(recipe_id: str):
             try:
                 logger.info(f"🔍 Searching Walmart for: {ingredient}")
                 
-                # Clean ingredient for better search
-                clean_ingredient = clean_ingredient_for_search(ingredient)
+                # Ingredient is already clean from ChatGPT's ingredients_clean list
+                # No additional cleaning needed
                 
                 # Search Walmart API
-                walmart_products = await search_walmart_products(clean_ingredient, walmart_consumer_id, walmart_private_key)
+                walmart_products = await search_walmart_products(ingredient, walmart_consumer_id, walmart_private_key)
                 
                 if walmart_products:
                     # Process and format products
@@ -1517,8 +1527,9 @@ async def get_recipe_cart_options(recipe_id: str):
                 "walmart_api_status": "success",
                 "message": f"Found {total_products_found} products for {len(products_by_ingredient)} ingredients",
                 "recipe_name": recipe.get("name", "Unknown Recipe"),
-                "total_ingredients": len(ingredients),
+                "total_ingredients": len(display_ingredients),
                 "products_found": len(products_by_ingredient),
+                "ingredients_list": display_ingredients,
                 "search_summary": {
                     "ingredients_searched": len(ingredients),
                     "ingredients_with_products": len(products_by_ingredient),
@@ -1539,8 +1550,8 @@ async def get_recipe_cart_options(recipe_id: str):
                     "walmart_api_status": "no_products_found",
                     "message": "No products found for recipe ingredients",
                     "recipe_name": recipe.get("name", "Unknown Recipe"),
-                    "total_ingredients": len(ingredients),
-                    "ingredients_list": ingredients,
+                    "total_ingredients": len(display_ingredients),
+                    "ingredients_list": display_ingredients,
                     "suggested_action": "Try searching manually on Walmart.com"
                 }
             )
