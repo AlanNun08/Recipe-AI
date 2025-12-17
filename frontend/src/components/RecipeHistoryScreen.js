@@ -106,7 +106,9 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
     if (recipe.category === 'starbucks' || recipe.type === 'starbucks') {
       onViewStarbucksRecipe?.(recipe);
     } else {
-      onViewRecipe?.(recipe.id, 'history');
+  // Use fallback to Mongo _id if id is missing
+  const rid = recipe.id || recipe._id || recipe['_id'] || '';
+  onViewRecipe?.(rid, 'history');
     }
   };
 
