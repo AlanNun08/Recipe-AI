@@ -668,7 +668,8 @@ async def generate_recipe(request: RecipeGenerationRequest):
 - Dietary preferences: {dietary_text}
 - Preferred ingredients: {ingredients_text}
 
-Please respond with a JSON object containing:
+CRITICAL: You must respond with a valid JSON object with EXACTLY these fields:
+
 {{
     "name": "Recipe name",
     "description": "Brief appetizing description",
@@ -679,30 +680,39 @@ Please respond with a JSON object containing:
     "cook_time": "X minutes",
     "total_time": "X minutes",
     "servings": {request.servings},
-    "ingredients": ["ingredient 1", "ingredient 2", "ingredient 3", ...],
-    "ingredients_clean": ["clean ingredient 1", "clean ingredient 2", "clean ingredient 3", ...],
-    "instructions": ["step 1", "step 2", ...],
+    "ingredients": ["1 lb beef sirloin, thinly sliced", "2 tbsp sesame oil", "4 cups spinach"],
+    "ingredients_clean": ["beef sirloin", "sesame oil", "spinach"],
+    "instructions": ["step 1", "step 2", "step 3"],
     "nutrition": {{"calories": "X per serving", "protein": "Xg", "carbs": "Xg", "fat": "Xg"}},
     "cooking_tips": ["tip 1", "tip 2"],
     "estimated_cost": 12.50
 }}
 
-IMPORTANT: Create two ingredient lists:
-- "ingredients": Full ingredient names with quantities and descriptors (for user display)
-- "ingredients_clean": Simplified ingredient names ONLY (no quantities, no measurements, no descriptors) - these are used for Walmart product search. Examples: "chicken", "bell pepper", "olive oil", "soy sauce", not "1 lb boneless chicken thighs" or "2 tbsp extra virgin olive oil"
+IMPORTANT INSTRUCTIONS FOR ingredients_clean:
+- This list must have the SAME NUMBER of items as ingredients
+- For each ingredient in the "ingredients" list, create a corresponding clean version in "ingredients_clean"
+- Clean versions should contain ONLY the ingredient name(s)
+- Remove: quantities (1 lb, 2 tbsp), measurements (cups, teaspoons), articles (a, the), descriptors (fresh, dried, chopped, boneless), preparation notes
+- Keep: the actual ingredient name that can be searched on Walmart.com
+- Examples:
+  * "1 lb beef sirloin, thinly sliced" → "beef sirloin"
+  * "2 tbsp fresh minced garlic" → "garlic"
+  * "4 cups fresh spinach, chopped" → "spinach"
+  * "3/4 cup coconut aminos" → "coconut aminos"
+  * "1/2 red bell pepper, julienned" → "bell pepper"
 """
 
-        logger.info("🤖 Sending request to OpenAI...")
+        logger.info("🤖 Sending request to OpenAI with explicit instructions for ingredients_clean...")
         
         # Call OpenAI API with better error handling
         try:
             response = openai_client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "You are a professional chef and recipe creator. Always respond with valid JSON."},
+                    {"role": "system", "content": "You are a professional chef and recipe creator. You MUST always respond with valid JSON and include the ingredients_clean field with simplified ingredient names for product search."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=2000,
+                max_tokens=2500,
                 temperature=0.7
             )
             
@@ -737,6 +747,22 @@ IMPORTANT: Create two ingredient lists:
                 status_code=500,
                 content={"detail": f"Failed to parse AI response as JSON: {str(json_error)}"}
             )
+        
+        # FALLBACK: If ingredients_clean is missing, generate it from ingredients
+        if "ingredients_clean" not in recipe_data or not recipe_data["ingredients_clean"]:
+            logger.warning("⚠️ ingredients_clean not provided by ChatGPT, generating fallback...")
+            
+            ingredients_to_clean = recipe_data.get("ingredients", [])
+            ingredients_clean = []
+            
+            for ingredient in ingredients_to_clean:
+                # Use the same cleaning logic we have in clean_ingredient_for_search
+                cleaned = clean_ingredient_for_search(ingredient)
+                ingredients_clean.append(cleaned)
+            
+            recipe_data["ingredients_clean"] = ingredients_clean
+            logger.info(f"✅ Generated {len(ingredients_clean)} clean ingredients as fallback")
+            logger.info(f"   Sample: {ingredients_to_clean[0] if ingredients_to_clean else 'none'} → {ingredients_clean[0] if ingredients_clean else 'none'}")
         
         # Generate unique ID for the recipe
         recipe_id = str(uuid.uuid4())
@@ -797,6 +823,14 @@ IMPORTANT: Create two ingredient lists:
         logger.info("🔍 DEBUG: Final recipe_data before JSONResponse:")
         logger.info(f"  Keys: {list(recipe_data.keys())}")
         logger.info(f"  Has _id: {'_id' in recipe_data}")
+        logger.info(f"  Has ingredients: {'ingredients' in recipe_data}")
+        logger.info(f"  Has ingredients_clean: {'ingredients_clean' in recipe_data}")
+        if 'ingredients' in recipe_data:
+            logger.info(f"  ingredients: {recipe_data['ingredients']}")
+        if 'ingredients_clean' in recipe_data:
+            logger.info(f"  ingredients_clean: {recipe_data['ingredients_clean']}")
+        else:
+            logger.error("⚠️ WARNING: ingredients_clean field is missing! ChatGPT may not have returned it")
         
         # Test JSON serialization before returning
         try:
@@ -1408,6 +1442,16 @@ async def get_recipe_cart_options(recipe_id: str):
         
         # For logging and response, we also want to show user-friendly ingredient names
         display_ingredients = recipe.get("ingredients", [])
+        
+        # DEBUG: Log which list we're using
+        logger.info(f"🔍 DEBUG: Ingredient list selection:")
+        logger.info(f"  Has ingredients_clean: {'ingredients_clean' in recipe}")
+        logger.info(f"  Has ingredients: {'ingredients' in recipe}")
+        logger.info(f"  Using clean ingredients: {'ingredients_clean' in recipe}")
+        if 'ingredients_clean' in recipe:
+            logger.info(f"  Clean ingredients ({len(ingredients)}): {ingredients}")
+        else:
+            logger.warning(f"  ⚠️ Using fallback ingredients ({len(ingredients)}): {ingredients}")
         
         if not ingredients:
             return JSONResponse(
