@@ -162,6 +162,8 @@ sender_email = os.environ.get('SENDER_EMAIL', 'noreply@buildyoursmartcart.com')
 walmart_consumer_id = os.environ.get('WALMART_CONSUMER_ID')
 walmart_private_key = os.environ.get('WALMART_PRIVATE_KEY')
 walmart_key_version = os.environ.get('WALMART_KEY_VERSION', '1')
+# Debug toggle for Walmart API (set to 'true' to enable extra logs)
+walmart_debug = os.environ.get('WALMART_DEBUG', 'false').lower() in ['1', 'true', 'yes']
 
 # Enhanced Walmart API validation and debugging
 if walmart_consumer_id and walmart_private_key:
@@ -186,6 +188,8 @@ if walmart_consumer_id and walmart_private_key:
         logger.warning(f"⚠️ Private key needs {4 - padding_needed} padding characters")
     else:
         logger.info("✅ Private key has correct Base64 padding")
+    if walmart_debug:
+        logger.info("🔎 WALMART_DEBUG is enabled — extra Walmart logs will be shown (secrets masked)")
 else:
     logger.warning("⚠️ Walmart API credentials not fully configured")
 
@@ -1626,9 +1630,11 @@ def generate_walmart_signature(consumer_id: str, private_key: str, timestamp: st
         canonicalized_array = canonicalize(headers_to_sign)
         string_to_sign = canonicalized_array[1]  # This is the canonicalizedStrBuffer
         
-        logger.info(f"🔐 Java-style canonicalized string: {repr(string_to_sign)}")
-        logger.info(f"🔐 Parameter names: {canonicalized_array[0]}")
-        
+        # Safe debug: log canonicalized string but only when debug enabled
+        if walmart_debug:
+            logger.info(f"🔐 Java-style canonicalized string: {repr(string_to_sign)}")
+            logger.info(f"🔐 Parameter names: {canonicalized_array[0]}")
+
         # Handle PEM format private key
         cleaned_private_key = private_key.strip()
         
@@ -1661,17 +1667,22 @@ def generate_walmart_signature(consumer_id: str, private_key: str, timestamp: st
                 pem_lines.append(current_line)
             
             pem_key = "\n".join(pem_lines)
-            logger.info("🔄 Reconstructed PEM format from environment variable")
+            if walmart_debug:
+                masked = (pem_key[:60] + '...') if len(pem_key) > 80 else pem_key[:80]
+                logger.info(f"🔄 Reconstructed PEM format from environment variable (masked): {masked}")
             
         else:
             # Extract just the Base64 content without headers for PKCS#8 format
-            # The Java code uses Base64.decodeBase64(key) directly on the key content
+            # The Java code uses Base64.decodxqeBase64(key) directly on the key content
             base64_content = cleaned_private_key.replace("-----BEGIN PRIVATE KEY-----", "")
             base64_content = base64_content.replace("-----END PRIVATE KEY-----", "")
             base64_content = base64_content.replace("\n", "").replace("\r", "").replace(" ", "")
             
             # Add proper PEM headers for Python cryptography library
             pem_key = f"-----BEGIN PRIVATE KEY-----\n{base64_content}\n-----END PRIVATE KEY-----"
+            if walmart_debug:
+                masked = (base64_content[:60] + '...') if len(base64_content) > 80 else base64_content[:80]
+                logger.info(f"🔐 Built PEM from base64 (masked start): {masked}")
         
         if CRYPTOGRAPHY_AVAILABLE:
             try:
@@ -1693,12 +1704,17 @@ def generate_walmart_signature(consumer_id: str, private_key: str, timestamp: st
                 
                 # Base64 encode (matches Java Base64.encodeBase64String)
                 signature_b64 = base64.b64encode(signature).decode('utf-8')
-                logger.info(f"✅ Successfully generated RSA signature ({len(signature_b64)} chars)")
+                if walmart_debug:
+                    logger.info(f"✅ Successfully generated RSA signature (len={len(signature_b64)})")
+                else:
+                    logger.info("✅ Successfully generated RSA signature")
                 return signature_b64
                 
             except Exception as crypto_error:
+                # Mask PEM preview
+                masked_preview = (pem_key[:200] + '...') if pem_key and len(pem_key) > 200 else (pem_key or '')
                 logger.error(f"❌ Cryptography signing failed: {crypto_error}")
-                logger.error(f"❌ PEM key preview: {pem_key[:200]}...")
+                logger.error(f"❌ PEM key preview (masked): {masked_preview[:200]}")
                 return ""
         else:
             logger.error("❌ Cryptography library not available")
@@ -1715,27 +1731,27 @@ async def search_walmart_products(query: str, consumer_id: str, private_key: str
     try:
         # Walmart Open API endpoint for product search
         base_url = "https://developer.api.walmart.com/api-proxy/service/affil/product/v2/search?query="
-        
+
         # Generate timestamp (Unix epoch time in milliseconds)
         timestamp = str(int(time.time() * 1000))
-        
+
         logger.info(f"🔍 Walmart API request for: {query}")
         logger.info(f"⏰ Using timestamp: {timestamp}")
-        
+
         # Generate signature for authentication
         signature = generate_walmart_signature(consumer_id, private_key, timestamp)
-        
+
         if not signature:
             logger.error("❌ Failed to generate signature")
             return []
-        
+
         # API parameters
         params = {
             'query': query,
             'categoryId': '976759',  # Grocery category
             'numItems': 5,  # Get top 5 results
         }
-        
+
         # ONLY the 4 required headers from Walmart API documentation
         headers = {
             'WM_CONSUMER.ID': consumer_id,
@@ -1743,6 +1759,13 @@ async def search_walmart_products(query: str, consumer_id: str, private_key: str
             'WM_SEC.KEY_VERSION': walmart_key_version,
             'WM_SEC.AUTH_SIGNATURE': signature
         }
+        # Safe debug output: log headers except signature (mask it) and params
+        if walmart_debug:
+            safe_headers = headers.copy()
+            if 'WM_SEC.AUTH_SIGNATURE' in safe_headers:
+                safe_headers['WM_SEC.AUTH_SIGNATURE'] = '[MASKED]'
+            logger.info(f"🔧 Walmart request headers (masked): {safe_headers}")
+            logger.info(f"🔧 Walmart request params: {params}")
         
    
         
@@ -1752,6 +1775,11 @@ async def search_walmart_products(query: str, consumer_id: str, private_key: str
                 response = await client.get(base_url, params=params, headers=headers)
                 
                 logger.info(f"📊 Walmart API response status: {response.status_code}")
+                if walmart_debug:
+                    # Truncate response body to avoid huge logs and mask potential PII
+                    body = response.text
+                    truncated = (body[:1000] + '...') if len(body) > 1000 else body
+                    logger.info(f"📄 Walmart response body (truncated): {truncated}")
                 
                 if response.status_code == 200:
                     data = response.json()
