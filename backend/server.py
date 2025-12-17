@@ -839,21 +839,53 @@ async def get_user_recipe_history(user_id: str):
         recipes = []
         
         async for recipe in recipes_cursor:
+            # id normalization (support both stored uuid id or Mongo _id)
+            raw_id = recipe.get("id") if recipe.get("id") else recipe.get("_id")
+            try:
+                rid = str(raw_id)
+            except Exception:
+                rid = ""
+
+            # created_at normalization
+            created_at = recipe.get("created_at", "")
+            if isinstance(created_at, datetime):
+                created_at = created_at.isoformat()
+
+            # infer category/type for frontend filtering
+            category = recipe.get("category")
+            rtype = recipe.get("type")
+            if not category and recipe.get("is_starbucks_drink"):
+                category = "starbucks"
+            if not rtype and recipe.get("is_starbucks_drink"):
+                rtype = "starbucks"
+
             recipe_data = {
-                "id": str(recipe.get("_id", "")),
+                "id": rid,
+                "_id": rid,
                 "name": recipe.get("name", ""),
+                "drink_name": recipe.get("drink_name", recipe.get("name", "")),
                 "description": recipe.get("description", ""),
-                "cuisine_type": recipe.get("cuisine_type", ""),
-                "meal_type": recipe.get("meal_type", ""),
-                "difficulty": recipe.get("difficulty", ""),
-                "prep_time": recipe.get("prep_time", ""),
-                "cook_time": recipe.get("cook_time", ""),
-                "servings": recipe.get("servings", 0),
                 "ingredients": recipe.get("ingredients", []),
                 "instructions": recipe.get("instructions", []),
-                "created_at": recipe.get("created_at", ""),
-                "ai_generated": recipe.get("ai_generated", True)
+                "prep_time": recipe.get("prep_time", recipe.get("prep_time_minutes", "")),
+                "cook_time": recipe.get("cook_time", ""),
+                "servings": recipe.get("servings", ""),
+                "difficulty": recipe.get("difficulty", ""),
+                "cuisine_type": recipe.get("cuisine_type", ""),
+                "meal_type": recipe.get("meal_type", ""),
+                "estimated_cost": recipe.get("estimated_cost", recipe.get("estimated_cost_usd", "")),
+                "nutrition": recipe.get("nutrition", {}),
+                "cooking_tips": recipe.get("cooking_tips", []),
+                "drink_type": recipe.get("drink_type", ""),
+                "starbucks_data": recipe.get("starbucks_data", {}),
+                "user_id": recipe.get("user_id", ""),
+                "created_at": created_at,
+                "ai_generated": recipe.get("ai_generated", False),
+                "is_starbucks_drink": recipe.get("is_starbucks_drink", False),
+                "category": category,
+                "type": rtype
             }
+
             recipes.append(recipe_data)
         
         logger.info(f"📚 Found {len(recipes)} recipes for user {user_id}")
@@ -873,6 +905,20 @@ async def get_user_recipe_history(user_id: str):
             status_code=500,
             content={"detail": f"Failed to fetch recipe history: {str(e)}"}
         )
+
+
+# API compatibility aliases used by frontend (prefix /api)
+@app.get("/api/recipes/history/{user_id}")
+async def api_get_user_recipe_history(user_id: str):
+    return await get_user_recipe_history(user_id)
+
+@app.delete("/api/recipes/{recipe_id}")
+async def api_delete_recipe(recipe_id: str):
+    return await delete_recipe(recipe_id)
+
+@app.get("/api/recipes/{recipe_id}/detail")
+async def api_get_recipe_detail(recipe_id: str):
+    return await get_recipe_detail(recipe_id)
 
 @app.get("/recipes/{recipe_id}/detail")
 async def get_recipe_detail(recipe_id: str):
