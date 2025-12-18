@@ -1738,17 +1738,21 @@ def clean_ingredient_for_search(ingredient: str) -> str:
 def generate_walmart_signature(consumer_id: str, private_key: str, timestamp: str) -> str:
     """Generate Walmart API signature for authentication following the exact Java logic"""
     try:
+        logger.info(f"🔐 [SIGNATURE] Starting signature generation for timestamp: {timestamp}")
+        
         # Create the headers map exactly like the Java code
         headers_to_sign = {
             "WM_CONSUMER.ID": consumer_id,
             "WM_CONSUMER.INTIMESTAMP": timestamp,
             "WM_SEC.KEY_VERSION": walmart_key_version
         }
+        logger.info(f"🔐 [SIGNATURE] Headers to sign (consumer_id masked): {{'WM_CONSUMER.ID': '{consumer_id[:8]}...', 'WM_CONSUMER.INTIMESTAMP': '{timestamp}', 'WM_SEC.KEY_VERSION': '{walmart_key_version}'}}")
         
         # Canonicalize exactly like the Java code - sorted keys with newline-separated values
         def canonicalize(headers_map):
             """Replicate the Java canonicalize method exactly"""
             sorted_keys = sorted(headers_map.keys())  # TreeSet behavior
+            logger.info(f"🔐 [SIGNATURE] Sorted header keys: {sorted_keys}")
             
             parameter_names = ""
             canonicalized_string = ""
@@ -1820,16 +1824,21 @@ def generate_walmart_signature(consumer_id: str, private_key: str, timestamp: st
         
         if CRYPTOGRAPHY_AVAILABLE:
             try:
+                logger.info(f"🔐 [SIGNATURE] Using cryptography library for signature generation")
                 from cryptography.hazmat.primitives import serialization
                 
                 # Load private key in PKCS#8 format (matches Java "PKCS#8")
+                logger.info(f"🔐 [SIGNATURE] Loading PEM private key...")
                 private_key_obj = serialization.load_pem_private_key(
                     pem_key.encode('utf-8'),
                     password=None,
                     backend=default_backend
                 )
                 
+                logger.info(f"🔐 [SIGNATURE] Private key loaded successfully")
+                
                 # Sign using SHA256WithRSA (exactly matches Java "SHA256WithRSA")
+                logger.info(f"🔐 [SIGNATURE] Signing with SHA256WithRSA...")
                 signature = private_key_obj.sign(
                     string_to_sign.encode('utf-8'),
                     padding.PKCS1v15(),
@@ -1838,26 +1847,24 @@ def generate_walmart_signature(consumer_id: str, private_key: str, timestamp: st
                 
                 # Base64 encode (matches Java Base64.encodeBase64String)
                 signature_b64 = base64.b64encode(signature).decode('utf-8')
-                if walmart_debug:
-                    logger.info(f"✅ Successfully generated RSA signature (len={len(signature_b64)})")
-                else:
-                    logger.info("✅ Successfully generated RSA signature")
+                logger.info(f"✅ [SIGNATURE] Successfully generated RSA signature (length={len(signature_b64)} chars)")
                 return signature_b64
                 
             except Exception as crypto_error:
                 # Mask PEM preview
                 masked_preview = (pem_key[:200] + '...') if pem_key and len(pem_key) > 200 else (pem_key or '')
-                logger.error(f"❌ Cryptography signing failed: {crypto_error}")
-                logger.error(f"❌ PEM key preview (masked): {masked_preview[:200]}")
+                logger.error(f"❌ [SIGNATURE] Cryptography signing failed: {crypto_error}")
+                logger.error(f"❌ [SIGNATURE] PEM key preview (masked): {masked_preview[:200]}")
+                logger.error(f"❌ [SIGNATURE] Cleaned private key first 50 chars: {cleaned_private_key[:50]}")
                 return ""
         else:
-            logger.error("❌ Cryptography library not available")
+            logger.error("❌ [SIGNATURE] Cryptography library not available")
             return ""
             
     except Exception as e:
-        logger.error(f"❌ Failed to generate Walmart signature: {e}")
+        logger.error(f"❌ [SIGNATURE] Failed to generate Walmart signature: {e}")
         import traceback
-        logger.error(f"❌ Stack trace: {traceback.format_exc()}")
+        logger.error(f"❌ [SIGNATURE] Stack trace: {traceback.format_exc()}")
         return ""
 
 async def search_walmart_products(query: str, consumer_id: str, private_key: str) -> list:
@@ -1890,6 +1897,7 @@ async def search_walmart_products(query: str, consumer_id: str, private_key: str
             'categoryId': '976759',  # Grocery category
             'numItems': 5,  # Get top 5 results
         }
+        logger.info(f"📡 [API] Request params: {params}")
 
         # ONLY the 4 required headers from Walmart API documentation
         headers = {
@@ -1898,65 +1906,77 @@ async def search_walmart_products(query: str, consumer_id: str, private_key: str
             'WM_SEC.KEY_VERSION': walmart_key_version,
             'WM_SEC.AUTH_SIGNATURE': signature
         }
+        logger.info(f"📡 [API] Headers prepared (signature={len(signature) if signature else 0} chars)")
+        logger.info(f"📡 [API] Full URL will be: {base_url}?query={query}&categoryId=976759&numItems=5")
+        
         # Safe debug output: log headers except signature (mask it) and params
         if walmart_debug:
             safe_headers = headers.copy()
             if 'WM_SEC.AUTH_SIGNATURE' in safe_headers:
-                safe_headers['WM_SEC.AUTH_SIGNATURE'] = '[MASKED]'
-            logger.info(f"🔧 Walmart request headers (masked): {safe_headers}")
-            logger.info(f"🔧 Walmart request params: {params}")
+                safe_headers['WM_SEC.AUTH_SIGNATURE'] = f'[MASKED-{len(signature)} chars]' if signature else '[EMPTY]'
+            logger.info(f"🔧 [DEBUG] Walmart request headers (masked): {safe_headers}")
+            logger.info(f"🔧 [DEBUG] Walmart request params: {params}")
         
    
         
         # Enhanced error handling for network issues
         try:
+            logger.info(f"📡 [API] Making async HTTP GET request to Walmart API...")
             async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.get(base_url, params=params, headers=headers)
                 
-                logger.info(f"📊 Walmart API response status: {response.status_code}")
+                logger.info(f"� [API] Response received - Status: {response.status_code}")
+                logger.info(f"📡 [API] Response headers: {dict(response.headers)}")
                 if walmart_debug:
                     # Truncate response body to avoid huge logs and mask potential PII
                     body = response.text
                     truncated = (body[:1000] + '...') if len(body) > 1000 else body
-                    logger.info(f"📄 Walmart response body (truncated): {truncated}")
+                    logger.info(f"📄 [DEBUG] Walmart response body (truncated): {truncated}")
                 
                 if response.status_code == 200:
                     try:
+                        logger.info(f"📄 [API] Parsing JSON response...")
                         data = response.json()
+                        logger.info(f"📄 [API] Response JSON keys: {list(data.keys())}")
                         products = data.get('items', [])
-                        logger.info(f"✅ Walmart API returned {len(products)} products for '{query}'")
-                        logger.info(f"📋 Response keys: {list(data.keys())}")
+                        logger.info(f"✅ [API] Walmart returned {len(products)} products for query='{query}'")
+                        if len(products) == 0:
+                            logger.info(f"⚠️ [API] Empty items array - Walmart has no products matching '{query}'")
+                        else:
+                            logger.info(f"✅ [API] Product names: {[p.get('name', 'Unknown')[:50] for p in products[:3]]}")
                         return products
                     except Exception as json_error:
-                        logger.error(f"❌ Failed to parse Walmart API response as JSON: {json_error}")
-                        logger.error(f"❌ Raw response text: {response.text[:500]}")
+                        logger.error(f"❌ [API] Failed to parse Walmart API response as JSON: {json_error}")
+                        logger.error(f"❌ [API] Raw response text (first 500 chars): {response.text[:500]}")
                         return []
                 elif response.status_code == 401:
-                    logger.error(f"❌ Walmart API authentication failed (401): Invalid credentials")
-                    logger.error(f"❌ Response: {response.text[:500]}")
+                    logger.error(f"❌ [API] Authentication failed (401): Invalid or expired credentials")
+                    logger.error(f"❌ [API] Response: {response.text[:500]}")
+                    logger.error(f"❌ [API] Check WALMART_CONSUMER_ID and WALMART_PRIVATE_KEY environment variables")
                     return []
                 elif response.status_code == 403:
-                    logger.error(f"❌ Walmart API access forbidden (403): Credentials not authorized")
-                    logger.error(f"❌ Response: {response.text[:500]}")
+                    logger.error(f"❌ [API] Access forbidden (403): Credentials not authorized for this API")
+                    logger.error(f"❌ [API] Response: {response.text[:500]}")
                     return []
                 elif response.status_code == 400:
-                    logger.error(f"❌ Walmart API bad request (400): Invalid query parameters")
-                    logger.error(f"❌ Response: {response.text[:500]}")
+                    logger.error(f"❌ [API] Bad request (400): Invalid query parameters or format")
+                    logger.error(f"❌ [API] Query: '{query}', categoryId: 976759, numItems: 5")
+                    logger.error(f"❌ [API] Response: {response.text[:500]}")
                     return []
                 elif response.status_code == 429:
-                    logger.warning(f"⚠️ Walmart API rate limited (429): Too many requests")
+                    logger.warning(f"⚠️ [API] Rate limited (429): Too many requests - backing off")
                     return []
                 elif response.status_code == 500:
-                    logger.error(f"❌ Walmart API server error (500): Service unavailable")
-                    logger.error(f"❌ Response: {response.text[:500]}")
+                    logger.error(f"❌ [API] Server error (500): Walmart service unavailable")
+                    logger.error(f"❌ [API] Response: {response.text[:500]}")
                     return []
                 else:
-                    logger.error(f"❌ Walmart API unexpected error {response.status_code}")
-                    logger.error(f"❌ Response: {response.text[:500]}")
+                    logger.error(f"❌ [API] Unexpected HTTP status {response.status_code}")
+                    logger.error(f"❌ [API] Response: {response.text[:500]}")
                     return []
             
         except httpx.TimeoutException as timeout_error:
-            logger.warning(f"⏰ Walmart API request timed out for '{query}': {timeout_error}")
+            logger.warning(f"⏰ [API] Request timed out for '{query}' after 15s: {timeout_error}")
             return []
             
         except httpx.RequestError as request_error:
@@ -1972,11 +1992,15 @@ async def search_walmart_products(query: str, consumer_id: str, private_key: str
 def format_walmart_product(product: dict, ingredient: str, rank: int) -> dict:
     """Format Walmart API product response for our frontend"""
     try:
+        logger.info(f"📦 [FORMAT] Formatting product #{rank + 1} for ingredient '{ingredient}'")
         # Extract product data
         item_id = product.get('itemId', '')
         name = product.get('name', 'Unknown Product')
         price = float(product.get('salePrice', product.get('msrp', 0)))
         msrp = float(product.get('msrp', price))
+        
+        logger.info(f"📦 [FORMAT] Product name: '{name[:60]}...'" if len(name) > 60 else f"📦 [FORMAT] Product name: '{name}'")
+        logger.info(f"📦 [FORMAT] Price: ${price}, MSRP: ${msrp}")
         
         # Calculate savings
         savings = max(0, msrp - price)
@@ -1985,6 +2009,8 @@ def format_walmart_product(product: dict, ingredient: str, rank: int) -> dict:
         # Get additional details
         brand = product.get('brandName', 'Generic')
         image_url = product.get('thumbnailImage', product.get('mediumImage', ''))
+        
+        logger.info(f"📦 [FORMAT] Brand: {brand}, Has image: {bool(image_url)}")
         
         # Determine size from name or use default
         size = extract_size_from_name(name)
@@ -2029,10 +2055,13 @@ def format_walmart_product(product: dict, ingredient: str, rank: int) -> dict:
             "marketplace": product.get('marketplace', False)
         }
         
+        logger.info(f"✅ [FORMAT] Successfully formatted product: {formatted_product['name'][:50]}... (${formatted_product['price']})")
         return formatted_product
         
     except Exception as e:
-        logger.error(f"❌ Error formatting Walmart product: {e}")
+        logger.error(f"❌ [FORMAT] Error formatting Walmart product for ingredient '{ingredient}': {e}")
+        import traceback
+        logger.error(f"❌ [FORMAT] Stack trace: {traceback.format_exc()}")
         return None
 
 def extract_size_from_name(name: str) -> str:
