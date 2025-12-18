@@ -1490,7 +1490,8 @@ async def get_recipe_cart_options(recipe_id: str):
                 content={
                     "cart_options": [],
                     "walmart_api_status": "no_ingredients",
-                    "message": "No ingredients found in recipe"
+                    "message": "No ingredients found in recipe",
+                    "ingredients_list": ingredients
                 }
             )
         
@@ -1608,9 +1609,9 @@ async def get_recipe_cart_options(recipe_id: str):
                 "walmart_api_status": "success",
                 "message": f"Found {total_products_found} products for {len(products_by_ingredient)} ingredients",
                 "recipe_name": recipe.get("name", "Unknown Recipe"),
-                "total_ingredients": len(display_ingredients),
+                "total_ingredients": len(ingredients),
                 "products_found": len(products_by_ingredient),
-                "ingredients_list": display_ingredients,
+                "ingredients_list": ingredients,
                 "search_summary": {
                     "ingredients_searched": len(ingredients),
                     "ingredients_with_products": len(products_by_ingredient),
@@ -1631,8 +1632,8 @@ async def get_recipe_cart_options(recipe_id: str):
                     "walmart_api_status": "no_products_found",
                     "message": "No products found for recipe ingredients",
                     "recipe_name": recipe.get("name", "Unknown Recipe"),
-                    "total_ingredients": len(display_ingredients),
-                    "ingredients_list": display_ingredients,
+                    "total_ingredients": len(ingredients),
+                    "ingredients_list": ingredients,
                     "suggested_action": "Try searching manually on Walmart.com"
                 }
             )

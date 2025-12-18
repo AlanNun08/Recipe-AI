@@ -207,8 +207,8 @@ function App() {
             user={user}
             onBack={() => setCurrentView('dashboard')}
             showNotification={showNotification}
-            onViewRecipe={(recipeId, source) => {
-              setSelectedRecipe({ id: recipeId, source });
+            onViewRecipe={(recipeId, source, options) => {
+              setSelectedRecipe({ id: recipeId, source, triggerWalmartFetch: options?.triggerWalmartFetch });
               setCurrentView('recipe-detail');
             }}
           />
@@ -258,6 +258,7 @@ function App() {
           <RecipeDetailScreen
             recipeId={selectedRecipe.id}
             recipeSource={selectedRecipe.source || "generated"}
+            triggerWalmartFetch={selectedRecipe.triggerWalmartFetch}
             onBack={() => {
               // FIX: Better back navigation based on source
               if (selectedRecipe.source === 'generated') {

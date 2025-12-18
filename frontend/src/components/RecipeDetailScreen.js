@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
-function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNotification, backDestination }) {
+function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNotification, backDestination, triggerWalmartFetch }) {
   const [recipe, setRecipe] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [cartOptions, setCartOptions] = useState([]);
@@ -48,6 +48,16 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
 
     fetchRecipe();
   }, [recipeId]); // Keep recipeId dependency
+
+  // If triggerWalmartFetch is set, force fetchCartOptions after mount
+  useEffect(() => {
+    if (triggerWalmartFetch && recipeId) {
+      cartLoadedRef.current = false; // Reset so fetchCartOptions will run
+      fetchCartOptions();
+    }
+    // Only run on mount or when triggerWalmartFetch changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerWalmartFetch, recipeId]);
 
   const fetchCartOptions = async () => {
     if (!recipeId || cartLoadedRef.current) {

@@ -203,7 +203,10 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
       // Auto-navigate to detail screen to fetch cart options immediately
       console.log('📱 Auto-navigating to recipe detail to fetch Walmart items...');
       if (onViewRecipe) {
-        onViewRecipe(response.data.id, 'generated');
+        // Pass a callback to trigger Walmart fetch after navigation
+        onViewRecipe(response.data.id, 'generated', {
+          triggerWalmartFetch: true
+        });
       } else {
         // Fallback: show results step if onViewRecipe not available
         setCurrentStep(5);
