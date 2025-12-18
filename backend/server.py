@@ -1466,7 +1466,7 @@ async def get_recipe_cart_options(recipe_id: str):
                 content={"detail": "Recipe not found"}
             )
         
-        ingredients = recipe.get("ingredients_clean") or recipe.get("ingredients", [])
+        ingredients = recipe.get("ingredients_clean")
         
         # For logging and response, we also want to show user-friendly ingredient names
         display_ingredients = recipe.get("ingredients", [])
