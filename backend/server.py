@@ -190,8 +190,16 @@ if walmart_consumer_id and walmart_private_key:
         logger.info("✅ Private key has correct Base64 padding")
     if walmart_debug:
         logger.info("🔎 WALMART_DEBUG is enabled — extra Walmart logs will be shown (secrets masked)")
+    
+    # Final status
+    logger.info("✅ Walmart API is CONFIGURED and READY")
 else:
     logger.warning("⚠️ Walmart API credentials not fully configured")
+    if not walmart_consumer_id:
+        logger.warning("   - WALMART_CONSUMER_ID environment variable is missing")
+    if not walmart_private_key:
+        logger.warning("   - WALMART_PRIVATE_KEY environment variable is missing")
+    logger.warning("   ➜ Walmart product search will NOT be available")
 
 # Pydantic models for recipe creation
 class RecipeGenerationRequest(BaseModel):
@@ -1540,14 +1548,18 @@ async def get_recipe_cart_options(recipe_id: str):
         
         # Real Walmart API integration
         logger.info("🔄 Starting real Walmart API product search...")
+        logger.info(f"📊 Will search {len(ingredients[:15])} ingredients (limited to 15)")
         
         products_by_ingredient = {}
         total_products_found = 0
+        ingredients_searched = 0
+        ingredients_with_results = 0
         
         # Process each ingredient
         for ingredient in ingredients[:15]:  # Limit to 15 ingredients for performance
             try:
-                logger.info(f"🔍 Searching Walmart for: {ingredient}")
+                logger.info(f"🔍 [{ingredients_searched + 1}/{len(ingredients[:15])}] Searching Walmart for: '{ingredient}'")
+                ingredients_searched += 1
                 
                 # Ingredient is already clean from ChatGPT's ingredients_clean list
                 # No additional cleaning needed
@@ -1556,6 +1568,8 @@ async def get_recipe_cart_options(recipe_id: str):
                 walmart_products = await search_walmart_products(ingredient, walmart_consumer_id, walmart_private_key)
                 
                 if walmart_products:
+                    ingredients_with_results += 1
+                    logger.info(f"   ✅ API returned {len(walmart_products)} products")
                     # Process and format products
                     formatted_products = []
                     for i, product in enumerate(walmart_products[:3]):  # Max 3 products per ingredient
@@ -1566,11 +1580,11 @@ async def get_recipe_cart_options(recipe_id: str):
                     if formatted_products:
                         products_by_ingredient[ingredient] = formatted_products
                         total_products_found += len(formatted_products)
-                        logger.info(f"✅ Found {len(formatted_products)} products for {ingredient}")
+                        logger.info(f"   ✅ After formatting: {len(formatted_products)} valid products for '{ingredient}'")
                     else:
-                        logger.warning(f"⚠️ No valid products found for {ingredient}")
+                        logger.warning(f"   ⚠️ API returned products but none passed validation for '{ingredient}'")
                 else:
-                    logger.warning(f"⚠️ No products returned from Walmart API for {ingredient}")
+                    logger.warning(f"   ⚠️ No products returned from Walmart API for '{ingredient}'")
                     
             except Exception as ingredient_error:
                 logger.error(f"❌ Error searching for {ingredient}: {ingredient_error}")
@@ -1625,6 +1639,11 @@ async def get_recipe_cart_options(recipe_id: str):
         
         else:
             logger.warning("⚠️ No products found for any ingredients")
+            logger.info(f"📊 Search Summary:")
+            logger.info(f"   - Ingredients searched: {ingredients_searched}")
+            logger.info(f"   - Ingredients with results: {ingredients_with_results}")
+            logger.info(f"   - Total products found: {total_products_found}")
+            logger.info(f"   - Coverage: {(ingredients_with_results/ingredients_searched*100):.1f}%" if ingredients_searched > 0 else "   - Coverage: N/A")
             return JSONResponse(
                 status_code=200,
                 content={
@@ -1852,6 +1871,11 @@ async def search_walmart_products(query: str, consumer_id: str, private_key: str
 
         logger.info(f"🔍 Walmart API request for: {query}")
         logger.info(f"⏰ Using timestamp: {timestamp}")
+        
+        # Validate credentials exist
+        if not consumer_id or not private_key:
+            logger.error(f"❌ Walmart credentials missing: consumer_id={bool(consumer_id)}, private_key={bool(private_key)}")
+            return []
 
         # Generate signature for authentication
         signature = generate_walmart_signature(consumer_id, private_key, timestamp)
@@ -1897,21 +1921,38 @@ async def search_walmart_products(query: str, consumer_id: str, private_key: str
                     logger.info(f"📄 Walmart response body (truncated): {truncated}")
                 
                 if response.status_code == 200:
-                    data = response.json()
-                    products = data.get('items', [])
-                    logger.info(f"✅ Walmart API returned {len(products)} products for '{query}'")
-                    return products
+                    try:
+                        data = response.json()
+                        products = data.get('items', [])
+                        logger.info(f"✅ Walmart API returned {len(products)} products for '{query}'")
+                        logger.info(f"📋 Response keys: {list(data.keys())}")
+                        return products
+                    except Exception as json_error:
+                        logger.error(f"❌ Failed to parse Walmart API response as JSON: {json_error}")
+                        logger.error(f"❌ Raw response text: {response.text[:500]}")
+                        return []
                 elif response.status_code == 401:
-                    logger.error(f"❌ Walmart API authentication failed (401): {response.text}")
+                    logger.error(f"❌ Walmart API authentication failed (401): Invalid credentials")
+                    logger.error(f"❌ Response: {response.text[:500]}")
                     return []
                 elif response.status_code == 403:
-                    logger.error(f"❌ Walmart API access forbidden (403): {response.text}")
+                    logger.error(f"❌ Walmart API access forbidden (403): Credentials not authorized")
+                    logger.error(f"❌ Response: {response.text[:500]}")
                     return []
                 elif response.status_code == 400:
-                    logger.error(f"❌ Walmart API bad request (400): {response.text}")
+                    logger.error(f"❌ Walmart API bad request (400): Invalid query parameters")
+                    logger.error(f"❌ Response: {response.text[:500]}")
+                    return []
+                elif response.status_code == 429:
+                    logger.warning(f"⚠️ Walmart API rate limited (429): Too many requests")
+                    return []
+                elif response.status_code == 500:
+                    logger.error(f"❌ Walmart API server error (500): Service unavailable")
+                    logger.error(f"❌ Response: {response.text[:500]}")
                     return []
                 else:
-                    logger.error(f"❌ Walmart API error {response.status_code}: {response.text}")
+                    logger.error(f"❌ Walmart API unexpected error {response.status_code}")
+                    logger.error(f"❌ Response: {response.text[:500]}")
                     return []
             
         except httpx.TimeoutException as timeout_error:
