@@ -1013,6 +1013,7 @@ async def get_recipe_detail(recipe_id: str):
             "total_time": recipe.get("total_time", ""),
             "servings": recipe.get("servings", 0),
             "ingredients": recipe.get("ingredients", []),
+            "ingredients_clean": recipe.get("ingredients_clean", []),
             "instructions": recipe.get("instructions", []),
             "nutrition": recipe.get("nutrition", {}),
             "cooking_tips": recipe.get("cooking_tips", []),
@@ -1020,7 +1021,15 @@ async def get_recipe_detail(recipe_id: str):
             "created_at": recipe.get("created_at", ""),
             "ai_generated": recipe.get("ai_generated", True)
         }
-
+        
+        # Log what we're returning
+        logger.info(f"📋 Returning recipe detail for: {recipe_data['name']}")
+        logger.info(f"  Has ingredients_clean: {'ingredients_clean' in recipe_data and len(recipe_data['ingredients_clean']) > 0}")
+        if recipe_data['ingredients_clean']:
+            logger.info(f"  Clean ingredients count: {len(recipe_data['ingredients_clean'])}")
+            logger.info(f"  Clean ingredients sample: {recipe_data['ingredients_clean'][:3]}")
+        else:
+            logger.warning(f"  ⚠️ No ingredients_clean found in database!")
         
         return JSONResponse(
             status_code=200,
@@ -1469,8 +1478,11 @@ async def get_recipe_cart_options(recipe_id: str):
         logger.info(f"  Using clean ingredients: {'ingredients_clean' in recipe}")
         if 'ingredients_clean' in recipe:
             logger.info(f"  Clean ingredients ({len(ingredients)}): {ingredients}")
+            logger.info(f"  🎯 USING ingredients_clean for Walmart search ✅")
         else:
             logger.warning(f"  ⚠️ Using fallback ingredients ({len(ingredients)}): {ingredients}")
+            logger.warning(f"  ⚠️ FALLBACK: ingredients_clean not found, using full ingredient descriptions")
+            logger.warning(f"  ⚠️ This may result in fewer product matches on Walmart")
         
         if not ingredients:
             return JSONResponse(
@@ -1483,7 +1495,13 @@ async def get_recipe_cart_options(recipe_id: str):
             )
         
         logger.info(f"🥘 Found {len(ingredients)} ingredients to search")
-        logger.info(f"🔍 Recipe ingredients: {ingredients}")
+        logger.info(f"🔍 Recipe ingredients (using for Walmart): {ingredients[:5]}..." if len(ingredients) > 5 else f"🔍 Recipe ingredients (using for Walmart): {ingredients}")
+        
+        # Determine search mode
+        search_mode = "clean_ingredients" if 'ingredients_clean' in recipe else "fallback_ingredients"
+        logger.info(f"🔎 Search mode: {search_mode}")
+        if search_mode == "fallback_ingredients":
+            logger.warning(f"⚠️ WARNING: Not using clean ingredients - Walmart search may have lower accuracy")
         
         # Check if Walmart API is properly configured
         walmart_api_ready = (
