@@ -1085,7 +1085,7 @@ async def delete_recipe(recipe_id: str):
 
 @app.post("/weekly-recipes/generate")
 async def generate_weekly_plan(request: WeeklyPlanRequest):
-    """Generate weekly meal plan using OpenAI"""
+    """Generate weekly meal plan using OpenAI - each meal is created as a full recipe"""
     try:
         logger.info(f"📅 Weekly plan generation for user: {request.user_id}")
         
@@ -1116,28 +1116,37 @@ Please respond with a JSON object containing:
         {{
             "day": "Monday",
             "name": "Recipe name",
-            "description": "Brief description",
+            "description": "Brief appetizing description",
             "cuisine_type": "cuisine",
             "meal_type": "dinner",
             "difficulty": "easy",
-            "prep_time": "20 mins",
-            "cook_time": "15 mins",
+            "prep_time": "20 minutes",
+            "cook_time": "15 minutes",
+            "total_time": "35 minutes",
             "servings": {request.family_size},
             "ingredients": ["ingredient 1", "ingredient 2"],
+            "ingredients_clean": ["ingredient 1", "ingredient 2"],
             "instructions": ["step 1", "step 2"],
-            "estimated_cost": 12.50,
-            "calories_per_serving": 450,
-            "dietary_tags": ["tag1", "tag2"],
-            "nutrition": {{"protein": "25g", "carbs": "30g", "fat": "15g", "calories": "450"}}
+            "nutrition": {{"calories": "450 per serving", "protein": "25g", "carbs": "30g", "fat": "15g"}},
+            "cooking_tips": ["tip 1", "tip 2"],
+            "estimated_cost": 12.50
         }}
     ],
     "shopping_list": ["combined ingredient list"]
-}}"""
+}}
+
+CRITICAL REQUIREMENTS:
+- Each meal must include ingredients_clean: simplified ingredient names for product search (same count as ingredients)
+- Remove quantities, measurements, articles, and descriptors from ingredients_clean
+- Keep only searchable ingredient names (e.g., "beef sirloin" not "1 lb beef sirloin, thinly sliced")
+- Include ALL fields shown above for each meal
+- Format prep_time, cook_time, total_time as "X minutes"
+"""
 
         response = openai_client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a meal planning expert. Create practical, budget-friendly meal plans. Always respond with valid JSON."},
+                {"role": "system", "content": "You are a meal planning expert. Create practical, budget-friendly meal plans with detailed recipes. Always respond with valid JSON."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=4000,
@@ -1153,24 +1162,103 @@ Please respond with a JSON object containing:
             plan_text = plan_text[:-3]
         
         plan_data = json.loads(plan_text)
+        plan_id = str(uuid.uuid4())
         
-        # Add metadata
-        plan_data["id"] = str(uuid.uuid4())
-        plan_data["user_id"] = request.user_id
-        plan_data["created_at"] = datetime.utcnow().isoformat()
+        # Process each meal to match individual recipe schema
+        processed_meals = []
+        recipe_ids = []
         
-        # Save to database
-        await weekly_recipes_collection.insert_one(plan_data)
+        for meal in plan_data.get("meals", []):
+            # Generate unique ID for each meal recipe
+            meal_id = str(uuid.uuid4())
+            recipe_ids.append(meal_id)
+            
+            # Ensure ingredients_clean exists and matches ingredients count
+            if "ingredients_clean" not in meal or not meal["ingredients_clean"]:
+                logger.warning(f"⚠️ ingredients_clean missing for {meal.get('name', 'Unknown')}, generating from ingredients")
+                ingredients_clean = []
+                for ingredient in meal.get("ingredients", []):
+                    cleaned = clean_ingredient_for_search(ingredient)
+                    ingredients_clean.append(cleaned)
+                meal["ingredients_clean"] = ingredients_clean
+            
+            # Ensure all recipe fields are present
+            meal_recipe = {
+                "id": meal_id,
+                "user_id": request.user_id,
+                "weekly_plan_id": plan_id,
+                "day_of_week": meal.get("day", ""),
+                "name": meal.get("name", ""),
+                "description": meal.get("description", ""),
+                "cuisine_type": meal.get("cuisine_type", ""),
+                "meal_type": meal.get("meal_type", ""),
+                "difficulty": meal.get("difficulty", ""),
+                "prep_time": meal.get("prep_time", ""),
+                "cook_time": meal.get("cook_time", ""),
+                "total_time": meal.get("total_time", ""),
+                "servings": meal.get("servings", request.family_size),
+                "ingredients": meal.get("ingredients", []),
+                "ingredients_clean": meal.get("ingredients_clean", []),
+                "instructions": meal.get("instructions", []),
+                "nutrition": meal.get("nutrition", {}),
+                "cooking_tips": meal.get("cooking_tips", []),
+                "estimated_cost": meal.get("estimated_cost", 0),
+                "created_at": datetime.utcnow().isoformat(),
+                "ai_generated": True,
+                "source": "weekly_plan",
+                "is_weekly_meal": True
+            }
+            
+            processed_meals.append(meal_recipe)
         
-        logger.info(f"✅ Weekly plan generated: {len(plan_data.get('meals', []))} meals")
+        # Save each meal as individual recipe document
+        logger.info(f"💾 Saving {len(processed_meals)} individual meal recipes to database...")
+        for meal_recipe in processed_meals:
+            try:
+                await recipes_collection.insert_one(meal_recipe)
+                logger.info(f"✅ Saved meal: {meal_recipe['name']} (ID: {meal_recipe['id']})")
+            except Exception as meal_error:
+                logger.error(f"❌ Failed to save meal {meal_recipe.get('name', 'Unknown')}: {meal_error}")
+        
+        # Create weekly plan summary
+        weekly_plan_doc = {
+            "id": plan_id,
+            "user_id": request.user_id,
+            "week_of": plan_data.get("week_of", ""),
+            "family_size": request.family_size,
+            "total_estimated_cost": request.budget,
+            "meal_ids": recipe_ids,
+            "created_at": datetime.utcnow().isoformat(),
+            "ai_generated": True
+        }
+        
+        # Save weekly plan summary to weekly_recipes_collection
+        await weekly_recipes_collection.insert_one(weekly_plan_doc)
+        logger.info(f"✅ Weekly plan summary saved: {plan_id}")
+        
+        # Return response with all meal details
+        response_data = {
+            "id": plan_id,
+            "user_id": request.user_id,
+            "week_of": plan_data.get("week_of", ""),
+            "family_size": request.family_size,
+            "total_estimated_cost": request.budget,
+            "ai_generated": True,
+            "meals": processed_meals,
+            "shopping_list": plan_data.get("shopping_list", [])
+        }
+        
+        logger.info(f"✅ Weekly plan generated: {len(processed_meals)} meals, all saved as individual recipes")
         
         return JSONResponse(
             status_code=200,
-            content=plan_data
+            content=response_data
         )
         
     except Exception as e:
         logger.error(f"❌ Weekly plan generation failed: {e}")
+        import traceback
+        logger.error(f"❌ Stack trace: {traceback.format_exc()}")
         return JSONResponse(
             status_code=500,
             content={"detail": f"Failed to generate weekly plan: {str(e)}"}
@@ -1178,7 +1266,7 @@ Please respond with a JSON object containing:
 
 @app.get("/weekly-recipes/current/{user_id}")
 async def get_current_weekly_plan(user_id: str):
-    """Get user's current weekly plan"""
+    """Get user's current weekly plan with all meal recipes"""
     try:
         # Find the most recent weekly plan
         plan = await weekly_recipes_collection.find_one(
@@ -1196,6 +1284,22 @@ async def get_current_weekly_plan(user_id: str):
         plan["id"] = str(plan["_id"])
         del plan["_id"]
         
+        # Fetch all individual meal recipes using the meal_ids
+        meal_ids = plan.get("meal_ids", [])
+        meals = []
+        
+        if meal_ids:
+            for meal_id in meal_ids:
+                meal_doc = await recipes_collection.find_one({"id": meal_id})
+                if meal_doc:
+                    # Remove MongoDB _id field
+                    if "_id" in meal_doc:
+                        del meal_doc["_id"]
+                    meals.append(meal_doc)
+        
+        # Add meals to plan
+        plan["meals"] = meals
+        
         return JSONResponse(
             status_code=200,
             content={"has_plan": True, "plan": plan}
@@ -1203,6 +1307,8 @@ async def get_current_weekly_plan(user_id: str):
         
     except Exception as e:
         logger.error(f"❌ Error fetching weekly plan: {e}")
+        import traceback
+        logger.error(f"❌ Stack trace: {traceback.format_exc()}")
         return JSONResponse(
             status_code=500,
             content={"detail": f"Failed to fetch weekly plan: {str(e)}"}
@@ -1236,9 +1342,9 @@ Please respond with a JSON object containing:
     "drink_name": "Creative drink name",
     "description": "Appetizing description of taste and appearance",
     "category": "{request.drink_type}",
-    "base_drink": "Base Starbucks drink to order",
+    "base_drink": "Base Starbucks drink to order (e.g., Iced Coffee, Latte, etc.)",
+    "ingredients": ["ingredient 1 with amount", "ingredient 2 with amount", "ingredient 3 with amount"],
     "modifications": ["modification 1", "modification 2", "modification 3"],
-    "ordering_script": "Exact script to tell the barista",
     "flavor_profile": "Taste description",
     "color": "Visual appearance",
     "estimated_price": 5.50,

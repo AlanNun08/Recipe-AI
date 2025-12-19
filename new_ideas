@@ -1,0 +1,10 @@
+new ideas for starbucks recipes section
+to share recipes, there should be 2 sections
+1 sections will take care of the top 5 reciepes of the week and users can add those recipes to their own recipe history
+    the top 5 recipes will only stay there for a week before they are update
+2nd section will take care of people voting on the recipes they think should be on the top 5 sections and the ones with the most votes gets 
+    added to the section when it times to update, this will be 24 hrs before the top 5 gets updated
+there will need to be 2 sections in the database
+1st will have the recipes that everyone will be able to see
+2nd will have the recipes that are shared by people so they get people from recipe history of an own user and it will be moved to a section 
+    where everyone will be able to see

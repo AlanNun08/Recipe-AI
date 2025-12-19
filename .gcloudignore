@@ -54,17 +54,11 @@ Thumbs.db
 logs/
 /var/log/
 
-# Test files
-tests/
-test_*.py
-*_test.py
-
 # Build artifacts (we'll include frontend/build)
 frontend/build/static/js/*.map
 frontend/build/static/css/*.map
 
 # Deployment scripts (not needed in production)
-build_for_deployment.sh
 verify_env_vars.py
 deployment-checklist.md
 

@@ -304,6 +304,32 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     return allIngredients.filter(ing => !selectedIngredients.includes(ing));
   };
 
+  const getCostIndicator = () => {
+    // Cost indicator based on meal type
+    // Breakfast/Snack = $ (inexpensive)
+    // Lunch = $$ (moderate)
+    // Dinner = $$$ (typically more expensive for a full meal)
+    const mealType = recipe?.meal_type?.toLowerCase() || '';
+    
+    if (mealType.includes('breakfast') || mealType.includes('snack') || mealType.includes('appetizer')) {
+      return '$';
+    } else if (mealType.includes('lunch')) {
+      return '$$';
+    } else if (mealType.includes('dinner') || mealType.includes('main')) {
+      return '$$$';
+    } else {
+      // Default based on servings if meal type unclear
+      const servings = recipe?.servings || 1;
+      if (servings <= 2) {
+        return '$';
+      } else if (servings <= 4) {
+        return '$$';
+      } else {
+        return '$$$';
+      }
+    }
+  };
+
   // ... existing loading and error states remain the same ...
 
   if (isLoading) {
@@ -373,7 +399,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
               </div>
               <div className="text-center">
                 <div className="text-2xl">💰</div>
-                <div className="font-bold">${recipe.estimated_cost}</div>
+                <div className="font-bold">{getCostIndicator()}</div>
                 <div className="text-sm text-gray-600">Est. Cost</div>
               </div>
             </div>

@@ -142,19 +142,26 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
     }
   };
 
-  const copyOrderScript = (orderScript) => {
-    if (orderScript) {
-      navigator.clipboard.writeText(orderScript);
-      setShowCopySuccess(true);
-      setTimeout(() => setShowCopySuccess(false), 2000);
-      showNotification('📋 Order script copied to clipboard!', 'success');
-    }
+  const copyIngredientsList = (drink) => {
+    const drinkName = drink.drink_name || drink.name || drink.recipe_name || "Secret Menu Drink";
+    const baseDrink = drink.base_drink || "Base drink";
+    const ingredients = drink.ingredients || [];
+    
+    const ingredientText = `☕ ${drinkName}\n\nBase: ${baseDrink}\n\nIngredients:\n${ingredients.map(ing => `• ${ing}`).join('\n')}`;
+    
+    navigator.clipboard.writeText(ingredientText);
+    setShowCopySuccess(true);
+    setTimeout(() => setShowCopySuccess(false), 2000);
+    showNotification('📋 Ingredients copied to clipboard!', 'success');
   };
 
   const shareDrink = (drink) => {
     const drinkName = drink.drink_name || drink.name || drink.recipe_name;
-    const orderScript = drink.ordering_script || drink.order_instructions;
-    const shareText = `Check out this amazing Starbucks secret menu drink: ${drinkName}! 🤩\n\nOrder it like this: "${orderScript}"\n\n#StarbucksSecretMenu #DrinkHack`;
+    const baseDrink = drink.base_drink || "Base drink";
+    const ingredients = drink.ingredients || [];
+    const ingredientList = ingredients.map(ing => `• ${ing}`).join('\n');
+    
+    const shareText = `Check out this amazing Starbucks secret menu drink: ${drinkName}! 🤩\n\nBase: ${baseDrink}\n\nIngredients:\n${ingredientList}\n\n#StarbucksSecretMenu #DrinkHack`;
     
     if (navigator.share) {
       navigator.share({
@@ -434,7 +441,7 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
               <DrinkCard 
                 drink={generatedDrink} 
                 showFullDetails={true}
-                onCopyOrder={() => copyOrderScript(generatedDrink.ordering_script)}
+                onCopyOrder={() => copyIngredientsList(generatedDrink)}
                 onShare={() => shareDrink(generatedDrink)}
                 onGenerateAnother={() => {
                   setGeneratedDrink(null);
@@ -509,7 +516,7 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
                     isCommunity={currentTab === 'community'}
                     onLike={currentTab === 'community' ? () => likeRecipe(recipe.id) : null}
                     isLiked={currentTab === 'community' && recipe.liked_by_users?.includes(user?.id)}
-                    onCopyOrder={() => copyOrderScript(recipe.order_instructions || recipe.ordering_script)}
+                    onCopyOrder={() => copyIngredientsList(recipe)}
                     onShare={() => shareDrink(recipe)}
                     user={user}
                   />
@@ -688,13 +695,11 @@ const DrinkCard = ({
   onBackToDashboard, 
   showActionButtons = true 
 }) => {
-  const [showFullScript, setShowFullScript] = useState(false);
-  
   const drinkName = drink.drink_name || drink.name || drink.recipe_name || "Secret Menu Drink";
   const description = drink.description || drink.vibe || "A delicious Starbucks creation";
-  const orderScript = drink.ordering_script || drink.order_instructions || "Order instructions not available";
   const category = drink.category || "unknown";
   const baseDrink = drink.base_drink || "";
+  const ingredients = drink.ingredients || [];
   const modifications = drink.modifications || [];
   const estimatedPrice = drink.estimated_price || 0;
   const flavorProfile = drink.flavor_profile || "";
@@ -838,6 +843,26 @@ const DrinkCard = ({
           </div>
         )}
         
+        {/* Enhanced Ingredients List */}
+        {ingredients.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <span className="text-3xl mr-3 animate-bounce">🧪</span>
+              Secret Ingredients ({ingredients.length})
+            </h3>
+            <div className="bg-gradient-to-r from-pink-100 to-orange-100 p-6 rounded-2xl border-l-4 border-pink-500 shadow-inner">
+              <ul className="space-y-3">
+                {ingredients.map((ingredient, index) => (
+                  <li key={index} className="bg-white p-3 rounded-lg flex items-center">
+                    <span className="text-pink-500 text-xl mr-3 font-bold">+</span>
+                    <span className="text-gray-700 text-lg">{ingredient}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+        
         {/* Enhanced Order Script */}
         <div className="mb-8">
           <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
@@ -847,19 +872,11 @@ const DrinkCard = ({
           <div className="bg-gradient-to-r from-yellow-100 to-orange-100 p-6 rounded-2xl border-l-4 border-yellow-500 shadow-inner">
             <div className="bg-white p-4 rounded-xl mb-4">
               <p className="text-gray-700 text-lg leading-relaxed italic font-medium">
-                {showFullScript ? orderScript : `${orderScript.substring(0, 120)}...`}
+                Start with a {baseDrink}, then add the secret ingredients above!
               </p>
             </div>
-            {orderScript.length > 120 && (
-              <button 
-                onClick={() => setShowFullScript(!showFullScript)}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium underline"
-              >
-                {showFullScript ? 'Show less' : 'Show full script'}
-              </button>
-            )}
             <div className="text-xs text-orange-700 mt-3 font-medium">
-              💡 Pro tip: Smile and be patient with your barista!
+              💡 Pro tip: Smile and be patient with your barista! Show them the ingredient list.
             </div>
           </div>
         </div>
@@ -873,11 +890,11 @@ const DrinkCard = ({
             </h3>
             <div className="flex flex-wrap gap-4 justify-center">
               <button
-                onClick={onCopyOrder}
+                onClick={() => copyIngredientsList(drink)}
                 className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-3"
               >
                 <span className="text-2xl animate-bounce">📋</span>
-                Copy Order Script
+                Copy Ingredients
               </button>
               
               <button

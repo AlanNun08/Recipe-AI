@@ -4,6 +4,7 @@ import LoginComponent from './components/LoginComponent';
 import VerificationPage from './components/VerificationPage';
 import DashboardScreen from './components/DashboardScreen';
 import RecipeDetailScreen from './components/RecipeDetailScreen';
+import RecipeDetailScreenMobile from './components/RecipeDetailScreenMobile';
 import RecipeGeneratorScreen from './components/RecipeGeneratorScreen';
 import WeeklyRecipesScreen from './components/WeeklyRecipesScreen';
 import StarbucksGeneratorScreen from './components/StarbucksGeneratorScreen';
@@ -16,6 +17,7 @@ function App() {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [notification, setNotification] = useState(null);
   const [verificationEmail, setVerificationEmail] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   // Check for existing user session on app load
   useEffect(() => {
@@ -32,6 +34,16 @@ function App() {
       }
     }
   }, []); // Keep empty dependency array
+
+  // Handle responsive design changes
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Expose setCurrentView globally for dashboard navigation
   useEffect(() => {
@@ -255,20 +267,45 @@ function App() {
 
       case 'recipe-detail':
         return selectedRecipe ? (
-          <RecipeDetailScreen
-            recipeId={selectedRecipe.id}
-            recipeSource={selectedRecipe.source || "generated"}
-            triggerWalmartFetch={selectedRecipe.triggerWalmartFetch}
-            onBack={() => {
-              // FIX: Better back navigation based on source
-              if (selectedRecipe.source === 'generated') {
-                setCurrentView('recipe-generator');
-              } else {
-                setCurrentView('dashboard');
-              }
-            }}
-            showNotification={showNotification}
-          />
+          isMobile ? (
+            <RecipeDetailScreenMobile
+              recipeId={selectedRecipe.id}
+              recipeSource={selectedRecipe.source || "generated"}
+              triggerWalmartFetch={selectedRecipe.triggerWalmartFetch}
+              onBack={() => {
+                // FIX: Better back navigation based on source
+                if (selectedRecipe.source === 'generated') {
+                  setCurrentView('recipe-generator');
+                } else if (selectedRecipe.source === 'history') {
+                  setCurrentView('recipe-history');
+                } else if (selectedRecipe.source === 'weekly') {
+                  setCurrentView('weekly-recipes');
+                } else {
+                  setCurrentView('dashboard');
+                }
+              }}
+              showNotification={showNotification}
+            />
+          ) : (
+            <RecipeDetailScreen
+              recipeId={selectedRecipe.id}
+              recipeSource={selectedRecipe.source || "generated"}
+              triggerWalmartFetch={selectedRecipe.triggerWalmartFetch}
+              onBack={() => {
+                // FIX: Better back navigation based on source
+                if (selectedRecipe.source === 'generated') {
+                  setCurrentView('recipe-generator');
+                } else if (selectedRecipe.source === 'history') {
+                  setCurrentView('recipe-history');
+                } else if (selectedRecipe.source === 'weekly') {
+                  setCurrentView('weekly-recipes');
+                } else {
+                  setCurrentView('dashboard');
+                }
+              }}
+              showNotification={showNotification}
+            />
+          )
         ) : (
           <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
