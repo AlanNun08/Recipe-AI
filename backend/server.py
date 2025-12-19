@@ -1773,54 +1773,52 @@ def generate_walmart_signature(consumer_id: str, private_key: str, timestamp: st
             logger.info(f"🔐 Java-style canonicalized string: {repr(string_to_sign)}")
             logger.info(f"🔐 Parameter names: {canonicalized_array[0]}")
 
-        # Handle PEM format private key
+        # Handle PEM format private key (may have spaces instead of newlines)
         cleaned_private_key = private_key.strip()
         
-        # If it looks like a broken PEM format (has BEGIN/END but spaces instead of newlines)
+        # If it looks like PEM format (has BEGIN/END markers)
         if "-----BEGIN" in cleaned_private_key and "-----END" in cleaned_private_key:
-            # Reconstruct proper PEM format
-            lines = cleaned_private_key.split(' ')
-            pem_lines = []
-            current_line = ""
+            logger.info("🔐 [SIGNATURE] Private key is in PEM format")
             
-            for part in lines:
-                if part.startswith("-----BEGIN"):
-                    if current_line:
-                        pem_lines.append(current_line)
-                    pem_lines.append("-----BEGIN PRIVATE KEY-----")
-                    current_line = ""
-                elif part.endswith("-----"):
-                    if current_line:
-                        pem_lines.append(current_line)
-                    pem_lines.append("-----END PRIVATE KEY-----")
-                    break
-                elif not part.startswith("-----") and not part.endswith("-----"):
-                    current_line += part
-                    # Standard PEM line length is 64 characters
-                    if len(current_line) >= 64:
-                        pem_lines.append(current_line[:64])
-                        current_line = current_line[64:]
+            # Check if it has spaces instead of newlines (environment variable format)
+            if ' -----' in cleaned_private_key or ' MII' in cleaned_private_key:
+                logger.info("🔐 [SIGNATURE] Detected spaces instead of newlines - converting...")
+                
+                # Replace spaces between PEM sections with actual newlines
+                fixed_key = cleaned_private_key.replace(' -----END', '\n-----END')
+                fixed_key = fixed_key.replace('KEY----- ', 'KEY-----\n')
+                
+                # Split into parts
+                lines = fixed_key.split('\n')
+                pem_start = lines[0]  # -----BEGIN PRIVATE KEY-----
+                pem_end = lines[-1]   # -----END PRIVATE KEY-----
+                base64_parts = lines[1:-1]  # All the base64 content lines
+                base64_content = ''.join(base64_parts)
+                
+                # Reconstruct proper PEM
+                pem_key = f"{pem_start}\n{base64_content}\n{pem_end}"
+                logger.info(f"🔐 [SIGNATURE] Reconstructed PEM format ({len(base64_content)} chars of base64)")
+            else:
+                # Already has proper newlines
+                pem_key = cleaned_private_key
+                logger.info("🔐 [SIGNATURE] PEM format looks correct (has newlines)")
             
-            if current_line:
-                pem_lines.append(current_line)
-            
-            pem_key = "\n".join(pem_lines)
             if walmart_debug:
                 masked = (pem_key[:60] + '...') if len(pem_key) > 80 else pem_key[:80]
-                logger.info(f"🔄 Reconstructed PEM format from environment variable (masked): {masked}")
+                logger.info(f"� [SIGNATURE] PEM key preview (masked): {masked}")
             
         else:
-            # Extract just the Base64 content without headers for PKCS#8 format
-            # The Java code uses Base64.decodxqeBase64(key) directly on the key content
-            base64_content = cleaned_private_key.replace("-----BEGIN PRIVATE KEY-----", "")
-            base64_content = base64_content.replace("-----END PRIVATE KEY-----", "")
-            base64_content = base64_content.replace("\n", "").replace("\r", "").replace(" ", "")
+            # Assume it's Base64 without PEM headers
+            logger.info("🔐 [SIGNATURE] Private key appears to be Base64 without PEM headers")
+            base64_content = cleaned_private_key.replace(" ", "").replace("\n", "").replace("\r", "")
             
             # Add proper PEM headers for Python cryptography library
             pem_key = f"-----BEGIN PRIVATE KEY-----\n{base64_content}\n-----END PRIVATE KEY-----"
+            logger.info(f"🔐 [SIGNATURE] Wrapped Base64 with PEM headers ({len(base64_content)} chars)")
+            
             if walmart_debug:
                 masked = (base64_content[:60] + '...') if len(base64_content) > 80 else base64_content[:80]
-                logger.info(f"🔐 Built PEM from base64 (masked start): {masked}")
+                logger.info(f"🔐 [SIGNATURE] Base64 content preview (masked): {masked}")
         
         if CRYPTOGRAPHY_AVAILABLE:
             try:
