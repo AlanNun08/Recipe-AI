@@ -218,109 +218,154 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
 
             {/* Weekly Meals Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {currentPlan.meals?.map((meal, index) => (
-                <div key={index} className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
-                  <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4">
-                    <h3 className="text-white font-bold text-lg">{meal.day}</h3>
-                  </div>
-                  
-                  <div className="p-6">
-                    <h4 className="text-xl font-bold text-gray-800 mb-2">{meal.name}</h4>
-                    <p className="text-gray-600 text-sm mb-4">{meal.description}</p>
-                    
-                    {/* Meal Details */}
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <span className="mr-2">⏱️</span>
-                        Prep: {meal.prep_time} | Cook: {meal.cook_time}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <span className="mr-2">👥</span>
-                        Serves {meal.servings} | {meal.cuisine_type}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <span className="mr-2">⭐</span>
-                        {meal.difficulty} difficulty
-                      </div>
-                      {meal.calories_per_serving && (
-                        <div className="flex items-center text-sm text-gray-500">
-                          <span className="mr-2">🔥</span>
-                          {meal.calories_per_serving} calories/serving
-                        </div>
-                      )}
-                      {meal.estimated_cost && (
-                        <div className="flex items-center text-sm text-green-600 font-medium">
-                          <span className="mr-2">💰</span>
-                          ~${meal.estimated_cost.toFixed(2)}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Dietary Tags */}
-                    {meal.dietary_tags && meal.dietary_tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-4">
-                        {meal.dietary_tags.map((tag, tagIndex) => (
-                          <span key={tagIndex} className="px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Ingredients Preview */}
-                    <div className="mb-4">
-                      <div className="font-semibold text-gray-700 mb-2 flex items-center">
-                        <span className="mr-2">🥘</span>
-                        Ingredients ({meal.ingredients?.length || 0}):
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {meal.ingredients?.slice(0, 3).join(', ')}
-                        {meal.ingredients?.length > 3 && `... +${meal.ingredients.length - 3} more`}
-                      </div>
-                    </div>
-                    
-                    {/* Instructions Preview */}
-                    <div className="mb-4">
-                      <div className="font-semibold text-gray-700 mb-2 flex items-center">
-                        <span className="mr-2">📋</span>
-                        Instructions ({meal.instructions?.length || 0} steps):
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {meal.instructions?.[0] || 'Cooking instructions included'}
-                        {meal.instructions?.length > 1 && ` (+${meal.instructions.length - 1} more steps)`}
-                      </div>
-                    </div>
+              {currentPlan.meals && currentPlan.meals.length > 0 ? (
+                currentPlan.meals.map((meal) => {
+                  // Get cost indicator based on meal type
+                  const getCostIndicator = (mealType, estimatedCost) => {
+                    if (mealType === 'breakfast' || mealType === 'snack') return '$';
+                    if (mealType === 'lunch') return '$$';
+                    if (mealType === 'dinner') return '$$$';
+                    if (estimatedCost < 8) return '$';
+                    if (estimatedCost < 15) return '$$';
+                    return '$$$';
+                  };
 
-                    {/* Nutrition Preview */}
-                    {meal.nutrition && (
-                      <div className="mb-4">
-                        <div className="font-semibold text-gray-700 mb-2 flex items-center">
-                          <span className="mr-2">📊</span>
-                          Nutrition:
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <span className="bg-red-50 text-red-700 px-2 py-1 rounded">🥩 {meal.nutrition.protein}</span>
-                          <span className="bg-orange-50 text-orange-700 px-2 py-1 rounded">🍞 {meal.nutrition.carbs}</span>
-                          <span className="bg-green-50 text-green-700 px-2 py-1 rounded">🥑 {meal.nutrition.fat}</span>
-                          <span className="bg-yellow-50 text-yellow-700 px-2 py-1 rounded">🔥 {meal.nutrition.calories}</span>
+                  const costIndicator = getCostIndicator(meal.meal_type, meal.estimated_cost);
+
+                  return (
+                    <div 
+                      key={meal.id} 
+                      className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 flex flex-col h-full"
+                    >
+                      {/* Header with Day and Meal Type */}
+                      <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-white font-bold text-lg">{meal.day_of_week}</h3>
+                            <span className="inline-block px-3 py-1 bg-white bg-opacity-30 text-white text-xs font-semibold rounded-full mt-1 capitalize">
+                              {meal.meal_type}
+                            </span>
+                          </div>
+                          <span className="text-3xl font-bold text-yellow-300">{costIndicator}</span>
                         </div>
                       </div>
-                    )}
-                    
-                    {/* View Recipe Button */}
-                    <button
-                      onClick={() => onViewRecipe(meal.id, 'weekly')}
-                      className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white font-bold py-3 px-4 rounded-xl hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
-                    >
-                      <span className="flex items-center justify-center">
-                        <span className="mr-2">📖</span>
-                        View Full Recipe & Walmart Shopping
-                        <span className="ml-2">🛒</span>
-                      </span>
-                    </button>
-                  </div>
+                      
+                      <div className="p-6 flex-1 flex flex-col">
+                        {/* Recipe Name */}
+                        <h4 className="text-xl font-bold text-gray-800 mb-1">{meal.name}</h4>
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{meal.description}</p>
+                        
+                        {/* Quick Stats */}
+                        <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
+                          <div className="bg-blue-50 p-3 rounded-lg text-center">
+                            <div className="text-blue-600 font-bold">⏱️</div>
+                            <div className="text-gray-700 font-semibold">{meal.prep_time}</div>
+                            <div className="text-gray-500 text-xs">Prep</div>
+                          </div>
+                          <div className="bg-orange-50 p-3 rounded-lg text-center">
+                            <div className="text-orange-600 font-bold">🍳</div>
+                            <div className="text-gray-700 font-semibold">{meal.cook_time}</div>
+                            <div className="text-gray-500 text-xs">Cook</div>
+                          </div>
+                          <div className="bg-green-50 p-3 rounded-lg text-center">
+                            <div className="text-green-600 font-bold">👥</div>
+                            <div className="text-gray-700 font-semibold">{meal.servings}</div>
+                            <div className="text-gray-500 text-xs">Servings</div>
+                          </div>
+                          <div className="bg-purple-50 p-3 rounded-lg text-center">
+                            <div className="text-purple-600 font-bold">⭐</div>
+                            <div className="text-gray-700 font-semibold capitalize">{meal.difficulty}</div>
+                            <div className="text-gray-500 text-xs">Level</div>
+                          </div>
+                        </div>
+
+                        {/* Cuisine and Cost */}
+                        <div className="flex items-center justify-between mb-4 text-sm">
+                          <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full font-medium capitalize">
+                            🍜 {meal.cuisine_type}
+                          </span>
+                          {meal.estimated_cost !== undefined && (
+                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full font-medium">
+                              💰 ${meal.estimated_cost.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Ingredients Preview - with scrollable list */}
+                        {meal.ingredients && meal.ingredients.length > 0 && (
+                          <div className="mb-4">
+                            <div className="font-semibold text-gray-700 mb-2 flex items-center text-sm">
+                              <span className="mr-2">🥘</span>
+                              Ingredients ({meal.ingredients.length}):
+                            </div>
+                            <div className="text-xs text-gray-600 max-h-16 overflow-y-auto bg-gray-50 p-2 rounded-lg">
+                              {meal.ingredients.slice(0, 5).map((ing, idx) => (
+                                <div key={idx} className="py-1">• {ing}</div>
+                              ))}
+                              {meal.ingredients.length > 5 && (
+                                <div className="py-1 text-gray-500 font-semibold">+{meal.ingredients.length - 5} more</div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Nutrition Info */}
+                        {meal.nutrition && typeof meal.nutrition === 'object' && Object.keys(meal.nutrition).length > 0 && (
+                          <div className="mb-4">
+                            <div className="font-semibold text-gray-700 mb-2 flex items-center text-sm">
+                              <span className="mr-2">�</span>
+                              Nutrition per Serving:
+                            </div>
+                            <div className="grid grid-cols-2 gap-1 text-xs">
+                              {meal.nutrition.calories && (
+                                <span className="bg-yellow-50 text-yellow-700 px-2 py-1 rounded">🔥 {meal.nutrition.calories}</span>
+                              )}
+                              {meal.nutrition.protein && (
+                                <span className="bg-red-50 text-red-700 px-2 py-1 rounded">🥩 {meal.nutrition.protein}</span>
+                              )}
+                              {meal.nutrition.carbs && (
+                                <span className="bg-orange-50 text-orange-700 px-2 py-1 rounded">🍞 {meal.nutrition.carbs}</span>
+                              )}
+                              {meal.nutrition.fat && (
+                                <span className="bg-green-50 text-green-700 px-2 py-1 rounded">� {meal.nutrition.fat}</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Cooking Tips */}
+                        {meal.cooking_tips && meal.cooking_tips.length > 0 && (
+                          <div className="mb-4">
+                            <div className="font-semibold text-gray-700 mb-2 flex items-center text-sm">
+                              <span className="mr-2">💡</span>
+                              Chef's Tips:
+                            </div>
+                            <div className="text-xs text-gray-600 bg-yellow-50 p-2 rounded-lg italic">
+                              "{meal.cooking_tips[0]}"
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* View Recipe Button - sticky at bottom */}
+                        <button
+                          onClick={() => onViewRecipe(meal.id, 'weekly')}
+                          className="w-full mt-auto bg-gradient-to-r from-green-500 to-blue-500 text-white font-bold py-3 px-4 rounded-xl hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                        >
+                          <span className="flex items-center justify-center">
+                            <span className="mr-2">📖</span>
+                            View Recipe & Shop
+                            <span className="ml-2">🛒</span>
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="col-span-full text-center py-8">
+                  <p className="text-gray-600">No meals in this plan</p>
                 </div>
-              ))}
+              )}
             </div>
 
             {/* Shopping List Summary */}
