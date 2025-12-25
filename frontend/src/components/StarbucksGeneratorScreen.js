@@ -870,13 +870,53 @@ const DrinkCard = ({
             How to Order This Magic
           </h3>
           <div className="bg-gradient-to-r from-yellow-100 to-orange-100 p-6 rounded-2xl border-l-4 border-yellow-500 shadow-inner">
-            <div className="bg-white p-4 rounded-xl mb-4">
-              <p className="text-gray-700 text-lg leading-relaxed italic font-medium">
-                Start with a {baseDrink}, then add the secret ingredients above!
+            {/* What to Say Section */}
+            <div className="mb-4">
+              <h4 className="font-bold text-gray-800 mb-2 text-lg flex items-center">
+                <span className="text-2xl mr-2">🎤</span>
+                What to Say at the Intercom:
+              </h4>
+              <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+                <p className="text-gray-700 font-medium italic leading-relaxed">
+                  "I'd like a {baseDrink}{modifications.length > 0 ? ` with ${modifications.join(', ')}` : ''}{ingredients.length > 0 ? `, and please add ${ingredients.slice(0, 2).join(', ')}${ingredients.length > 2 ? `, and ${ingredients.length - 2} more ingredient${ingredients.length - 2 > 1 ? 's' : ''}` : ''}` : ''}"
+                </p>
+              </div>
+              <p className="text-xs text-gray-600 mt-2">
+                ℹ️ Or show them the ingredient list above if it's easier
               </p>
             </div>
-            <div className="text-xs text-orange-700 mt-3 font-medium">
-              💡 Pro tip: Smile and be patient with your barista! Show them the ingredient list.
+
+            {/* Base Instructions Section */}
+            <div className="mb-4">
+              <h4 className="font-bold text-gray-800 mb-2 text-lg flex items-center">
+                <span className="text-2xl mr-2">📋</span>
+                Quick Instructions:
+              </h4>
+              <div className="bg-white p-4 rounded-xl">
+                <ol className="space-y-2 text-gray-700">
+                  <li className="flex items-start">
+                    <span className="text-green-600 font-bold mr-3">1.</span>
+                    <span>Start with a <strong>{baseDrink}</strong></span>
+                  </li>
+                  {modifications.length > 0 && (
+                    <li className="flex items-start">
+                      <span className="text-green-600 font-bold mr-3">2.</span>
+                      <span>Add modifications: {modifications.join(', ')}</span>
+                    </li>
+                  )}
+                  {ingredients.length > 0 && (
+                    <li className="flex items-start">
+                      <span className={`text-green-600 font-bold mr-3`}>{modifications.length > 0 ? '3.' : '2.'}</span>
+                      <span>Add ingredients: {ingredients.join(', ')}</span>
+                    </li>
+                  )}
+                </ol>
+              </div>
+            </div>
+
+            {/* Pro Tips */}
+            <div className="text-xs text-orange-700 mt-4 font-medium bg-orange-50 p-3 rounded-lg">
+              💡 Pro tip: Be friendly and patient with your barista! They appreciate customers who know exactly what they want. You can copy the ingredient list above to show them if needed.
             </div>
           </div>
         </div>
