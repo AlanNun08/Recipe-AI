@@ -878,7 +878,7 @@ const DrinkCard = ({
               </h4>
               <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
                 <p className="text-gray-700 font-medium italic leading-relaxed">
-                  "I'd like a {baseDrink}{modifications.length > 0 ? ` with ${modifications.join(', ')}` : ''}{ingredients.length > 0 ? `, and please add ${ingredients.slice(0, 2).join(', ')}${ingredients.length > 2 ? `, and ${ingredients.length - 2} more ingredient${ingredients.length - 2 > 1 ? 's' : ''}` : ''}` : ''}"
+                  "I'd like a {baseDrink}{modifications.length > 0 ? ` with ${modifications.join(', ')}` : ''}{ingredients.length > 0 ? `, and please add ${ingredients.join(', ')}` : ''}"
                 </p>
               </div>
               <p className="text-xs text-gray-600 mt-2">
