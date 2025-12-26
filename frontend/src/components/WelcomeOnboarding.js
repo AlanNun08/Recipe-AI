@@ -6,6 +6,8 @@ const WelcomeOnboarding = ({ onComplete, onSkip, showLoginOption = false, onLogi
   const [currentStep, setCurrentStep] = useState(0);
   const [showDemo, setShowDemo] = useState(false);
   const [sampleRecipe, setSampleRecipe] = useState(null);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [registrationError, setRegistrationError] = useState('');
   const [userPreferences, setUserPreferences] = useState({
     quickPrefs: [],
     budget: '',
@@ -66,6 +68,61 @@ const WelcomeOnboarding = ({ onComplete, onSkip, showLoginOption = false, onLogi
         ? prev.quickPrefs.filter(id => id !== prefId)
         : [...prev.quickPrefs, prefId]
     }));
+  };
+
+  const handleRegisterAccount = async () => {
+    // Validate registration data
+    if (!registrationData.firstName || !registrationData.lastName || !registrationData.email || !registrationData.password) {
+      setRegistrationError('Please fill in all required fields');
+      return;
+    }
+
+    if (!registrationData.agreeTerms) {
+      setRegistrationError('Please agree to terms and conditions');
+      return;
+    }
+
+    if (registrationData.password.length < 8) {
+      setRegistrationError('Password must be at least 8 characters');
+      return;
+    }
+
+    setIsRegistering(true);
+    setRegistrationError('');
+
+    try {
+      console.log('📝 Registering new user...', registrationData.email);
+
+      const response = await fetch(`${API}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: registrationData.email.trim(),
+          password: registrationData.password,
+          name: `${registrationData.firstName} ${registrationData.lastName}`,
+          phone: '' // Optional field
+        }),
+      });
+
+      const data = await response.json();
+      console.log('📡 Registration response:', data);
+
+      if (response.ok && data.status === 'success') {
+        console.log('✅ Registration successful:', data);
+        // Move to preferences step
+        setCurrentStep(3);
+      } else {
+        setRegistrationError(data.detail || 'Registration failed. Please try again.');
+        console.error('❌ Registration failed:', data);
+      }
+    } catch (error) {
+      console.error('❌ Registration error:', error);
+      setRegistrationError('Network error. Please check your connection and try again.');
+    } finally {
+      setIsRegistering(false);
+    }
   };
 
   const renderHeroStep = () => (
@@ -291,12 +348,25 @@ const WelcomeOnboarding = ({ onComplete, onSkip, showLoginOption = false, onLogi
               </label>
             </div>
 
+            {registrationError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-700 text-sm">⚠️ {registrationError}</p>
+              </div>
+            )}
+
             <button
-              onClick={() => setCurrentStep(3)}
-              disabled={!registrationData.agreeTerms}
+              onClick={handleRegisterAccount}
+              disabled={!registrationData.agreeTerms || isRegistering}
               className="w-full bg-gradient-to-r from-green-500 to-teal-500 text-white py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200"
             >
-              🚀 Create Free Account
+              {isRegistering ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Creating account...
+                </div>
+              ) : (
+                '🚀 Create Free Account'
+              )}
             </button>
           </form>
 

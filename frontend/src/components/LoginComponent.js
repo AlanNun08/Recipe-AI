@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
 const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPassword }) => {
-  const [email, setEmail] = useState('fresh@test.com'); // Pre-fill test credentials
-  const [password, setPassword] = useState('password123'); // Pre-fill test credentials
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -105,11 +105,6 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSocialLogin = (provider) => {
-    console.log(`Social login with ${provider}`);
-    setError(`${provider} login coming soon!`);
   };
 
   const testAPIConnection = async () => {
@@ -234,45 +229,6 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
           )}
         </button>
       </form>
-
-      {/* Social Login */}
-      <div className="space-y-4">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">or continue with</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          <button
-            type="button"
-            onClick={() => handleSocialLogin('Google')}
-            className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <span className="text-lg">📱</span>
-            <span className="ml-2 text-sm font-medium">Google</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSocialLogin('Facebook')}
-            className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <span className="text-lg">📘</span>
-            <span className="ml-2 text-sm font-medium">Facebook</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSocialLogin('Apple')}
-            className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <span className="text-lg">🍎</span>
-            <span className="ml-2 text-sm font-medium">Apple</span>
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
