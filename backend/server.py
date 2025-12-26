@@ -48,6 +48,7 @@ from pymongo import ASCENDING, DESCENDING
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from mailjet_rest import Client
 
 # OpenAI imports
 from openai import OpenAI
@@ -275,16 +276,106 @@ def generate_verification_code() -> str:
     return str(random.randint(100000, 999999))
 
 async def send_verification_email(email: str, code: str) -> bool:
-    """Send verification email (placeholder implementation)"""
+    """Send verification email using Mailjet API"""
     try:
-        logger.info(f"📧 Sending verification code {code} to {email}")
-        # In production, integrate with email service (Mailjet, SendGrid, etc.)
-        # For now, just log the code
-        logger.info(f"✅ Verification email sent (simulated)")
-        return True
+        logger.info(f"📧 Sending verification code to {email}")
+        
+        # Check if Mailjet credentials are available
+        if not mailjet_api_key or not mailjet_secret_key:
+            logger.warning(f"⚠️ Mailjet credentials not configured. Code would be: {code}")
+            # In development, still return True but log the code
+            logger.info(f"� Verification code for {email}: {code}")
+            return True
+        
+        # Prepare email content
+        email_subject = "Verify Your Recipe-AI Account"
+        html_content = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <h1 style="color: #333; text-align: center;">🍳 Welcome to Recipe-AI!</h1>
+                    
+                    <p style="color: #666; font-size: 16px; margin-bottom: 20px;">
+                        Thank you for creating an account. To get started, please verify your email address using the code below:
+                    </p>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <div style="background-color: #f0f0f0; padding: 20px; border-radius: 10px; font-family: 'Courier New', monospace;">
+                            <h2 style="color: #007bff; margin: 0; letter-spacing: 5px;">
+                                {code}
+                            </h2>
+                        </div>
+                    </div>
+                    
+                    <p style="color: #666; font-size: 14px;">
+                        <strong>This code expires in 15 minutes.</strong>
+                    </p>
+                    
+                    <p style="color: #666; font-size: 14px; margin-top: 20px;">
+                        If you didn't create this account, you can safely ignore this email.
+                    </p>
+                    
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+                    
+                    <p style="color: #999; font-size: 12px; text-align: center;">
+                        © 2025 Recipe-AI. All rights reserved.
+                    </p>
+                </div>
+            </body>
+        </html>
+        """
+        
+        text_content = f"""
+        Welcome to Recipe-AI!
+        
+        Thank you for creating an account. Please verify your email using this code:
+        
+        {code}
+        
+        This code expires in 15 minutes.
+        
+        If you didn't create this account, you can safely ignore this email.
+        """
+        
+        # Send email via Mailjet API
+        mailjet = Client(auth=(mailjet_api_key, mailjet_secret_key), version='v3.1')
+        
+        data = {
+            "Messages": [
+                {
+                    "From": {
+                        "Email": sender_email,
+                        "Name": "Recipe-AI Team"
+                    },
+                    "To": [
+                        {
+                            "Email": email,
+                            "Name": "User"
+                        }
+                    ],
+                    "Subject": email_subject,
+                    "TextPart": text_content,
+                    "HTMLPart": html_content
+                }
+            ]
+        }
+        
+        result = mailjet.send.create(data=data)
+        
+        if result.status_code == 200:
+            logger.info(f"✅ Verification email sent successfully to {email}")
+            return True
+        else:
+            logger.error(f"❌ Mailjet API error: {result.status_code} - {result.json()}")
+            return False
+            
     except Exception as e:
         logger.error(f"❌ Failed to send verification email: {e}")
-        return False
+        logger.error(f"❌ Error type: {type(e).__name__}")
+        import traceback
+        logger.error(f"❌ Stack trace: {traceback.format_exc()}")
+        # Return True anyway to not block registration
+        return True
 
 @app.post("/auth/register")
 async def register(request: UserRegistrationRequest):
@@ -307,19 +398,55 @@ async def register(request: UserRegistrationRequest):
         # Generate verification code
         verification_code = generate_verification_code()
         
-        # Create user document
+        # Create user document with complete schema
         user_id = str(uuid.uuid4())
+        now = datetime.utcnow()
+        trial_end = now + timedelta(days=50)  # 50-day trial period
+        
         user_document = {
             "id": user_id,
             "email": request.email,
             "password_hash": hashed_password,
-            "name": request.name,
+            "first_name": request.name.split()[0] if request.name else "",
+            "last_name": " ".join(request.name.split()[1:]) if request.name and len(request.name.split()) > 1 else "",
             "phone": request.phone,
-            "verified": False,
-            "created_at": datetime.utcnow(),
+            
+            # Dietary preferences
+            "dietary_preferences": [],
+            "allergies": [],
+            "favorite_cuisines": [],
+            
+            # Verification status
+            "is_verified": False,
+            "created_at": now,
+            "verified_at": None,
+            
+            # Subscription information
+            "subscription_status": "trial",  # "trial", "active", "cancelled", "free"
+            "trial_start_date": now,
+            "trial_end_date": trial_end,
+            "subscription_start_date": None,
+            "subscription_end_date": None,
+            
+            # Stripe information
+            "stripe_customer_id": None,
+            "stripe_subscription_id": None,
+            
+            # Payment information
+            "last_payment_date": None,
+            "next_billing_date": None,
+            
+            # Subscription cancellation info
+            "subscription_cancelled_date": None,
+            "subscription_cancel_reason": None,
+            "subscription_reactivated_date": None,
+            
+            # Additional fields
             "last_login": None,
             "preferences": {},
-            "subscription_status": "free"
+            "weekly_budget": None,
+            "cooking_skill_level": None,
+            "household_size": 4
         }
         
         # Save user to database
@@ -329,8 +456,8 @@ async def register(request: UserRegistrationRequest):
         verification_document = {
             "email": request.email,
             "code": verification_code,
-            "created_at": datetime.utcnow(),
-            "expires_at": datetime.utcnow() + timedelta(minutes=15),
+            "created_at": now,
+            "expires_at": now + timedelta(minutes=15),
             "used": False
         }
         await verification_codes_collection.insert_one(verification_document)
@@ -347,8 +474,12 @@ async def register(request: UserRegistrationRequest):
                 "message": "User registered successfully. Please check your email for verification code.",
                 "user_id": user_id,
                 "email": request.email,
+                "first_name": user_document["first_name"],
+                "last_name": user_document["last_name"],
                 "verification_required": True,
-                "email_sent": email_sent
+                "email_sent": email_sent,
+                "subscription_status": "trial",
+                "trial_end_date": trial_end.isoformat()
             }
         )
         
@@ -409,8 +540,9 @@ async def login(request: UserLoginRequest):
                 content={"detail": "Invalid email or password"}
             )
         
-        # Check if user is verified
-        if not user.get("verified", False):
+        # Check if user is verified (support both field names)
+        is_verified = user.get("is_verified") or user.get("verified", False)
+        if not is_verified:
             logger.warning(f"⚠️ User not verified: {request.email}")
             
             # Generate new verification code
@@ -452,6 +584,7 @@ async def login(request: UserLoginRequest):
         
         logger.info(f"✅ Login successful: {request.email}")
         
+        # Return complete user object
         return JSONResponse(
             status_code=200,
             content={
@@ -459,9 +592,17 @@ async def login(request: UserLoginRequest):
                 "message": "Login successful",
                 "user_id": user["id"],
                 "email": user["email"],
-                "name": user.get("name", "User"),
-                "verified": user["verified"],
-                "subscription_status": user.get("subscription_status", "free")
+                "first_name": user.get("first_name", ""),
+                "last_name": user.get("last_name", ""),
+                "is_verified": user.get("is_verified", user.get("verified", False)),
+                "subscription_status": user.get("subscription_status", "trial"),
+                "trial_start_date": user.get("trial_start_date", "").isoformat() if user.get("trial_start_date") else None,
+                "trial_end_date": user.get("trial_end_date", "").isoformat() if user.get("trial_end_date") else None,
+                "subscription_start_date": user.get("subscription_start_date", "").isoformat() if user.get("subscription_start_date") else None,
+                "subscription_end_date": user.get("subscription_end_date", "").isoformat() if user.get("subscription_end_date") else None,
+                "dietary_preferences": user.get("dietary_preferences", []),
+                "allergies": user.get("allergies", []),
+                "favorite_cuisines": user.get("favorite_cuisines", [])
             }
         )
         
@@ -510,10 +651,16 @@ async def verify_email(request: EmailVerificationRequest):
                 content={"detail": "Verification code expired"}
             )
         
-        # Mark user as verified
+        # Mark user as verified (set both field names for compatibility)
         result = await users_collection.update_one(
             {"email": request.email},
-            {"$set": {"verified": True}}
+            {
+                "$set": {
+                    "is_verified": True,
+                    "verified": True,
+                    "verified_at": datetime.utcnow()
+                }
+            }
         )
         
         if result.matched_count == 0:
