@@ -1,28 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { authService } from '../services/auth';
 
-const VerificationPage = ({ onVerificationSuccess, onBackToLogin }) => {
+const VerificationPage = ({ email, onVerificationSuccess, onBackToLogin }) => {
   const [verificationCode, setVerificationCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [verificationData, setVerificationData] = useState(null);
+  const [codeSent, setCodeSent] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
+  // Auto-send verification code when component mounts with email
   useEffect(() => {
-    // Get pending verification data from localStorage
-    const pendingData = authService.getPendingVerification();
-    if (pendingData) {
-      setVerificationData(pendingData);
-    } else {
-      // No pending verification, redirect back to login
-      setError('No pending verification found. Please login again.');
+    if (email) {
+      sendVerificationCode();
     }
-  }, []);
+  }, [email]);
+
+  const sendVerificationCode = async () => {
+    if (!email) return;
+    
+    try {
+      await authService.resendVerificationCode(email);
+      setCodeSent(true);
+      setError('');
+    } catch (error) {
+      console.error('Failed to send verification code:', error);
+      setError('Failed to send verification code. Please try again.');
+    }
+  };
 
   const handleVerification = async (e) => {
     e.preventDefault();
     
-    if (!verificationData) {
-      setError('No verification data found. Please login again.');
+    if (!email) {
+      setError('Email not found. Please login again.');
+      return;
+    }
+
+    if (verificationCode.length !== 6) {
+      setError('Please enter a valid 6-digit code.');
       return;
     }
 
@@ -30,68 +45,57 @@ const VerificationPage = ({ onVerificationSuccess, onBackToLogin }) => {
     setError('');
     
     try {
-      const result = await authService.verifyEmailAndLogin(
-        verificationData.user_id, 
-        verificationCode
-      );
-      
+      const result = await authService.verifyCode(email, verificationCode);
       console.log('Verification successful:', result);
       
-      // Clear verification data
-      authService.clearPendingVerification();
-      
-      // Call success callback
+      // Call success callback with user data
       if (onVerificationSuccess) {
         onVerificationSuccess(result);
       } else {
         alert('Account verified successfully! You are now logged in.');
-        // Default redirect or action
         window.location.href = '/dashboard';
       }
       
     } catch (error) {
       console.error('Verification error:', error);
-      setError('Verification failed: ' + error.message);
+      setError(error.message || 'Verification failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleResendCode = async () => {
-    if (!verificationData) {
-      setError('No verification data found. Please login again.');
+    if (!email) {
+      setError('Email not found. Please login again.');
       return;
     }
 
-    setLoading(true);
+    setResendLoading(true);
     setError('');
     
     try {
-      await authService.resendCode(verificationData.email);
-      alert('New verification code sent to your email!');
+      await sendVerificationCode();
     } catch (error) {
       console.error('Resend error:', error);
-      setError('Failed to resend code: ' + error.message);
+      setError('Failed to resend code. Please try again.');
     } finally {
-      setLoading(false);
+      setResendLoading(false);
     }
   };
 
   const handleBackToLogin = () => {
-    authService.clearPendingVerification();
     if (onBackToLogin) {
       onBackToLogin();
     } else {
-      // Default back to login
       window.location.href = '/login';
     }
   };
 
-  if (!verificationData) {
+  if (!email) {
     return (
       <div style={{ maxWidth: '400px', margin: '0 auto', padding: '20px', textAlign: 'center' }}>
         <h2>Verification Required</h2>
-        <p style={{ color: 'red' }}>No pending verification found. Please login again.</p>
+        <p style={{ color: 'red' }}>No email found. Please login again.</p>
         <button 
           onClick={handleBackToLogin}
           style={{ 
@@ -124,18 +128,31 @@ const VerificationPage = ({ onVerificationSuccess, onBackToLogin }) => {
           We sent a 6-digit verification code to:
         </p>
         <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px' }}>
-          {verificationData.email}
+          {email}
         </p>
       </div>
       
+      {codeSent && (
+        <div style={{ 
+          color: '#28a745',
+          marginBottom: '15px',
+          backgroundColor: '#d4edda',
+          padding: '12px',
+          borderRadius: '5px',
+          border: '1px solid #c3e6cb'
+        }}>
+          ✅ Verification code sent! Check your email.
+        </div>
+      )}
+      
       {error && (
         <div style={{ 
-          color: 'red', 
+          color: '#dc3545', 
           marginBottom: '15px',
-          backgroundColor: '#ffe6e6',
-          padding: '10px',
+          backgroundColor: '#f8d7da',
+          padding: '12px',
           borderRadius: '5px',
-          border: '1px solid #ffb3b3'
+          border: '1px solid #f5c6cb'
         }}>
           {error}
         </div>
@@ -203,31 +220,31 @@ const VerificationPage = ({ onVerificationSuccess, onBackToLogin }) => {
         
         <button 
           onClick={handleResendCode}
-          disabled={loading}
+          disabled={resendLoading || loading}
           style={{ 
             padding: '8px 16px', 
             marginRight: '10px',
-            backgroundColor: loading ? '#ccc' : '#17a2b8',
+            backgroundColor: resendLoading || loading ? '#ccc' : '#17a2b8',
             color: 'white',
             border: 'none',
             borderRadius: '5px',
-            cursor: loading ? 'not-allowed' : 'pointer',
+            cursor: resendLoading || loading ? 'not-allowed' : 'pointer',
             fontSize: '14px'
           }}
         >
-          {loading ? 'Sending...' : 'Resend Code'}
+          {resendLoading ? 'Sending...' : 'Resend Code'}
         </button>
         
         <button 
           onClick={handleBackToLogin}
-          disabled={loading}
+          disabled={loading || resendLoading}
           style={{ 
             padding: '8px 16px',
             backgroundColor: 'transparent',
             color: '#6c757d',
             border: '1px solid #6c757d',
             borderRadius: '5px',
-            cursor: loading ? 'not-allowed' : 'pointer',
+            cursor: loading || resendLoading ? 'not-allowed' : 'pointer',
             fontSize: '14px'
           }}
         >
@@ -244,7 +261,7 @@ const VerificationPage = ({ onVerificationSuccess, onBackToLogin }) => {
         <p>
           Check your spam folder if you don't see the email.
           <br />
-          Code expires in 24 hours.
+          Code expires in 15 minutes.
         </p>
       </div>
     </div>

@@ -131,6 +131,23 @@ grocery_carts_collection = db["grocery_carts"]
 shared_recipes_collection = db["shared_recipes"]
 payment_transactions_collection = db["payment_transactions"]
 
+# Create indexes for faster queries (non-blocking)
+async def create_database_indexes():
+    """Create MongoDB indexes for faster queries"""
+    try:
+        # Users collection indexes
+        await users_collection.create_index("email", unique=True)
+        await users_collection.create_index("id")
+        await users_collection.create_index("stripe_customer_id", sparse=True)
+        
+        # Verification codes collection indexes
+        await verification_codes_collection.create_index("email")
+        await verification_codes_collection.create_index("expires_at", expireAfterSeconds=0)  # TTL index
+        
+        logger.info("✅ Database indexes created successfully")
+    except Exception as e:
+        logger.warning(f"⚠️ Could not create indexes (may already exist): {e}")
+
 # External API setup - only from environment variables
 openai_client = None
 openai_api_key = os.environ.get('OPENAI_API_KEY')
@@ -201,6 +218,19 @@ else:
     if not walmart_private_key:
         logger.warning("   - WALMART_PRIVATE_KEY environment variable is missing")
     logger.warning("   ➜ Walmart product search will NOT be available")
+
+# ============================================================================
+# APPLICATION STARTUP - Initialize database indexes
+# ============================================================================
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database indexes on app startup"""
+    try:
+        await create_database_indexes()
+        logger.info("🚀 Application startup complete - database indexes initialized")
+    except Exception as e:
+        logger.error(f"❌ Startup error: {e}")
 
 # Pydantic models for recipe creation
 class RecipeGenerationRequest(BaseModel):
@@ -379,24 +409,47 @@ async def send_verification_email(email: str, code: str) -> bool:
 
 @app.post("/auth/register")
 async def register(request: UserRegistrationRequest):
-    """Register new user"""
+    """Register new user with validation and MongoDB storage"""
     try:
-        logger.info(f"👤 Registration attempt for email: {request.email}")
+        email = request.email.strip().lower()
+        logger.info(f"👤 Registration attempt for email: {email}")
         
-        # Check if user already exists
-        existing_user = await users_collection.find_one({"email": request.email})
-        if (existing_user):
-            logger.warning(f"⚠️ User already exists: {request.email}")
+        # Validate email format
+        if not email or '@' not in email:
+            logger.warning(f"⚠️ Invalid email format: {email}")
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Invalid email format"}
+            )
+        
+        # Validate password strength
+        if not request.password or len(request.password) < 8:
+            logger.warning(f"⚠️ Password too short for: {email}")
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Password must be at least 8 characters long"}
+            )
+        
+        # Check if user already exists in MongoDB
+        logger.info(f"🔍 Checking if user exists in MongoDB: {email}")
+        existing_user = await users_collection.find_one({"email": email})
+        if existing_user:
+            logger.warning(f"⚠️ User already exists in MongoDB: {email}")
             return JSONResponse(
                 status_code=400,
                 content={"detail": "User with this email already exists"}
             )
         
-        # Hash password
+        logger.info(f"✅ Email is unique, proceeding with registration: {email}")
+        
+        # Hash password using bcrypt
+        logger.info(f"🔐 Hashing password for: {email}")
         hashed_password = hash_password(request.password)
+        logger.info(f"✅ Password hashed successfully")
         
         # Generate verification code
         verification_code = generate_verification_code()
+        logger.info(f"📧 Generated verification code for: {email}")
         
         # Create user document with complete schema
         user_id = str(uuid.uuid4())
@@ -405,11 +458,11 @@ async def register(request: UserRegistrationRequest):
         
         user_document = {
             "id": user_id,
-            "email": request.email,
+            "email": email,
             "password_hash": hashed_password,
             "first_name": request.name.split()[0] if request.name else "",
             "last_name": " ".join(request.name.split()[1:]) if request.name and len(request.name.split()) > 1 else "",
-            "phone": request.phone,
+            "phone": request.phone if request.phone else None,
             
             # Dietary preferences
             "dietary_preferences": [],
@@ -449,18 +502,21 @@ async def register(request: UserRegistrationRequest):
             "household_size": 4
         }
         
-        # Save user to database
-        await users_collection.insert_one(user_document)
+        # Save user to MongoDB database
+        logger.info(f"💾 Inserting user into MongoDB: {email}")
+        result = await users_collection.insert_one(user_document)
+        logger.info(f"✅ User inserted successfully with MongoDB ID: {result.inserted_id}")
         
         # Save verification code
         verification_document = {
-            "email": request.email,
+            "email": email,
             "code": verification_code,
             "created_at": now,
             "expires_at": now + timedelta(minutes=15),
             "used": False
         }
         await verification_codes_collection.insert_one(verification_document)
+        logger.info(f"✅ Verification code saved for: {email}")
         
         # Send verification email
         email_sent = await send_verification_email(request.email, verification_code)
@@ -492,25 +548,30 @@ async def register(request: UserRegistrationRequest):
 
 @app.post("/auth/login")
 async def login(request: UserLoginRequest):
-    """Login user with proper verification and error handling"""
+    """Login user with MongoDB lookup and proper verification"""
     try:
-        logger.info(f"🔐 Login attempt for email: {request.email}")
+        email = request.email.strip().lower()
+        logger.info(f"🔐 Login attempt for email: {email}")
         
-        # Find user in database
-        user = await users_collection.find_one({"email": request.email})
+        # Search for user in MongoDB database
+        logger.info(f"🔍 Searching MongoDB for user: {email}")
+        user = await users_collection.find_one({"email": email})
+        
         if not user:
-            logger.warning(f"⚠️ User not found: {request.email}")
+            logger.warning(f"⚠️ User not found in MongoDB: {email}")
+            logger.info(f"💡 User must register first or check email spelling")
             return JSONResponse(
                 status_code=401,
                 content={"detail": "Invalid email or password"}
             )
         
-        logger.info(f"👤 Found user: {request.email}")
+        logger.info(f"✅ User found in MongoDB: {email}")
+        logger.info(f"👤 User ID: {user.get('id', 'N/A')}")
         logger.info(f"🔑 User fields: {list(user.keys())}")
         
         # Check if password_hash field exists
         if "password_hash" not in user:
-            logger.error(f"❌ User {request.email} missing password_hash field")
+            logger.error(f"❌ User {email} missing password_hash field in MongoDB")
             logger.error(f"❌ Available fields: {list(user.keys())}")
             return JSONResponse(
                 status_code=500,
@@ -521,36 +582,39 @@ async def login(request: UserLoginRequest):
                 }
             )
         
-        # Verify password
+        # Verify password using bcrypt
         stored_hash = user["password_hash"]
         if not stored_hash:
-            logger.error(f"❌ User {request.email} has empty password_hash")
+            logger.error(f"❌ User {email} has empty password_hash in MongoDB")
             return JSONResponse(
                 status_code=500,
                 content={"detail": "User account corrupted - empty password"}
             )
         
-        # Check password using the same hash function
+        # Check password using bcrypt verification
+        logger.info(f"🔐 Verifying password for: {email}")
         if not verify_password(request.password, stored_hash):
-            logger.warning(f"⚠️ Invalid password for: {request.email}")
-            logger.info(f"🔐 Request hash: {hash_password(request.password)[:20]}...")
-            logger.info(f"🔐 Stored hash: {stored_hash[:20]}...")
+            logger.warning(f"⚠️ Invalid password for: {email}")
             return JSONResponse(
                 status_code=401,
                 content={"detail": "Invalid email or password"}
             )
         
+        logger.info(f"✅ Password verified successfully for: {email}")
+        
         # Check if user is verified (support both field names)
         is_verified = user.get("is_verified") or user.get("verified", False)
         if not is_verified:
-            logger.warning(f"⚠️ User not verified: {request.email}")
+            logger.warning(f"⚠️ User not verified in MongoDB: {email}")
             
             # Generate new verification code
             verification_code = generate_verification_code()
+            logger.info(f"📧 Generated new verification code for: {email}")
             
-            # Update verification code in database
+            # Update verification code in MongoDB database
+            logger.info(f"💾 Updating verification code in MongoDB for: {email}")
             await verification_codes_collection.update_one(
-                {"email": request.email},
+                {"email": email},
                 {
                     "$set": {
                         "code": verification_code,
@@ -561,28 +625,31 @@ async def login(request: UserLoginRequest):
                 },
                 upsert=True
             )
+            logger.info(f"✅ Verification code updated in MongoDB")
             
             # Send verification email
-            await send_verification_email(request.email, verification_code)
+            await send_verification_email(email, verification_code)
             
             return JSONResponse(
                 status_code=403,
                 content={
                     "status": "verification_required",
                     "message": "Account not verified. Please check your email for verification code.",
-                    "email": request.email,
+                    "email": email,
                     "user_id": user["id"],
                     "verification_code": verification_code  # For development only
                 }
             )
         
-        # Update last login
+        # Update last login timestamp in MongoDB
+        logger.info(f"⏰ Updating last login for: {email}")
         await users_collection.update_one(
-            {"email": request.email},
+            {"email": email},
             {"$set": {"last_login": datetime.utcnow()}}
         )
+        logger.info(f"✅ Last login updated in MongoDB")
         
-        logger.info(f"✅ Login successful: {request.email}")
+        logger.info(f"✅ Login successful for: {email}")
         
         # Return complete user object
         return JSONResponse(

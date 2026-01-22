@@ -91,34 +91,56 @@ const WelcomeOnboarding = ({ onComplete, onSkip, showLoginOption = false, onLogi
     setRegistrationError('');
 
     try {
-      console.log('📝 Registering new user...', registrationData.email);
+      const email = registrationData.email.trim().toLowerCase();
+      const fullName = `${registrationData.firstName} ${registrationData.lastName}`.trim();
+      
+      console.log('📝 Registering new user...');
+      console.log('  📧 Email:', email);
+      console.log('  👤 Name:', fullName);
+      console.log('  🔗 API URL:', `${API}/api/auth/register`);
+
+      const requestData = {
+        email: email,
+        password: registrationData.password,
+        name: fullName,
+        phone: '' // Optional field
+      };
+      
+      console.log('📤 Sending registration request:', requestData);
 
       const response = await fetch(`${API}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email: registrationData.email.trim(),
-          password: registrationData.password,
-          name: `${registrationData.firstName} ${registrationData.lastName}`,
-          phone: '' // Optional field
-        }),
+        body: JSON.stringify(requestData),
       });
 
+      console.log('📡 Response status:', response.status);
       const data = await response.json();
-      console.log('📡 Registration response:', data);
+      console.log('� Registration response:', data);
 
       if (response.ok && data.status === 'success') {
-        console.log('✅ Registration successful:', data);
+        console.log('✅ Registration successful!');
+        console.log('  👤 User ID:', data.user_id);
+        console.log('  📧 Email:', data.email);
+        console.log('  ⏰ Trial End Date:', data.trial_end_date);
+        
+        // Store registration info for next step
+        sessionStorage.setItem('registeredEmail', email);
+        sessionStorage.setItem('registeredUserId', data.user_id);
+        
         // Move to preferences step
         setCurrentStep(3);
       } else {
-        setRegistrationError(data.detail || 'Registration failed. Please try again.');
-        console.error('❌ Registration failed:', data);
+        const errorMessage = data.detail || data.message || 'Registration failed. Please try again.';
+        console.error('❌ Registration failed:', response.status, data);
+        setRegistrationError(errorMessage);
       }
     } catch (error) {
       console.error('❌ Registration error:', error);
+      console.error('  Error type:', error.name);
+      console.error('  Error message:', error.message);
       setRegistrationError('Network error. Please check your connection and try again.');
     } finally {
       setIsRegistering(false);

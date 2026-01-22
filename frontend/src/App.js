@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import LandingPage from './components/LandingPage';
 import WelcomeOnboarding from './components/WelcomeOnboarding';
 import LoginComponent from './components/LoginComponent';
 import VerificationPage from './components/VerificationPage';
@@ -12,7 +13,7 @@ import RecipeHistoryScreen from './components/RecipeHistoryScreen';
 import './App.css';
 
 function App() {
-  const [currentView, setCurrentView] = useState('welcome'); // Start with welcome/onboarding
+  const [currentView, setCurrentView] = useState('landing'); // Start with welcome/onboarding
   const [user, setUser] = useState(null);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [notification, setNotification] = useState(null);
@@ -129,6 +130,15 @@ function App() {
 
   const renderCurrentView = () => {
     switch (currentView) {
+      case 'landing':
+        return (
+          <LandingPage
+            onVerificationRequired={handleVerificationRequired}
+            onLoginSuccess={handleLoginSuccess}
+            onSignUpClick={() => setCurrentView('welcome')}
+          />
+        );
+
       case 'welcome':
         return (
           <WelcomeOnboarding
