@@ -444,7 +444,7 @@ function LandingPage({ onVerificationRequired, onLoginSuccess, onSignUpClick }) 
             <div className="bg-gray-50 p-8 rounded-xl border-2 border-gray-200 hover:shadow-lg transition-all">
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Free Trial</h3>
               <p className="text-3xl font-bold text-gray-900 mb-1">Free</p>
-              <p className="text-gray-600 mb-6">50 days trial access</p>
+              <p className="text-gray-600 mb-6">7-day free trial access</p>
               <ul className="space-y-3 mb-8">
                 {[
                   '✓ Basic recipe suggestions',

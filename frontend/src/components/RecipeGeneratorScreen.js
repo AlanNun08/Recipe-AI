@@ -16,6 +16,7 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedRecipe, setGeneratedRecipe] = useState(null);
+  const [trialStatus, setTrialStatus] = useState(null);
 
   const cuisineOptions = [
     { value: 'Italian', emoji: '🍝', desc: 'Pasta, pizza, risotto' },
@@ -77,6 +78,32 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
 
   const totalSteps = 4;
 
+  useEffect(() => {
+    const userId = user?.id || user?.user_id;
+    if (userId) {
+      loadTrialStatus(userId);
+    }
+  }, [user]);
+
+  const loadTrialStatus = async (userId) => {
+    try {
+      const response = await axios.get(`${API}/api/user/trial-status/${userId}`);
+      setTrialStatus(response.data);
+    } catch (error) {
+      console.error('Failed to load trial status:', error);
+    }
+  };
+
+  const hasGenerationAccess = trialStatus ? Boolean(trialStatus.has_access) : true;
+
+  const handleUpgradeClick = () => {
+    if (typeof window.setCurrentScreen === 'function') {
+      window.setCurrentScreen('settings');
+      return;
+    }
+    showNotification('Upgrade options are available in Settings.', 'info');
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -136,6 +163,11 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
   };
 
   const generateRecipe = async () => {
+    if (!hasGenerationAccess) {
+      showNotification('Your 7-day free trial has ended. You can still view history, but recipe generation requires an upgrade.', 'warning');
+      return;
+    }
+
     if (!formData.cuisine || !formData.meal_type || !formData.difficulty) {
       showNotification('Please complete the required fields!', 'error');
       return;
@@ -244,24 +276,17 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
         const errorDetail = error.response?.data?.detail || 'Internal server error';
         console.error('🔥 Server error details:', errorDetail);
         showNotification(`❌ Server error: ${errorDetail}`, 'error');
-      } else if (error.response?.status === 429) {
-        const errorData = error.response.data.detail;
+      } else if ([402, 429].includes(error.response?.status)) {
+        const errorData = error.response?.data?.detail;
+        if (error.response?.data?.trial_status) {
+          setTrialStatus(error.response.data.trial_status);
+        }
         
         if (typeof errorData === 'object' && errorData.upgrade_required) {
           showNotification(
-            `⚠️ ${errorData.message} Redirecting to upgrade...`, 
+            `⚠️ ${errorData.message}`, 
             'warning'
           );
-          
-          setTimeout(() => {
-            if (onBack) {
-              onBack();
-              setTimeout(() => {
-                showNotification('💎 Upgrade to continue generating recipes!', 'info');
-              }, 500);
-            }
-          }, 2000);
-          
           return;
         }
       } else {
@@ -581,9 +606,9 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
 
               <button
                 onClick={generateRecipe}
-                disabled={isGenerating || !formData.cuisine || !formData.meal_type || !formData.difficulty}
+                disabled={isGenerating || !formData.cuisine || !formData.meal_type || !formData.difficulty || !hasGenerationAccess}
                 className={`w-full font-bold py-5 px-6 rounded-2xl mt-8 transition-all duration-300 flex items-center justify-center text-lg shadow-lg ${
-                  isGenerating || !formData.cuisine || !formData.meal_type || !formData.difficulty
+                  isGenerating || !formData.cuisine || !formData.meal_type || !formData.difficulty || !hasGenerationAccess
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
                     : 'bg-gradient-to-r from-orange-500 to-red-600 text-white hover:shadow-xl transform hover:-translate-y-1 hover:from-orange-600 hover:to-red-700'
                 }`}
@@ -600,6 +625,26 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
                   </>
                 )}
               </button>
+
+              {!hasGenerationAccess && (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-amber-900">Your free trial has ended</p>
+                      <p className="text-sm text-amber-800 mt-1">
+                        You can still access your recipe history and saved recipes. Upgrade when you are ready to keep generating new AI recipes.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleUpgradeClick}
+                      className="shrink-0 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-amber-900 border border-amber-300 hover:bg-amber-100 transition-colors"
+                    >
+                      Upgrade
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -865,6 +910,25 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
               Create personalized recipes with AI and get instant Walmart shopping lists
             </p>
           </div>
+
+          {trialStatus && !trialStatus.has_access && (
+            <div className="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-semibold text-gray-900">Generation is paused (trial ended)</p>
+                  <p className="text-sm text-gray-600">
+                    You still have access to recipe history. Upgrade anytime to resume generating recipes.
+                  </p>
+                </div>
+                <button
+                  onClick={handleUpgradeClick}
+                  className="rounded-xl bg-amber-100 text-amber-900 px-4 py-2 font-semibold hover:bg-amber-200 transition-colors"
+                >
+                  Upgrade
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Main Content */}

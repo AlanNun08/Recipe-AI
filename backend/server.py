@@ -12,7 +12,8 @@ import os
 import logging
 import uuid
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+import math
 from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import urlencode, quote
@@ -278,6 +279,101 @@ class EmailVerificationRequest(BaseModel):
 
 # Authentication functions
 import hashlib
+
+TRIAL_LENGTH_DAYS = 7
+
+
+def _parse_datetime(value: Any) -> Optional[datetime]:
+    """Parse MongoDB datetime or ISO string into a datetime."""
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        try:
+            normalized = value.replace("Z", "+00:00")
+            parsed = datetime.fromisoformat(normalized)
+            # Normalize to naive UTC for consistent comparison with utcnow()
+            if parsed.tzinfo is not None:
+                return parsed.astimezone(timezone.utc).replace(tzinfo=None)
+            return parsed
+        except ValueError:
+            return None
+    return None
+
+
+def _build_access_status(user: Dict[str, Any]) -> Dict[str, Any]:
+    """Compute effective trial/subscription access for a user."""
+    now = datetime.utcnow()
+
+    trial_start = _parse_datetime(user.get("trial_start_date")) or _parse_datetime(user.get("created_at")) or now
+    trial_end = _parse_datetime(user.get("trial_end_date")) or (trial_start + timedelta(days=TRIAL_LENGTH_DAYS))
+
+    raw_subscription_status = (user.get("subscription_status") or "free").lower()
+
+    subscription_end = _parse_datetime(user.get("subscription_end_date"))
+    next_billing_date = _parse_datetime(user.get("next_billing_date"))
+
+    subscription_active = raw_subscription_status == "active"
+    if subscription_end and subscription_end < now:
+        subscription_active = False
+
+    trial_active = False
+    if not subscription_active and raw_subscription_status == "trial":
+        trial_active = trial_end > now
+
+    remaining_seconds = max(0, (trial_end - now).total_seconds())
+    trial_days_left = int(math.ceil(remaining_seconds / 86400)) if remaining_seconds > 0 else 0
+
+    has_access = subscription_active or trial_active
+    trial_expired = (raw_subscription_status == "trial") and not trial_active and not subscription_active
+    effective_subscription_status = "active" if subscription_active else ("trial" if trial_active else "free")
+
+    return {
+        "has_access": has_access,
+        "trial_active": trial_active,
+        "trial_expired": trial_expired,
+        "trial_days_left": trial_days_left,
+        "subscription_active": subscription_active,
+        "subscription_status": effective_subscription_status,
+        "raw_subscription_status": raw_subscription_status,
+        "trial_start_date": trial_start.isoformat() if trial_start else None,
+        "trial_end_date": trial_end.isoformat() if trial_end else None,
+        "subscription_end_date": subscription_end.isoformat() if subscription_end else None,
+        "next_billing_date": next_billing_date.isoformat() if next_billing_date else None,
+    }
+
+
+async def _get_user_access_status(user_id: str) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    user = await users_collection.find_one({"id": user_id})
+    if not user:
+        return None, None
+    return user, _build_access_status(user)
+
+
+async def _enforce_generation_access(user_id: str, feature_label: str) -> Optional[JSONResponse]:
+    """Return a response when access should be denied; otherwise None."""
+    user, access_status = await _get_user_access_status(user_id)
+
+    if not user:
+        return JSONResponse(status_code=404, content={"detail": "User not found"})
+
+    if access_status and access_status.get("has_access"):
+        return None
+
+    return JSONResponse(
+        status_code=402,
+        content={
+            "detail": {
+                "message": f"Your 7-day free trial has ended. Upgrade to continue {feature_label}.",
+                "upgrade_required": True,
+                "reason": "trial_expired",
+                "feature": feature_label,
+                "can_access_history": True,
+            },
+            "trial_status": access_status or {}
+        }
+    )
 import secrets
 import bcrypt
 
@@ -454,7 +550,7 @@ async def register(request: UserRegistrationRequest):
         # Create user document with complete schema
         user_id = str(uuid.uuid4())
         now = datetime.utcnow()
-        trial_end = now + timedelta(days=50)  # 50-day trial period
+        trial_end = now + timedelta(days=TRIAL_LENGTH_DAYS)  # 7-day trial period
         
         user_document = {
             "id": user_id,
@@ -874,6 +970,10 @@ async def generate_recipe(request: RecipeGenerationRequest):
         logger.info(f"📊 Servings: {request.servings}, Prep time max: {request.prep_time_max}")
         logger.info(f"🥗 Dietary preferences: {request.dietary_preferences}")
         logger.info(f"🥘 Ingredients on hand: {request.ingredients_on_hand}")
+
+        access_denied = await _enforce_generation_access(request.user_id, "generating AI recipes")
+        if access_denied:
+            return access_denied
         
         if not openai_client:
             logger.error("❌ OpenAI client not available")
@@ -1302,6 +1402,10 @@ async def generate_weekly_plan(request: WeeklyPlanRequest):
     """Generate weekly meal plan using OpenAI - each meal is created as a full recipe"""
     try:
         logger.info(f"📅 Weekly plan generation for user: {request.user_id}")
+
+        access_denied = await _enforce_generation_access(request.user_id, "generating weekly meal plans")
+        if access_denied:
+            return access_denied
         
         if not openai_client:
             return JSONResponse(
@@ -1535,6 +1639,10 @@ async def generate_starbucks_drink(request: StarbucksDrinkRequest):
         logger.info(f"☕ Starbucks drink generation for user: {request.user_id}")
         logger.info(f"🔍 OpenAI client available: {bool(openai_client)}")
         logger.info(f"🔍 OpenAI API key present: {bool(openai_api_key)}")
+
+        access_denied = await _enforce_generation_access(request.user_id, "generating AI drinks")
+        if access_denied:
+            return access_denied
         
         if not openai_client:
             logger.error("❌ OpenAI client not available for Starbucks drink generation")
@@ -1639,18 +1747,16 @@ async def get_trial_status(user_id: str):
                 content={"detail": "User not found"}
             )
         
-        # Mock trial status for now
-        trial_status = {
-            "trial_active": True,
-            "trial_days_left": 14,
-            "subscription_active": False,
-            "subscription_status": user.get("subscription_status", "free"),
-            "usage_limits": {
-                "recipes_generated": 0,
-                "recipes_limit": 50,
-                "weekly_plans_generated": 0,
-                "weekly_plans_limit": 5
-            }
+        trial_status = _build_access_status(user)
+
+        # Lightweight usage counts for UI
+        recipes_generated = await recipes_collection.count_documents({"user_id": user_id})
+        weekly_plans_generated = await weekly_recipes_collection.count_documents({"user_id": user_id})
+        trial_status["usage_limits"] = {
+            "recipes_generated": recipes_generated,
+            "recipes_limit": 50 if trial_status["trial_active"] else 0,
+            "weekly_plans_generated": weekly_plans_generated,
+            "weekly_plans_limit": 5 if trial_status["trial_active"] else 0
         }
         
         return JSONResponse(

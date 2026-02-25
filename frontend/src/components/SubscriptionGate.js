@@ -64,7 +64,7 @@ const SubscriptionGate = ({ user, children, featureName = "this premium feature"
           <div className="text-2xl font-bold text-purple-600 mt-2">
             $9.99<span className="text-base text-gray-500">/month</span>
           </div>
-          <p className="text-purple-600 text-sm">7-week free trial included!</p>
+          <p className="text-purple-600 text-sm">7-day free trial included!</p>
         </div>
 
         <div className="text-left">
@@ -100,7 +100,7 @@ const SubscriptionGate = ({ user, children, featureName = "this premium feature"
       <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg max-w-md mx-auto">
         <p className="text-blue-800 text-sm font-semibold">🎁 7-Week Free Trial</p>
         <p className="text-blue-700 text-xs">
-          Try all premium features free for 7 weeks. No credit card required to start.
+          Try all premium features free for 7 days. No credit card required to start.
         </p>
       </div>
     </div>

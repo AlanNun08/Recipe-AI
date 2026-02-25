@@ -154,40 +154,6 @@ const DashboardScreen = ({
           </div>
         )}
 
-        {/* User Info Card */}
-        {user && (
-          <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-              <span className="text-3xl mr-3">👤</span>
-              Account Information
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-4">
-                <div className="text-2xl mb-2">📧</div>
-                <div className="text-sm text-gray-600 mb-1">Email</div>
-                <div className="font-semibold text-gray-800">{user.email}</div>
-              </div>
-              <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-2xl p-4">
-                <div className="text-2xl mb-2">✅</div>
-                <div className="text-sm text-gray-600 mb-1">Verified</div>
-                <div className="font-semibold text-gray-800">{user.is_verified ? 'Yes' : 'No'}</div>
-              </div>
-              <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-2xl p-4">
-                <div className="text-2xl mb-2">💳</div>
-                <div className="text-sm text-gray-600 mb-1">Subscription</div>
-                <div className="font-semibold text-gray-800 capitalize">{user.subscription?.status || 'Unknown'}</div>
-              </div>
-              <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-2xl p-4">
-                <div className="text-2xl mb-2">📅</div>
-                <div className="text-sm text-gray-600 mb-1">Joined</div>
-                <div className="font-semibold text-gray-800">
-                  {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Preferences Card */}
         {userPreferences && (
           <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8">

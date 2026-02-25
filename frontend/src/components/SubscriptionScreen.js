@@ -168,7 +168,7 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
                 <div className="text-3xl font-bold text-purple-600 mt-2">
                   $9.99<span className="text-lg text-gray-500">/month</span>
                 </div>
-                <p className="text-gray-600 text-sm mt-1">After 7-week free trial</p>
+                <p className="text-gray-600 text-sm mt-1">After 7-day free trial</p>
               </div>
 
               <div className="mb-6">
@@ -240,9 +240,9 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
 
           {/* Free Trial Info */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-semibold text-blue-800 mb-2">🎁 7-Week Free Trial</h4>
+            <h4 className="font-semibold text-blue-800 mb-2">🎁 7-Day Free Trial</h4>
             <p className="text-blue-700 text-sm">
-              New users get full access to all premium features for 7 weeks completely free. 
+              New users get full access to all premium features for 7 days completely free. 
               No credit card required to start your trial. You can subscribe anytime during or after your trial.
             </p>
           </div>

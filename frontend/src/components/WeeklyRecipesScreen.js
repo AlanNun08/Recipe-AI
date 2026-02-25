@@ -27,6 +27,16 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
     loadTrialStatus();
   }, []);
 
+  const hasGenerationAccess = trialStatus ? Boolean(trialStatus.has_access) : true;
+
+  const handleUpgradeClick = () => {
+    if (typeof window.setCurrentScreen === 'function') {
+      window.setCurrentScreen('settings');
+      return;
+    }
+    showNotification('Upgrade options are available in Settings.', 'info');
+  };
+
   const loadTrialStatus = async () => {
     try {
       const response = await axios.get(`${API}/api/user/trial-status/${user.id}`);
@@ -55,7 +65,16 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
     }
   };
 
-  const generateWeeklyPlan = async () => {
+  const generateWeeklyPlan = async (e) => {
+    if (e?.preventDefault) {
+      e.preventDefault();
+    }
+
+    if (!hasGenerationAccess) {
+      showNotification('Your 7-day free trial has ended. You can still view saved plans, but new weekly plan generation requires an upgrade.', 'warning');
+      return;
+    }
+
     setIsGenerating(true);
     
     try {
@@ -83,25 +102,18 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
       if (error.response?.status === 503) {
         // OpenAI API not configured
         showNotification('❌ AI meal planning is currently unavailable. Please contact support.', 'error');
-      } else if (error.response?.status === 429) {
+      } else if ([402, 429].includes(error.response?.status)) {
         // Usage limit error
-        const errorData = error.response.data.detail;
+        const errorData = error.response?.data?.detail;
+        if (error.response?.data?.trial_status) {
+          setTrialStatus(error.response.data.trial_status);
+        }
         
         if (typeof errorData === 'object' && errorData.upgrade_required) {
           showNotification(
-            `⚠️ ${errorData.message} Redirecting to upgrade...`, 
+            `⚠️ ${errorData.message}`, 
             'warning'
           );
-          
-          setTimeout(() => {
-            if (onBack) {
-              onBack();
-              setTimeout(() => {
-                showNotification('💎 Upgrade to continue generating meal plans!', 'info');
-              }, 500);
-            }
-          }, 2000);
-          
           return;
         }
       } else {
@@ -184,6 +196,25 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
           </div>
         </div>
 
+        {trialStatus && !trialStatus.has_access && (
+          <div className="bg-white border border-amber-200 rounded-2xl p-4 mb-6 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="font-semibold text-gray-900">Weekly plan generation paused (trial ended)</p>
+                <p className="text-sm text-gray-600">
+                  You can still view existing plans and recipe history. Upgrade anytime to generate new weekly plans.
+                </p>
+              </div>
+              <button
+                onClick={handleUpgradeClick}
+                className="rounded-xl bg-amber-100 text-amber-900 px-4 py-2 font-semibold hover:bg-amber-200 transition-colors"
+              >
+                Upgrade
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Current Plan Display */}
         {currentPlan ? (
           <div className="space-y-6">
@@ -207,8 +238,12 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
                     </div>
                   )}
                   <button
-                    onClick={() => setShowGenerator(true)}
-                    className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all"
+                    onClick={() => hasGenerationAccess ? setShowGenerator(true) : handleUpgradeClick()}
+                    className={`px-4 py-2 rounded-xl transition-all ${
+                      hasGenerationAccess
+                        ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:shadow-lg'
+                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    }`}
                   >
                     🔄 Generate New Plan
                   </button>
@@ -412,8 +447,12 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
             </div>
             
             <button
-              onClick={() => setShowGenerator(true)}
-              className="w-full bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 text-white font-bold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 text-lg"
+              onClick={() => hasGenerationAccess ? setShowGenerator(true) : handleUpgradeClick()}
+              className={`w-full font-bold py-4 px-8 rounded-2xl shadow-lg transition-all duration-300 text-lg ${
+                hasGenerationAccess
+                  ? 'bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 text-white hover:shadow-xl transform hover:-translate-y-1'
+                  : 'bg-gray-200 text-gray-500 cursor-not-allowed shadow-none'
+              }`}
             >
               <span className="flex items-center justify-center">
                 <span className="text-2xl mr-3 animate-bounce">🤖</span>
@@ -439,6 +478,15 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
               </div>
               
               <form onSubmit={generateWeeklyPlan} className="space-y-6">
+                {!hasGenerationAccess && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                    <p className="font-semibold text-amber-900">Trial ended</p>
+                    <p className="text-sm text-amber-800 mt-1">
+                      You can still view your saved meals and recipe history. Upgrade to generate a new weekly plan.
+                    </p>
+                  </div>
+                )}
+
                 {/* Family Size */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -529,7 +577,7 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
                 {/* Generate Button */}
                 <button
                   type="submit"
-                  disabled={isGenerating}
+                  disabled={isGenerating || !hasGenerationAccess}
                   className="w-full bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 text-white font-bold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isGenerating ? (
