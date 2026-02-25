@@ -10,6 +10,7 @@ import RecipeGeneratorScreen from './components/RecipeGeneratorScreen';
 import WeeklyRecipesScreen from './components/WeeklyRecipesScreen';
 import StarbucksGeneratorScreen from './components/StarbucksGeneratorScreen';
 import RecipeHistoryScreen from './components/RecipeHistoryScreen';
+import { authService } from './services/auth';
 import './App.css';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [notification, setNotification] = useState(null);
   const [verificationEmail, setVerificationEmail] = useState('');
+  const [pendingVerificationLogin, setPendingVerificationLogin] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   // Check for existing user session on app load
@@ -65,8 +67,8 @@ function App() {
       user_id: userData.user_id,
       id: userData.user_id, // Add both fields for compatibility
       email: userData.email,
-      name: userData.name,
-      verified: userData.verified,
+      name: userData.name || [userData.first_name, userData.last_name].filter(Boolean).join(' '),
+      verified: userData.verified ?? userData.is_verified,
       subscription_status: userData.subscription_status
     };
     
@@ -79,13 +81,50 @@ function App() {
   const handleVerificationRequired = (data) => {
     console.log('⚠️ Verification required:', data);
     setVerificationEmail(data.email);
+    setPendingVerificationLogin(null);
     setCurrentView('verification');
     showNotification('Please check your email for verification code.', 'info');
   };
 
-  const handleVerificationSuccess = (data) => {
+  const handleRegistrationVerificationRequired = (data, credentials) => {
+    console.log('📝 Registration complete, verification required:', data);
+    setVerificationEmail(data.email);
+    setPendingVerificationLogin(credentials || null);
+    setCurrentView('verification');
+    showNotification('Account created. Enter the code sent to your email to continue.', 'info');
+  };
+
+  const handleVerificationSuccess = async (data) => {
     console.log('✅ Email verified successfully:', data);
-    showNotification('Email verified! You can now log in.', 'success');
+
+    if (
+      pendingVerificationLogin?.email &&
+      pendingVerificationLogin?.password &&
+      pendingVerificationLogin.email.toLowerCase() === (data.email || '').toLowerCase()
+    ) {
+      try {
+        const loginResult = await authService.login({
+          email: pendingVerificationLogin.email,
+          password: pendingVerificationLogin.password
+        });
+
+        setPendingVerificationLogin(null);
+        setVerificationEmail('');
+        handleLoginSuccess({
+          ...loginResult,
+          verified: loginResult.is_verified,
+          name: [loginResult.first_name, loginResult.last_name].filter(Boolean).join(' ')
+        });
+        return;
+      } catch (error) {
+        console.error('❌ Auto-login after verification failed:', error);
+        showNotification('Email verified. Please log in to continue.', 'warning');
+      }
+    } else {
+      showNotification('Email verified! You can now log in.', 'success');
+    }
+
+    setPendingVerificationLogin(null);
     setCurrentView('login');
     setVerificationEmail('');
   };
@@ -146,6 +185,7 @@ function App() {
             onSkip={() => setCurrentView('login')}
             showLoginOption={true}
             onLoginClick={() => setCurrentView('login')}
+            onRegistrationVerificationRequired={handleRegistrationVerificationRequired}
           />
         );
 

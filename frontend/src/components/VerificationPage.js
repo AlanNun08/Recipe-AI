@@ -5,13 +5,13 @@ const VerificationPage = ({ email, onVerificationSuccess, onBackToLogin }) => {
   const [verificationCode, setVerificationCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [codeSent, setCodeSent] = useState(false);
+  const [codeSent, setCodeSent] = useState(Boolean(email));
   const [resendLoading, setResendLoading] = useState(false);
 
-  // Auto-send verification code when component mounts with email
+  // Do not auto-resend on mount; signup/login flows already send the code.
   useEffect(() => {
     if (email) {
-      sendVerificationCode();
+      setCodeSent(true);
     }
   }, [email]);
 

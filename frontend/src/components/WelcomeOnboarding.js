@@ -2,12 +2,20 @@ import React, { useState } from 'react';
 
 const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
-const WelcomeOnboarding = ({ onComplete, onSkip, showLoginOption = false, onLoginClick }) => {
+const WelcomeOnboarding = ({
+  onComplete,
+  onSkip,
+  showLoginOption = false,
+  onLoginClick,
+  onRegistrationVerificationRequired
+}) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [showDemo, setShowDemo] = useState(false);
   const [sampleRecipe, setSampleRecipe] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationError, setRegistrationError] = useState('');
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
   const [userPreferences, setUserPreferences] = useState({
     quickPrefs: [],
     budget: '',
@@ -23,6 +31,7 @@ const WelcomeOnboarding = ({ onComplete, onSkip, showLoginOption = false, onLogi
     lastName: '',
     email: '',
     password: '',
+    confirmPassword: '',
     agreeTerms: false,
     emailUpdates: true
   });
@@ -72,7 +81,7 @@ const WelcomeOnboarding = ({ onComplete, onSkip, showLoginOption = false, onLogi
 
   const handleRegisterAccount = async () => {
     // Validate registration data
-    if (!registrationData.firstName || !registrationData.lastName || !registrationData.email || !registrationData.password) {
+    if (!registrationData.firstName || !registrationData.lastName || !registrationData.email || !registrationData.password || !registrationData.confirmPassword) {
       setRegistrationError('Please fill in all required fields');
       return;
     }
@@ -84,6 +93,11 @@ const WelcomeOnboarding = ({ onComplete, onSkip, showLoginOption = false, onLogi
 
     if (registrationData.password.length < 8) {
       setRegistrationError('Password must be at least 8 characters');
+      return;
+    }
+
+    if (registrationData.password !== registrationData.confirmPassword) {
+      setRegistrationError('Passwords do not match');
       return;
     }
 
@@ -129,8 +143,23 @@ const WelcomeOnboarding = ({ onComplete, onSkip, showLoginOption = false, onLogi
         // Store registration info for next step
         sessionStorage.setItem('registeredEmail', email);
         sessionStorage.setItem('registeredUserId', data.user_id);
-        
-        // Move to preferences step
+
+        if (onRegistrationVerificationRequired && data.verification_required) {
+          onRegistrationVerificationRequired(
+            {
+              ...data,
+              email,
+              name: fullName
+            },
+            {
+              email,
+              password: registrationData.password
+            }
+          );
+          return;
+        }
+
+        // Fallback: Move to preferences step (legacy flow)
         setCurrentStep(3);
       } else {
         const errorMessage = data.detail || data.message || 'Registration failed. Please try again.';
@@ -302,7 +331,13 @@ const WelcomeOnboarding = ({ onComplete, onSkip, showLoginOption = false, onLogi
             <p className="text-sm text-gray-500">⭐ Join 12,847+ families already saving</p>
           </div>
 
-          <form className="space-y-4">
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleRegisterAccount();
+            }}
+          >
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1">👤 First Name</label>
@@ -339,14 +374,50 @@ const WelcomeOnboarding = ({ onComplete, onSkip, showLoginOption = false, onLogi
 
             <div>
               <label className="block text-sm font-medium mb-1">🔒 Create Password</label>
-              <input
-                type="password"
-                value={registrationData.password}
-                onChange={(e) => setRegistrationData({...registrationData, password: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="••••••••••••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showRegisterPassword ? "text" : "password"}
+                  value={registrationData.password}
+                  onChange={(e) => setRegistrationData({...registrationData, password: e.target.value})}
+                  className="w-full p-3 pr-16 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="••••••••••••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowRegisterPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-blue-600 hover:text-blue-800"
+                >
+                  {showRegisterPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
               <p className="text-xs text-gray-500 mt-1">💪 Strong password (8+ chars, mix of letters/numbers)</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">🔒 Confirm Password</label>
+              <div className="relative">
+                <input
+                  type={showRegisterConfirmPassword ? "text" : "password"}
+                  value={registrationData.confirmPassword}
+                  onChange={(e) => setRegistrationData({...registrationData, confirmPassword: e.target.value})}
+                  className={`w-full p-3 pr-16 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    registrationData.confirmPassword && registrationData.password !== registrationData.confirmPassword
+                      ? 'border-red-300'
+                      : 'border-gray-300'
+                  }`}
+                  placeholder="••••••••••••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowRegisterConfirmPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-blue-600 hover:text-blue-800"
+                >
+                  {showRegisterConfirmPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              {registrationData.confirmPassword && registrationData.password !== registrationData.confirmPassword && (
+                <p className="text-xs text-red-600 mt-1">Passwords do not match.</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -377,8 +448,12 @@ const WelcomeOnboarding = ({ onComplete, onSkip, showLoginOption = false, onLogi
             )}
 
             <button
-              onClick={handleRegisterAccount}
-              disabled={!registrationData.agreeTerms || isRegistering}
+              type="submit"
+              disabled={
+                !registrationData.agreeTerms ||
+                isRegistering ||
+                (registrationData.confirmPassword && registrationData.password !== registrationData.confirmPassword)
+              }
               className="w-full bg-gradient-to-r from-green-500 to-teal-500 text-white py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200"
             >
               {isRegistering ? (
