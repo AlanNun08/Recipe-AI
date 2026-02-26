@@ -66,7 +66,7 @@ function App() {
 
   // Check for existing user session on app load
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
+    const savedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser);
@@ -135,9 +135,19 @@ function App() {
       verified: userData.verified ?? userData.is_verified,
       subscription_status: userData.subscription_status
     };
+
+    const rememberMe = userData.rememberMe !== false;
     
     setUser(normalizedUser);
-    localStorage.setItem('user', JSON.stringify(normalizedUser));
+    if (rememberMe) {
+      localStorage.setItem('user', JSON.stringify(normalizedUser));
+      localStorage.setItem('rememberMe', 'true');
+      sessionStorage.removeItem('user');
+    } else {
+      sessionStorage.setItem('user', JSON.stringify(normalizedUser));
+      localStorage.removeItem('user');
+      localStorage.removeItem('rememberMe');
+    }
     setCurrentView('dashboard');
     showNotification(`Welcome back, ${userData.name || userData.email}!`, 'success');
   };
@@ -216,7 +226,9 @@ function App() {
     console.log('🚪 Logging out user');
     setUser(null);
     localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
     localStorage.removeItem('userPreferences');
+    localStorage.removeItem('rememberMe');
     setCurrentView('login');
     showNotification('You have been logged out.', 'info');
   };
@@ -248,15 +260,6 @@ function App() {
         return (
           <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
             <div className="max-w-md w-full">
-              {/* Back to Welcome Button */}
-              <button
-                onClick={() => setCurrentView('welcome')}
-                className="mb-4 flex items-center text-blue-600 hover:text-blue-800 font-medium"
-              >
-                <span className="mr-2">←</span>
-                Back to Welcome
-              </button>
-
               {/* Login Card */}
               <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
                 <div className="text-center mb-6">
@@ -282,15 +285,6 @@ function App() {
                     >
                       Create one here
                     </button>
-                  </p>
-                </div>
-
-                {/* Test Credentials Helper */}
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
-                  <p className="text-yellow-800 text-sm font-medium">🧪 Test Credentials:</p>
-                  <p className="text-yellow-700 text-xs mt-1">
-                    Email: fresh@test.com<br/>
-                    Password: password123
                   </p>
                 </div>
               </div>

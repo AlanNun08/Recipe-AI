@@ -54,16 +54,9 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
           email: data.email,
           name: data.name,
           verified: data.verified,
-          subscription_status: data.subscription_status
+          subscription_status: data.subscription_status,
+          rememberMe
         };
-
-        // Store with remember me preference
-        if (rememberMe) {
-          localStorage.setItem('user', JSON.stringify(userData));
-          localStorage.setItem('rememberMe', 'true');
-        } else {
-          sessionStorage.setItem('user', JSON.stringify(userData));
-        }
 
         if (onLoginSuccess) {
           onLoginSuccess(userData);
@@ -199,7 +192,7 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
               onChange={(e) => setRememberMe(e.target.checked)}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mr-2"
             />
-            <span className="text-gray-700">☑️ Keep me logged in</span>
+            <span className="text-gray-700">Keep me logged in</span>
           </label>
           <button
             type="button"
