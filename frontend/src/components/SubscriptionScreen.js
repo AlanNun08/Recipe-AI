@@ -4,6 +4,7 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [processingSubscriptionAction, setProcessingSubscriptionAction] = useState(false);
   const [error, setError] = useState('');
 
   // Use environment variable
@@ -62,6 +63,62 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
       setError('Failed to start subscription process');
     } finally {
       setProcessingPayment(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!window.confirm('Cancel your subscription at the end of the current billing period?')) {
+      return;
+    }
+
+    try {
+      setProcessingSubscriptionAction(true);
+      setError('');
+
+      const response = await fetch(`${backendUrl}/api/subscription/cancel/${user.id}`, {
+        method: 'POST'
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.detail || 'Failed to cancel subscription');
+        return;
+      }
+
+      await fetchSubscriptionStatus();
+      if (onSubscriptionUpdate) {
+        onSubscriptionUpdate(data);
+      }
+    } catch (e) {
+      setError('Failed to cancel subscription');
+    } finally {
+      setProcessingSubscriptionAction(false);
+    }
+  };
+
+  const handleReactivateSubscription = async () => {
+    try {
+      setProcessingSubscriptionAction(true);
+      setError('');
+
+      const response = await fetch(`${backendUrl}/api/subscription/reactivate/${user.id}`, {
+        method: 'POST'
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.detail || 'Failed to reactivate subscription');
+        return;
+      }
+
+      await fetchSubscriptionStatus();
+      if (onSubscriptionUpdate) {
+        onSubscriptionUpdate(data);
+      }
+    } catch (e) {
+      setError('Failed to reactivate subscription');
+    } finally {
+      setProcessingSubscriptionAction(false);
     }
   };
 
@@ -149,6 +206,11 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
                   <p className="text-green-600 text-xs">
                     Renews: {formatDate(subscriptionStatus.subscription_end_date)}
                   </p>
+                  {subscriptionStatus.cancel_at_period_end && (
+                    <p className="text-amber-700 text-xs mt-2">
+                      Cancellation scheduled. Access remains active until period end.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -224,8 +286,40 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
                   )}
                 </button>
               ) : (
-                <div className="text-center py-3 text-green-600 font-semibold">
-                  ✅ You have an active subscription
+                <div className="space-y-3">
+                  <div className="text-center py-1 text-green-600 font-semibold">
+                    ✅ You have an active subscription
+                  </div>
+
+                  {subscriptionStatus && (
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {subscriptionStatus.cancel_at_period_end ? (
+                        <button
+                          onClick={handleReactivateSubscription}
+                          disabled={processingSubscriptionAction}
+                          className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-colors ${
+                            processingSubscriptionAction
+                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                              : 'bg-green-100 text-green-800 hover:bg-green-200'
+                          }`}
+                        >
+                          {processingSubscriptionAction ? 'Processing...' : 'Reactivate Subscription'}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleCancelSubscription}
+                          disabled={processingSubscriptionAction}
+                          className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-colors ${
+                            processingSubscriptionAction
+                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                              : 'bg-red-100 text-red-800 hover:bg-red-200'
+                          }`}
+                        >
+                          {processingSubscriptionAction ? 'Processing...' : 'Cancel at Period End'}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
