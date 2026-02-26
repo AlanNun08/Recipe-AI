@@ -13,8 +13,48 @@ import RecipeHistoryScreen from './components/RecipeHistoryScreen';
 import { authService } from './services/auth';
 import './App.css';
 
+const VIEW_TO_PATH = {
+  landing: '/',
+  welcome: '/signup',
+  login: '/login',
+  verification: '/verify',
+  dashboard: '/dashboard',
+  'recipe-generator': '/recipe-generator',
+  'weekly-recipes': '/weekly-recipes',
+  'starbucks-generator': '/starbucks-generator',
+  'recipe-history': '/recipe-history',
+  'recipe-detail': '/recipe-detail',
+  settings: '/settings',
+  'shopping-list': '/shopping-list',
+};
+
+const PATH_ALIASES = {
+  '/': 'landing',
+  '/landing': 'landing',
+  '/welcome': 'welcome',
+  '/signup': 'welcome',
+  '/register': 'welcome',
+  '/login': 'login',
+  '/verify': 'verification',
+  '/verification': 'verification',
+  '/dashboard': 'dashboard',
+  '/recipe-generator': 'recipe-generator',
+  '/generate-recipe': 'recipe-generator',
+  '/weekly-recipes': 'weekly-recipes',
+  '/weekly-planner': 'weekly-recipes',
+  '/starbucks-generator': 'starbucks-generator',
+  '/starbucks': 'starbucks-generator',
+  '/recipe-history': 'recipe-history',
+  '/history': 'recipe-history',
+  '/recipe-detail': 'recipe-detail',
+  '/settings': 'settings',
+  '/shopping-list': 'shopping-list',
+};
+
+const getViewFromPath = (pathname) => PATH_ALIASES[pathname] || 'landing';
+
 function App() {
-  const [currentView, setCurrentView] = useState('landing'); // Start with welcome/onboarding
+  const [currentView, setCurrentView] = useState(() => getViewFromPath(window.location.pathname));
   const [user, setUser] = useState(null);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [notification, setNotification] = useState(null);
@@ -53,6 +93,24 @@ function App() {
     window.setCurrentScreen = setCurrentView;
     window.setSelectedRecipe = setSelectedRecipe;
   }, []); // Keep this cleanup as it's for globals
+
+  // Sync browser navigation (back/forward) with the app's internal screen state.
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentView(getViewFromPath(window.location.pathname));
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Keep the URL in sync when the app changes views programmatically.
+  useEffect(() => {
+    const targetPath = VIEW_TO_PATH[currentView];
+    if (!targetPath) return;
+    if (window.location.pathname === targetPath) return;
+    window.history.pushState({}, '', targetPath);
+  }, [currentView]);
 
   const showNotification = (message, type = 'info') => {
     setNotification({ message, type });
