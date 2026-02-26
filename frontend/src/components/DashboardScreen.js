@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import TrialStatusBanner from './TrialStatusBanner';
+import SubscriptionScreen from './SubscriptionScreen';
 
 const DashboardScreen = ({ 
   user, 
@@ -9,6 +11,7 @@ const DashboardScreen = ({
 }) => {
   const [dashboardStats, setDashboardStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
@@ -116,6 +119,13 @@ const DashboardScreen = ({
             </div>
           )}
         </div>
+
+        {user && (
+          <TrialStatusBanner
+            user={user}
+            onUpgradeClick={() => setShowSubscriptionModal(true)}
+          />
+        )}
 
         {/* Quick Stats */}
         {dashboardStats && (
@@ -251,6 +261,19 @@ const DashboardScreen = ({
           </div>
         </div>
       </div>
+
+      {showSubscriptionModal && user && (
+        <SubscriptionScreen
+          user={user}
+          onClose={() => setShowSubscriptionModal(false)}
+          onSubscriptionUpdate={() => {
+            setShowSubscriptionModal(false);
+            if (showNotification) {
+              showNotification('Subscription updated successfully.', 'success');
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

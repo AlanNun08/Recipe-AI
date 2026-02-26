@@ -175,3 +175,55 @@ These changes require:
 1. Committing the relevant files to git
 2. Pushing to GitHub
 3. Running the Google deployment pipeline (or Cloud Build trigger) from GitHub
+
+---
+
+## Addendum - 2026-02-26 (Trial Countdown UI + Daily DB Sync)
+
+Date: 2026-02-26
+
+### A. Dashboard Trial Visibility + Countdown Prompt
+- Added trial banner to the dashboard for logged-in users
+- Shows active trial countdown (`X days left`)
+- Shows a gentle expired-trial prompt (non-intrusive) with CTA to view subscription plans
+- CTA opens the existing subscription modal from the dashboard
+
+Updated files:
+- `frontend/src/components/DashboardScreen.js`
+- `frontend/src/components/TrialStatusBanner.js`
+
+Functions / UI logic updated:
+- `DashboardScreen`
+  - Added `showSubscriptionModal` state
+  - Rendered `TrialStatusBanner` for logged-in users
+  - Wired `onUpgradeClick` to open `SubscriptionScreen`
+- `TrialStatusBanner`
+  - Updated expired-trial prompt styling and copy to be calmer / less aggressive
+  - Updated expired CTA label to `View Plans`
+
+### B. Trial Countdown DB Sync (Once Per Day)
+- Added backend logic to persist trial countdown/status fields to the user document
+- Updates occur at most once per UTC day per user when trial status is checked or access is evaluated
+- Also initializes countdown fields at registration for new users
+
+Updated file:
+- `backend/server.py`
+
+Functions added (backend):
+- `_sync_trial_countdown_fields(user, access_status)`
+
+Functions updated (backend):
+- `_get_user_access_status(user_id)` (now triggers countdown sync)
+- `_build_access_status(user)` (improved expired-trial handling)
+- `register(...)` (initializes trial countdown fields on user creation)
+- `get_trial_status(...)` (uses synced access-status helper)
+
+User DB fields maintained:
+- `trial_days_left`
+- `trial_active`
+- `trial_expired`
+- `trial_countdown_last_updated_date`
+- `trial_last_synced_at`
+
+Validation performed:
+- `python3 -m py_compile backend/server.py` (passed)

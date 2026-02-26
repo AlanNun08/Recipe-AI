@@ -326,7 +326,8 @@ def _build_access_status(user: Dict[str, Any]) -> Dict[str, Any]:
     trial_days_left = int(math.ceil(remaining_seconds / 86400)) if remaining_seconds > 0 else 0
 
     has_access = subscription_active or trial_active
-    trial_expired = (raw_subscription_status == "trial") and not trial_active and not subscription_active
+    # Consider the trial expired if a trial window exists and has ended without an active subscription.
+    trial_expired = (trial_end <= now) and not subscription_active
     effective_subscription_status = "active" if subscription_active else ("trial" if trial_active else "free")
 
     return {
@@ -348,7 +349,56 @@ async def _get_user_access_status(user_id: str) -> Tuple[Optional[Dict[str, Any]
     user = await users_collection.find_one({"id": user_id})
     if not user:
         return None, None
-    return user, _build_access_status(user)
+    access_status = _build_access_status(user)
+    await _sync_trial_countdown_fields(user, access_status)
+    return user, access_status
+
+
+async def _sync_trial_countdown_fields(user: Dict[str, Any], access_status: Dict[str, Any]) -> None:
+    """Persist trial countdown/status fields, but only write once per UTC day unless status changed."""
+    try:
+        if not user or not access_status:
+            return
+
+        now = datetime.utcnow()
+        today_str = now.date().isoformat()
+
+        current_status = (user.get("subscription_status") or "free").lower()
+        desired_status = current_status
+        if current_status == "trial" and access_status.get("trial_expired") and not access_status.get("subscription_active"):
+            desired_status = "free"
+
+        updates: Dict[str, Any] = {}
+        needs_daily_sync = user.get("trial_countdown_last_updated_date") != today_str
+
+        # Update countdown fields once per day.
+        if needs_daily_sync:
+            updates["trial_countdown_last_updated_date"] = today_str
+            updates["trial_days_left"] = access_status.get("trial_days_left", 0)
+            updates["trial_active"] = bool(access_status.get("trial_active"))
+            updates["trial_expired"] = bool(access_status.get("trial_expired"))
+            updates["trial_last_synced_at"] = now
+
+        # Update status transitions immediately (e.g., trial -> free on expiry).
+        if desired_status != current_status:
+            updates["subscription_status"] = desired_status
+
+        # Backfill missing fields even if already synced today.
+        if "trial_days_left" not in user:
+            updates.setdefault("trial_days_left", access_status.get("trial_days_left", 0))
+        if "trial_active" not in user:
+            updates.setdefault("trial_active", bool(access_status.get("trial_active")))
+        if "trial_expired" not in user:
+            updates.setdefault("trial_expired", bool(access_status.get("trial_expired")))
+        if "trial_countdown_last_updated_date" not in user:
+            updates.setdefault("trial_countdown_last_updated_date", today_str)
+
+        if not updates:
+            return
+
+        await users_collection.update_one({"id": user["id"]}, {"$set": updates})
+    except Exception as sync_error:
+        logger.warning(f"⚠️ Trial countdown sync skipped for user {user.get('id')}: {sync_error}")
 
 
 async def _enforce_generation_access(user_id: str, feature_label: str) -> Optional[JSONResponse]:
@@ -574,6 +624,11 @@ async def register(request: UserRegistrationRequest):
             "subscription_status": "trial",  # "trial", "active", "cancelled", "free"
             "trial_start_date": now,
             "trial_end_date": trial_end,
+            "trial_days_left": TRIAL_LENGTH_DAYS,
+            "trial_active": True,
+            "trial_expired": False,
+            "trial_countdown_last_updated_date": now.date().isoformat(),
+            "trial_last_synced_at": now,
             "subscription_start_date": None,
             "subscription_end_date": None,
             
@@ -1746,15 +1801,13 @@ Please respond with a JSON object containing:
 async def get_trial_status(user_id: str):
     """Get user's trial and subscription status"""
     try:
-        user = await users_collection.find_one({"id": user_id})
+        user, trial_status = await _get_user_access_status(user_id)
         
-        if not user:
+        if not user or not trial_status:
             return JSONResponse(
                 status_code=404,
                 content={"detail": "User not found"}
             )
-        
-        trial_status = _build_access_status(user)
 
         # Lightweight usage counts for UI
         recipes_generated = await recipes_collection.count_documents({"user_id": user_id})

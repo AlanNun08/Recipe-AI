@@ -113,18 +113,16 @@ const TrialStatusBanner = ({ user, onUpgradeClick }) => {
   if (!trialStatus.has_access) {
     // Trial expired - show upgrade prompt
     return (
-      <div className="relative overflow-hidden rounded-2xl shadow-lg mb-4 bg-gradient-to-r from-red-600 to-red-700">
-        <div className="absolute inset-0 bg-black bg-opacity-10"></div>
-        
+      <div className="relative overflow-hidden rounded-2xl shadow-lg mb-4 border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
         <div className="relative z-10 p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="text-3xl animate-pulse">⚠️</div>
+              <div className="text-3xl">⏳</div>
               
-              <div className="text-white">
-                <div className="font-bold text-lg">Trial Expired</div>
-                <div className="text-sm opacity-90">
-                  Subscribe to continue using premium features
+              <div className="text-gray-900">
+                <div className="font-bold text-lg">Your free trial has ended</div>
+                <div className="text-sm text-gray-700">
+                  You can still view saved recipes and history. Upgrade to continue generating new AI recipes and meal plans.
                 </div>
               </div>
             </div>
@@ -133,15 +131,15 @@ const TrialStatusBanner = ({ user, onUpgradeClick }) => {
               {onUpgradeClick && (
                 <button
                   onClick={onUpgradeClick}
-                  className="bg-white text-red-600 px-6 py-2 rounded-xl font-bold hover:shadow-lg transition-all animate-pulse"
+                  className="bg-white text-amber-900 px-5 py-2 rounded-xl font-bold hover:shadow-lg transition-all border border-amber-300"
                 >
-                  🚀 Subscribe Now
+                  View Plans
                 </button>
               )}
               
               <button
                 onClick={() => setIsDismissed(true)}
-                className="text-white hover:text-gray-200 text-xl opacity-70 hover:opacity-100"
+                className="text-gray-500 hover:text-gray-700 text-xl opacity-70 hover:opacity-100"
               >
                 ×
               </button>
