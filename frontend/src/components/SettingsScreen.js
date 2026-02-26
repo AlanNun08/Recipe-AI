@@ -1,457 +1,749 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
-const SettingsScreen = ({ user, onClose, onLogout, showNotification }) => {
-  const [loading, setLoading] = useState(true);
-  const [settingsData, setSettingsData] = useState(null);
-  const [editMode, setEditMode] = useState(false);
-  const [profileData, setProfileData] = useState({
-    first_name: '',
-    last_name: '',
-    dietary_preferences: []
-  });
-  const [processing, setProcessing] = useState(false);
+const DEFAULT_SETTINGS = {
+  general: {
+    defaultStartPage: 'dashboard',
+    units: 'us',
+    reducedMotion: false,
+  },
+  notifications: {
+    weeklyMealReminder: true,
+    trialEndingReminder: true,
+    billingEmails: true,
+    productUpdates: false,
+  },
+  preferences: {
+    householdSize: '2',
+    budgetStyle: 'balanced',
+    dietaryPreferences: [],
+  },
+};
 
-  // Use environment variable instead of prop
+const DIETARY_OPTIONS = [
+  'vegetarian',
+  'vegan',
+  'gluten-free',
+  'dairy-free',
+  'keto',
+  'paleo',
+  'low-carb',
+  'mediterranean',
+  'pescatarian',
+  'nut-free',
+];
+
+const SettingsSection = ({ title, subtitle, children }) => (
+  <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 md:p-6">
+    <div className="mb-4">
+      <h2 className="text-lg md:text-xl font-semibold text-gray-900">{title}</h2>
+      {subtitle ? <p className="text-sm text-gray-600 mt-1">{subtitle}</p> : null}
+    </div>
+    {children}
+  </section>
+);
+
+const ToggleRow = ({ label, description, checked, onChange, disabled }) => (
+  <label className={`flex items-start justify-between gap-4 py-3 ${disabled ? 'opacity-60' : ''}`}>
+    <div>
+      <div className="text-sm font-medium text-gray-800">{label}</div>
+      {description ? <div className="text-xs text-gray-500 mt-1">{description}</div> : null}
+    </div>
+    <button
+      type="button"
+      onClick={() => !disabled && onChange(!checked)}
+      disabled={disabled}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+        checked ? 'bg-blue-600' : 'bg-gray-300'
+      }`}
+      aria-pressed={checked}
+      aria-label={label}
+    >
+      <span
+        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+          checked ? 'translate-x-5' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  </label>
+);
+
+const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [processingBilling, setProcessingBilling] = useState(false);
+  const [processingSubscriptionAction, setProcessingSubscriptionAction] = useState(false);
+  const [processingSecurityAction, setProcessingSecurityAction] = useState(false);
+  const [error, setError] = useState('');
 
-  const dietaryOptions = [
-    'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'keto', 
-    'paleo', 'low-carb', 'mediterranean', 'pescatarian', 'nut-free'
-  ];
+  const settingsStorageKey = user?.id ? `userSettings:${user.id}` : 'userSettings:anonymous';
 
   useEffect(() => {
-    if (user?.id) {
-      fetchSettings();
+    if (!user?.id) {
+      setLoading(false);
+      return;
     }
-  }, [user]);
 
-  const fetchSettings = async () => {
+    loadLocalSettings();
+    fetchSubscriptionStatus();
+  }, [user?.id]);
+
+  const loadLocalSettings = () => {
     try {
-      const response = await fetch(`${backendUrl}/api/user/settings/${user.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSettingsData(data);
-        setProfileData({
-          first_name: data.profile.first_name || '',
-          last_name: data.profile.last_name || '',
-          dietary_preferences: data.profile.dietary_preferences || []
-        });
-      } else {
-        showNotification('Failed to load settings', 'error');
+      const stored = localStorage.getItem(settingsStorageKey);
+      if (!stored) {
+        setSettings(DEFAULT_SETTINGS);
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-      showNotification('Error loading settings', 'error');
+
+      const parsed = JSON.parse(stored);
+      setSettings({
+        general: { ...DEFAULT_SETTINGS.general, ...(parsed.general || {}) },
+        notifications: { ...DEFAULT_SETTINGS.notifications, ...(parsed.notifications || {}) },
+        preferences: { ...DEFAULT_SETTINGS.preferences, ...(parsed.preferences || {}) },
+      });
+    } catch (e) {
+      setSettings(DEFAULT_SETTINGS);
+    }
+  };
+
+  const fetchSubscriptionStatus = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const response = await fetch(`${backendUrl}/api/subscription/status/${user.id}`);
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.detail || 'Failed to load subscription status');
+        return;
+      }
+      setSubscriptionStatus(data);
+    } catch (e) {
+      setError('Failed to load subscription status');
     } finally {
       setLoading(false);
     }
   };
 
-  const updateProfile = async () => {
-    setProcessing(true);
+  const saveLocalSettings = async () => {
     try {
-      const response = await fetch(`${backendUrl}/api/user/profile/${user.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profileData)
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        showNotification('Profile updated successfully!', 'success');
-        setEditMode(false);
-        await fetchSettings(); // Refresh settings
-      } else {
-        const error = await response.json();
-        showNotification(error.detail || 'Failed to update profile', 'error');
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      showNotification('Error updating profile', 'error');
+      setSaving(true);
+      localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
+      showNotification('Settings saved', 'success');
+    } catch (e) {
+      showNotification('Failed to save settings', 'error');
     } finally {
-      setProcessing(false);
+      setSaving(false);
     }
   };
 
-  const cancelSubscription = async () => {
-    if (!window.confirm('Are you sure you want to cancel your subscription? Your access will continue until the next billing date.')) {
-      return;
-    }
-
-    setProcessing(true);
-    try {
-      const response = await fetch(`${backendUrl}/api/subscription/cancel/${user.id}`, {
-        method: 'POST'
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        showNotification(result.message, 'success');
-        await fetchSettings(); // Refresh settings to show cancellation
-      } else {
-        const error = await response.json();
-        showNotification(error.detail || 'Failed to cancel subscription', 'error');
-      }
-    } catch (error) {
-      console.error('Error cancelling subscription:', error);
-      showNotification('Error cancelling subscription', 'error');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const reactivateSubscription = async () => {
-    setProcessing(true);
-    try {
-      const response = await fetch(`${backendUrl}/api/subscription/reactivate/${user.id}`, {
-        method: 'POST'
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        showNotification(result.message, 'success');
-        await fetchSettings(); // Refresh settings
-      } else {
-        const error = await response.json();
-        showNotification(error.detail || 'Failed to reactivate subscription', 'error');
-      }
-    } catch (error) {
-      console.error('Error reactivating subscription:', error);
-      showNotification('Error reactivating subscription', 'error');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handleDietaryChange = (option) => {
-    setProfileData(prev => ({
+  const updateSettings = (section, patch) => {
+    setSettings((prev) => ({
       ...prev,
-      dietary_preferences: prev.dietary_preferences.includes(option)
-        ? prev.dietary_preferences.filter(pref => pref !== option)
-        : [...prev.dietary_preferences, option]
+      [section]: {
+        ...prev[section],
+        ...patch,
+      },
     }));
   };
 
-  const getUsageBarColor = (current, limit) => {
-    const percentage = (current / limit) * 100;
-    if (percentage >= 90) return 'bg-red-500';
-    if (percentage >= 70) return 'bg-yellow-500';
-    return 'bg-green-500';
+  const toggleDietaryPreference = (value) => {
+    setSettings((prev) => {
+      const current = prev.preferences.dietaryPreferences || [];
+      const next = current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value];
+
+      return {
+        ...prev,
+        preferences: {
+          ...prev.preferences,
+          dietaryPreferences: next,
+        },
+      };
+    });
   };
 
-  const redirectToUpgrade = () => {
-    showNotification('Redirecting to upgrade your plan...', 'info');
-    onClose();
-    // This would typically navigate to subscription screen
-    // For now, we'll just show a message
-    setTimeout(() => {
-      showNotification('Contact support to upgrade your subscription', 'info');
-    }, 1000);
+  const formatDate = (dateValue) => {
+    if (!dateValue) return 'Unknown';
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return 'Unknown';
+    return date.toLocaleDateString();
   };
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading settings...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const getDaysRemaining = (dateValue) => {
+    if (!dateValue) return 0;
+    const end = new Date(dateValue);
+    if (Number.isNaN(end.getTime())) return 0;
+    const diff = end.getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  };
 
-  if (!settingsData) {
+  const accountName = useMemo(() => {
+    if (user?.name) return user.name;
+    const first = user?.first_name || '';
+    const last = user?.last_name || '';
+    return `${first} ${last}`.trim() || 'Not set';
+  }, [user]);
+
+  const accountStatusDisplay = useMemo(() => {
+    if (!subscriptionStatus) {
+      return { label: 'Loading', detail: 'Checking access', tone: 'bg-gray-100 text-gray-700' };
+    }
+
+    if (subscriptionStatus.subscription_active) {
+      if (subscriptionStatus.cancel_at_period_end) {
+        return {
+          label: 'Premium (Ending)',
+          detail: `Cancels ${formatDate(subscriptionStatus.subscription_end_date || subscriptionStatus.next_billing_date)}`,
+          tone: 'bg-amber-100 text-amber-800',
+        };
+      }
+
+      return {
+        label: 'Premium',
+        detail: 'Monthly plan active',
+        tone: 'bg-green-100 text-green-800',
+      };
+    }
+
+    if (subscriptionStatus.trial_active) {
+      return {
+        label: 'Trial',
+        detail: `${getDaysRemaining(subscriptionStatus.trial_end_date)} days left`,
+        tone: 'bg-blue-100 text-blue-800',
+      };
+    }
+
+    if (subscriptionStatus.subscription_status === 'past_due') {
+      return {
+        label: 'Payment Due',
+        detail: 'Update payment method to restore access',
+        tone: 'bg-red-100 text-red-800',
+      };
+    }
+
+    return {
+      label: 'Trial Ended',
+      detail: 'History is still available. Upgrade to generate recipes again.',
+      tone: 'bg-orange-100 text-orange-800',
+    };
+  }, [subscriptionStatus]);
+
+  const handleSubscribe = async () => {
+    if (!user?.id) return;
+    try {
+      setProcessingBilling(true);
+      setError('');
+      const response = await fetch(`${backendUrl}/api/subscription/create-checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          user_email: user.email,
+          origin_url: window.location.origin,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.detail || 'Failed to start subscription checkout');
+        return;
+      }
+      window.location.href = data.url;
+    } catch (e) {
+      setError('Failed to start subscription checkout');
+    } finally {
+      setProcessingBilling(false);
+    }
+  };
+
+  const handleOpenBillingPortal = async () => {
+    if (!user?.id) return;
+    try {
+      setProcessingBilling(true);
+      setError('');
+      const response = await fetch(`${backendUrl}/api/subscription/create-billing-portal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          origin_url: window.location.origin,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.detail || 'Failed to open billing portal');
+        return;
+      }
+      window.location.href = data.url;
+    } catch (e) {
+      setError('Failed to open billing portal');
+    } finally {
+      setProcessingBilling(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!window.confirm('Cancel your subscription at the end of the current billing period?')) {
+      return;
+    }
+
+    try {
+      setProcessingSubscriptionAction(true);
+      setError('');
+      const response = await fetch(`${backendUrl}/api/subscription/cancel/${user.id}`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.detail || 'Failed to cancel subscription');
+        return;
+      }
+      showNotification(data.message || 'Subscription will cancel at period end', 'success');
+      await fetchSubscriptionStatus();
+    } catch (e) {
+      setError('Failed to cancel subscription');
+    } finally {
+      setProcessingSubscriptionAction(false);
+    }
+  };
+
+  const handleReactivateSubscription = async () => {
+    try {
+      setProcessingSubscriptionAction(true);
+      setError('');
+      const response = await fetch(`${backendUrl}/api/subscription/reactivate/${user.id}`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.detail || 'Failed to reactivate subscription');
+        return;
+      }
+      showNotification(data.message || 'Subscription reactivated', 'success');
+      await fetchSubscriptionStatus();
+    } catch (e) {
+      setError('Failed to reactivate subscription');
+    } finally {
+      setProcessingSubscriptionAction(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    try {
+      setProcessingSecurityAction(true);
+      setError('');
+      const response = await fetch(`${backendUrl}/api/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.detail || 'Failed to resend verification email');
+        return;
+      }
+      showNotification('Verification code sent to your email', 'success');
+    } catch (e) {
+      setError('Failed to resend verification email');
+    } finally {
+      setProcessingSecurityAction(false);
+    }
+  };
+
+  if (!user) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-          <div className="text-center">
-            <p className="text-red-600">Failed to load settings</p>
-            <button
-              onClick={onClose}
-              className="mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-            >
-              Close
-            </button>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 text-center max-w-md w-full">
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">Settings</h1>
+          <p className="text-gray-600 mb-4">Log in to manage account settings.</p>
+          <button
+            onClick={onBack}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Back
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-800">⚙️ Settings</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
-          >
-            ×
-          </button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+      <div className="max-w-5xl mx-auto px-4 py-6 md:py-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Settings</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Manage your account, subscription, billing, notifications, and preferences.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={onBack}
+              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              Back to Dashboard
+            </button>
+            <button
+              onClick={saveLocalSettings}
+              disabled={saving}
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+            >
+              {saving ? 'Saving...' : 'Save Settings'}
+            </button>
+          </div>
         </div>
 
-        <div className="p-6 space-y-8">
-          {/* Profile Section */}
-          <div className="bg-gray-50 rounded-lg p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">👤 Profile</h3>
-              <button
-                onClick={() => editMode ? updateProfile() : setEditMode(true)}
-                disabled={processing}
-                className={`px-4 py-2 rounded-lg text-white font-medium transition-colors ${
-                  processing 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : editMode 
-                      ? 'bg-green-600 hover:bg-green-700' 
-                      : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                {processing ? 'Saving...' : editMode ? 'Save Changes' : 'Edit Profile'}
-              </button>
-            </div>
+        {error ? (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
+            {error}
+          </div>
+        ) : null}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                {editMode ? (
-                  <input
-                    type="text"
-                    value={profileData.first_name}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, first_name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-gray-800 py-2">{settingsData.profile.first_name || 'Not set'}</p>
-                )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <SettingsSection title="Account Info" subtitle="Profile and account status">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide">Name</div>
+                  <div className="text-sm font-medium text-gray-900 mt-1">{accountName}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide">Email</div>
+                  <div className="text-sm font-medium text-gray-900 mt-1 break-all">{user.email || 'Unknown'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide">Verified</div>
+                  <div className={`text-sm font-medium mt-1 ${user.verified ? 'text-green-700' : 'text-amber-700'}`}>
+                    {user.verified ? 'Yes' : 'No'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide">Joined</div>
+                  <div className="text-sm font-medium text-gray-900 mt-1">
+                    {formatDate(user.created_at || subscriptionStatus?.trial_start_date)}
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <div className="text-xs text-gray-500 uppercase tracking-wide">Account Status</div>
+                  <div className="flex flex-wrap items-center gap-3 mt-2">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${accountStatusDisplay.tone}`}>
+                      {accountStatusDisplay.label}
+                    </span>
+                    <span className="text-sm text-gray-600">{accountStatusDisplay.detail}</span>
+                  </div>
+                </div>
+              </div>
+            </SettingsSection>
+
+            <SettingsSection title="Subscription & Billing" subtitle="Trial, plan, and access management">
+              {loading ? (
+                <div className="text-sm text-gray-600">Loading subscription status...</div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <div className="text-gray-500">Access</div>
+                        <div className={`font-semibold mt-1 ${subscriptionStatus?.has_access ? 'text-green-700' : 'text-red-700'}`}>
+                          {subscriptionStatus?.has_access ? 'Active' : 'Limited'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-gray-500">Plan</div>
+                        <div className="font-semibold mt-1 text-gray-900 capitalize">
+                          {subscriptionStatus?.subscription_active
+                            ? 'Premium Monthly'
+                            : subscriptionStatus?.trial_active
+                              ? '7-day Trial'
+                              : subscriptionStatus?.subscription_status || 'Free'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-gray-500">Trial Ends</div>
+                        <div className="font-medium mt-1 text-gray-900">{formatDate(subscriptionStatus?.trial_end_date)}</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-500">Next Billing</div>
+                        <div className="font-medium mt-1 text-gray-900">{formatDate(subscriptionStatus?.next_billing_date)}</div>
+                      </div>
+                    </div>
+                    {subscriptionStatus?.trial_active ? (
+                      <div className="mt-3 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                        Trial active: {getDaysRemaining(subscriptionStatus.trial_end_date)} day(s) remaining.
+                      </div>
+                    ) : null}
+                    {!subscriptionStatus?.has_access ? (
+                      <div className="mt-3 text-sm text-orange-700 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
+                        Your trial has ended. You can still view recipe history, but generation is locked until you subscribe.
+                      </div>
+                    ) : null}
+                    {subscriptionStatus?.cancel_at_period_end ? (
+                      <div className="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                        Cancellation scheduled. Access remains active until {formatDate(subscriptionStatus.subscription_end_date || subscriptionStatus.next_billing_date)}.
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    {!subscriptionStatus?.subscription_active ? (
+                      <button
+                        onClick={handleSubscribe}
+                        disabled={processingBilling}
+                        className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+                      >
+                        {processingBilling ? 'Opening Checkout...' : 'Subscribe to Premium'}
+                      </button>
+                    ) : null}
+
+                    {subscriptionStatus?.subscription_active && !subscriptionStatus?.cancel_at_period_end ? (
+                      <button
+                        onClick={handleCancelSubscription}
+                        disabled={processingSubscriptionAction}
+                        className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:bg-red-400"
+                      >
+                        {processingSubscriptionAction ? 'Processing...' : 'Cancel at Period End'}
+                      </button>
+                    ) : null}
+
+                    {subscriptionStatus?.subscription_active && subscriptionStatus?.cancel_at_period_end ? (
+                      <button
+                        onClick={handleReactivateSubscription}
+                        disabled={processingSubscriptionAction}
+                        className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:bg-green-400"
+                      >
+                        {processingSubscriptionAction ? 'Processing...' : 'Reactivate Subscription'}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              )}
+            </SettingsSection>
+
+            <SettingsSection title="Payment Methods" subtitle="Securely managed in Stripe Billing Portal">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="text-sm text-gray-600">
+                  Update your card, billing details, and view invoices in Stripe.
+                </div>
+                <button
+                  onClick={handleOpenBillingPortal}
+                  disabled={processingBilling || !subscriptionStatus?.stripe_configured}
+                  className="px-4 py-2 rounded-lg border border-blue-300 text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                >
+                  {processingBilling ? 'Opening...' : 'Manage Payment Methods'}
+                </button>
+              </div>
+              {!subscriptionStatus?.stripe_configured ? (
+                <p className="text-xs text-amber-700 mt-3">
+                  Stripe is not configured on the server yet. Add your Stripe environment variables to enable billing management.
+                </p>
+              ) : null}
+            </SettingsSection>
+
+            <SettingsSection title="Notifications" subtitle="Choose which emails and reminders you receive">
+              <div className="divide-y divide-gray-100">
+                <ToggleRow
+                  label="Weekly meal reminders"
+                  description="Helpful reminders to build next week’s meal plan."
+                  checked={settings.notifications.weeklyMealReminder}
+                  onChange={(value) => updateSettings('notifications', { weeklyMealReminder: value })}
+                />
+                <ToggleRow
+                  label="Trial ending reminders"
+                  description="Gentle reminders before your free trial expires."
+                  checked={settings.notifications.trialEndingReminder}
+                  onChange={(value) => updateSettings('notifications', { trialEndingReminder: value })}
+                />
+                <ToggleRow
+                  label="Billing receipts and renewal emails"
+                  description="Payment confirmations and subscription billing notices."
+                  checked={settings.notifications.billingEmails}
+                  onChange={(value) => updateSettings('notifications', { billingEmails: value })}
+                />
+                <ToggleRow
+                  label="Product updates"
+                  description="Occasional feature announcements and improvements."
+                  checked={settings.notifications.productUpdates}
+                  onChange={(value) => updateSettings('notifications', { productUpdates: value })}
+                />
+              </div>
+            </SettingsSection>
+
+            <SettingsSection title="Preferences" subtitle="Default behavior for recipes and planning">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Default Start Page</label>
+                  <select
+                    value={settings.general.defaultStartPage}
+                    onChange={(e) => updateSettings('general', { defaultStartPage: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  >
+                    <option value="dashboard">Dashboard</option>
+                    <option value="recipe-generator">Recipe Generator</option>
+                    <option value="weekly-recipes">Weekly Planner</option>
+                    <option value="recipe-history">Recipe History</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Measurement Units</label>
+                  <select
+                    value={settings.general.units}
+                    onChange={(e) => updateSettings('general', { units: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  >
+                    <option value="us">US (cups, oz, lb)</option>
+                    <option value="metric">Metric (g, kg, ml)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Household Size</label>
+                  <select
+                    value={settings.preferences.householdSize}
+                    onChange={(e) => updateSettings('preferences', { householdSize: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  >
+                    <option value="1">1 person</option>
+                    <option value="2">2 people</option>
+                    <option value="3-4">3-4 people</option>
+                    <option value="5+">5+ people</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Budget Style</label>
+                  <select
+                    value={settings.preferences.budgetStyle}
+                    onChange={(e) => updateSettings('preferences', { budgetStyle: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  >
+                    <option value="budget">Budget-first</option>
+                    <option value="balanced">Balanced</option>
+                    <option value="premium">Premium ingredients</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                {editMode ? (
-                  <input
-                    type="text"
-                    value={profileData.last_name}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, last_name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-gray-800 py-2">{settingsData.profile.last_name || 'Not set'}</p>
-                )}
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <p className="text-gray-800 py-2">{settingsData.profile.email}</p>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Dietary Preferences</label>
-                {editMode ? (
-                  <div className="flex flex-wrap gap-2">
-                    {dietaryOptions.map(option => (
+              <div className="mt-4">
+                <div className="text-sm font-medium text-gray-700 mb-2">Dietary Preferences</div>
+                <div className="flex flex-wrap gap-2">
+                  {DIETARY_OPTIONS.map((option) => {
+                    const selected = settings.preferences.dietaryPreferences.includes(option);
+                    return (
                       <button
                         key={option}
-                        onClick={() => handleDietaryChange(option)}
-                        className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                          profileData.dietary_preferences.includes(option)
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        type="button"
+                        onClick={() => toggleDietaryPreference(option)}
+                        className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                          selected
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
                         }`}
                       >
                         {option}
                       </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {settingsData.profile.dietary_preferences.length > 0 ? (
-                      settingsData.profile.dietary_preferences.map(pref => (
-                        <span key={pref} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                          {pref}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-gray-500">None selected</span>
-                    )}
-                  </div>
-                )}
+                    );
+                  })}
+                </div>
               </div>
+            </SettingsSection>
 
-              {editMode && (
-                <div className="md:col-span-2">
+            <SettingsSection title="Security" subtitle="Verification and session controls">
+              <div className="space-y-4">
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium text-gray-800">Email verification</div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {user.verified
+                          ? 'Your email address is verified.'
+                          : 'Your email is not verified. Resend a verification code if needed.'}
+                      </div>
+                    </div>
+                    {!user.verified ? (
+                      <button
+                        onClick={handleResendVerification}
+                        disabled={processingSecurityAction}
+                        className="px-4 py-2 rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+                      >
+                        {processingSecurityAction ? 'Sending...' : 'Resend Verification Code'}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <ToggleRow
+                    label="Reduced motion"
+                    description="Prefer fewer UI animations and transitions."
+                    checked={settings.general.reducedMotion}
+                    onChange={(value) => updateSettings('general', { reducedMotion: value })}
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-3">
                   <button
-                    onClick={() => setEditMode(false)}
-                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 mr-2"
+                    onClick={onLogout}
+                    className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
                   >
-                    Cancel
+                    Log Out
+                  </button>
+                  <button
+                    type="button"
+                    disabled
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-400 cursor-not-allowed"
+                    title="Password change UI can be added next"
+                  >
+                    Change Password (Next)
                   </button>
                 </div>
-              )}
-            </div>
+              </div>
+            </SettingsSection>
           </div>
 
-          {/* Subscription Section */}
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">💳 Subscription</h3>
-            
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700">Status:</span>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  settingsData.subscription.subscription_status === 'active' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {settingsData.subscription.subscription_status === 'active' ? '✅ Active' : '🆓 Trial'}
-                </span>
-              </div>
-
-              {settingsData.subscription.trial_active && (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-700">Trial ends:</span>
-                  <span className="text-gray-800">
-                    {new Date(settingsData.subscription.trial_end_date).toLocaleDateString()}
+          <div className="space-y-6">
+            <SettingsSection title="Quick Summary">
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between gap-3">
+                  <span className="text-gray-600">Plan</span>
+                  <span className="font-medium text-gray-900">
+                    {subscriptionStatus?.subscription_active
+                      ? 'Premium'
+                      : subscriptionStatus?.trial_active
+                        ? 'Trial'
+                        : 'Free'}
                   </span>
                 </div>
-              )}
-
-              {settingsData.subscription.subscription_active && (
-                <>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-700">Next billing:</span>
-                    <span className="text-gray-800">
-                      {new Date(settingsData.subscription.next_billing_date).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  <div className="mt-4">
-                    {settingsData.subscription.cancel_at_period_end ? (
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <p className="text-yellow-800 mb-2">⚠️ Subscription will be cancelled at end of billing period</p>
-                        <button
-                          onClick={reactivateSubscription}
-                          disabled={processing}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400"
-                        >
-                          {processing ? 'Processing...' : 'Reactivate Subscription'}
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={cancelSubscription}
-                        disabled={processing}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400"
-                      >
-                        {processing ? 'Processing...' : 'Cancel Subscription'}
-                      </button>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Usage Section */}
-          <div className="bg-gray-50 rounded-lg p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">📊 Usage This Month</h3>
-              {settingsData.subscription.subscription_status === 'trial' && (
-                <button
-                  onClick={redirectToUpgrade}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 font-medium"
-                >
-                  Upgrade Plan
-                </button>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              {/* Weekly Recipes */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-700">🗓️ Weekly Recipe Plans</span>
-                  <span className="text-sm text-gray-600">
-                    {settingsData.usage.weekly_recipes.current} / {settingsData.usage.weekly_recipes.limit}
+                <div className="flex justify-between gap-3">
+                  <span className="text-gray-600">Trial Days Left</span>
+                  <span className="font-medium text-gray-900">
+                    {subscriptionStatus?.trial_active ? getDaysRemaining(subscriptionStatus.trial_end_date) : 0}
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-300 ${getUsageBarColor(
-                      settingsData.usage.weekly_recipes.current, 
-                      settingsData.usage.weekly_recipes.limit
-                    )}`}
-                    style={{ 
-                      width: `${Math.min(100, (settingsData.usage.weekly_recipes.current / settingsData.usage.weekly_recipes.limit) * 100)}%` 
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              {/* Individual Recipes */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-700">🍳 Individual Recipes</span>
-                  <span className="text-sm text-gray-600">
-                    {settingsData.usage.individual_recipes.current} / {settingsData.usage.individual_recipes.limit}
+                <div className="flex justify-between gap-3">
+                  <span className="text-gray-600">Access</span>
+                  <span className={`font-medium ${subscriptionStatus?.has_access ? 'text-green-700' : 'text-orange-700'}`}>
+                    {subscriptionStatus?.has_access ? 'Enabled' : 'History only'}
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-300 ${getUsageBarColor(
-                      settingsData.usage.individual_recipes.current, 
-                      settingsData.usage.individual_recipes.limit
-                    )}`}
-                    style={{ 
-                      width: `${Math.min(100, (settingsData.usage.individual_recipes.current / settingsData.usage.individual_recipes.limit) * 100)}%` 
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              {/* Starbucks Drinks */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-700">☕ Starbucks Drinks</span>
-                  <span className="text-sm text-gray-600">
-                    {settingsData.usage.starbucks_drinks.current} / {settingsData.usage.starbucks_drinks.limit}
+                <div className="flex justify-between gap-3">
+                  <span className="text-gray-600">Verified</span>
+                  <span className={`font-medium ${user.verified ? 'text-green-700' : 'text-amber-700'}`}>
+                    {user.verified ? 'Yes' : 'No'}
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-300 ${getUsageBarColor(
-                      settingsData.usage.starbucks_drinks.current, 
-                      settingsData.usage.starbucks_drinks.limit
-                    )}`}
-                    style={{ 
-                      width: `${Math.min(100, (settingsData.usage.starbucks_drinks.current / settingsData.usage.starbucks_drinks.limit) * 100)}%` 
-                    }}
-                  ></div>
-                </div>
               </div>
+            </SettingsSection>
 
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  💡 Usage resets monthly. {settingsData.subscription.subscription_status === 'trial' 
-                    ? 'Upgrade to get higher limits!' 
-                    : 'Thank you for being a premium subscriber!'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Account Actions */}
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">🔒 Account</h3>
-            <button
-              onClick={onLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-            >
-              Logout
-            </button>
+            <SettingsSection title="What You Can Do">
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li>View recipe history even after your trial ends.</li>
+                <li>Upgrade to restore recipe and weekly plan generation.</li>
+                <li>Manage cards and invoices securely through Stripe.</li>
+                <li>Control reminders and basic app preferences here.</li>
+              </ul>
+            </SettingsSection>
           </div>
         </div>
       </div>

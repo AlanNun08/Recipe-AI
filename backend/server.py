@@ -293,6 +293,11 @@ class SubscriptionCheckoutRequest(BaseModel):
     user_email: Optional[str] = None
     origin_url: str
 
+
+class StripeBillingPortalRequest(BaseModel):
+    user_id: str
+    origin_url: str
+
 # Authentication functions
 import hashlib
 
@@ -2048,6 +2053,45 @@ async def create_subscription_checkout(request: SubscriptionCheckoutRequest):
     except Exception as e:
         logger.error(f"❌ Failed to create Stripe checkout session: {e}")
         return JSONResponse(status_code=500, content={"detail": f"Failed to create checkout session: {str(e)}"})
+
+
+@app.post("/subscription/create-billing-portal")
+async def create_billing_portal_session(request: StripeBillingPortalRequest):
+    """Create a Stripe Billing Portal session for payment method and billing management."""
+    try:
+        if not _stripe_is_configured():
+            return JSONResponse(status_code=503, content={"detail": "Stripe is not configured on the server"})
+
+        user = await users_collection.find_one({"id": request.user_id})
+        if not user:
+            return JSONResponse(status_code=404, content={"detail": "User not found"})
+
+        origin_url = (request.origin_url or "").strip()
+        if not (origin_url.startswith("http://") or origin_url.startswith("https://")):
+            return JSONResponse(status_code=400, content={"detail": "Invalid origin URL"})
+
+        stripe_customer_id = user.get("stripe_customer_id")
+        if not stripe_customer_id:
+            customer = stripe.Customer.create(
+                email=user.get("email"),
+                metadata={"user_id": user["id"]},
+                name=f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or None
+            )
+            stripe_customer_id = customer.id
+            await users_collection.update_one(
+                {"id": user["id"]},
+                {"$set": {"stripe_customer_id": stripe_customer_id}}
+            )
+
+        portal_session = stripe.billing_portal.Session.create(
+            customer=stripe_customer_id,
+            return_url=f"{origin_url}/settings",
+        )
+
+        return JSONResponse(status_code=200, content={"url": portal_session.url})
+    except Exception as e:
+        logger.error(f"❌ Failed to create Stripe billing portal session: {e}")
+        return JSONResponse(status_code=500, content={"detail": f"Failed to create billing portal session: {str(e)}"})
 
 
 @app.get("/subscription/checkout/status/{session_id}")

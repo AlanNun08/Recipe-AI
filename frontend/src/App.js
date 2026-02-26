@@ -10,6 +10,7 @@ import RecipeGeneratorScreen from './components/RecipeGeneratorScreen';
 import WeeklyRecipesScreen from './components/WeeklyRecipesScreen';
 import StarbucksGeneratorScreen from './components/StarbucksGeneratorScreen';
 import RecipeHistoryScreen from './components/RecipeHistoryScreen';
+import SettingsScreen from './components/SettingsScreen';
 import { authService } from './services/auth';
 import './App.css';
 
@@ -432,19 +433,12 @@ function App() {
 
       case 'settings':
         return (
-          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-              <div className="text-4xl mb-4">⚙️</div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Settings</h2>
-              <p className="text-gray-600 mb-6">User settings and preferences coming soon!</p>
-              <button
-                onClick={() => setCurrentView('dashboard')}
-                className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                ← Back to Dashboard
-              </button>
-            </div>
-          </div>
+          <SettingsScreen
+            user={user}
+            onBack={() => setCurrentView(user ? 'dashboard' : 'login')}
+            onLogout={handleLogout}
+            showNotification={showNotification}
+          />
         );
 
       case 'shopping-list':
