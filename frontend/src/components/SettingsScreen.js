@@ -181,6 +181,14 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   };
 
+  const getTrialDaysLeftDisplay = () => {
+    const apiDaysLeft = subscriptionStatus?.trial_days_left;
+    if (typeof apiDaysLeft === 'number' && Number.isFinite(apiDaysLeft)) {
+      return Math.max(0, apiDaysLeft);
+    }
+    return getDaysRemaining(subscriptionStatus?.trial_end_date);
+  };
+
   const accountName = useMemo(() => {
     if (user?.name) return user.name;
     const first = user?.first_name || '';
@@ -210,11 +218,11 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
     }
 
     if (subscriptionStatus.trial_active) {
-      return {
-        label: 'Trial',
-        detail: `${getDaysRemaining(subscriptionStatus.trial_end_date)} days left`,
-        tone: 'bg-blue-100 text-blue-800',
-      };
+        return {
+          label: 'Trial',
+          detail: `${getTrialDaysLeftDisplay()} days left`,
+          tone: 'bg-blue-100 text-blue-800',
+        };
     }
 
     if (subscriptionStatus.subscription_status === 'past_due') {
@@ -473,7 +481,7 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
                     </div>
                     {subscriptionStatus?.trial_active ? (
                       <div className="mt-3 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                        Trial active: {getDaysRemaining(subscriptionStatus.trial_end_date)} day(s) remaining.
+                        Trial active: {getTrialDaysLeftDisplay()} day(s) remaining.
                       </div>
                     ) : null}
                     {!subscriptionStatus?.has_access ? (
@@ -718,7 +726,7 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
                 <div className="flex justify-between gap-3">
                   <span className="text-gray-600">Trial Days Left</span>
                   <span className="font-medium text-gray-900">
-                    {subscriptionStatus?.trial_active ? getDaysRemaining(subscriptionStatus.trial_end_date) : 0}
+                    {subscriptionStatus?.trial_active ? getTrialDaysLeftDisplay() : 0}
                   </span>
                 </div>
                 <div className="flex justify-between gap-3">
