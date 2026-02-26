@@ -23,3 +23,5 @@ This directory contains all project documentation grouped by topic.
 - Auth summary: `docs/authentication/README_AUTHENTICATION.md`
 - Weekly recipes index: `docs/weekly-recipes/current/DOCUMENTATION_INDEX.md`
 - Weekly recipes quick reference: `docs/weekly-recipes/current/WEEKLY_RECIPES_QUICK_REF.md`
+- Stripe website integration guide: `docs/STRIPE_WEBSITE_INTEGRATION_GUIDE_2026-02-26.md`
+- Stripe subscription go-live checklist: `docs/STRIPE_SUBSCRIPTION_GO_LIVE_CHECKLIST_2026-02-26.md`

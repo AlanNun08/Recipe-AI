@@ -7,9 +7,10 @@ const WelcomeOnboarding = ({
   onSkip,
   showLoginOption = false,
   onLoginClick,
-  onRegistrationVerificationRequired
+  onRegistrationVerificationRequired,
+  simpleSignupMode = true
 }) => {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(simpleSignupMode ? 2 : 0);
   const [showDemo, setShowDemo] = useState(false);
   const [sampleRecipe, setSampleRecipe] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -86,11 +87,6 @@ const WelcomeOnboarding = ({
       return;
     }
 
-    if (!registrationData.agreeTerms) {
-      setRegistrationError('Please agree to terms and conditions');
-      return;
-    }
-
     if (registrationData.password.length < 8) {
       setRegistrationError('Password must be at least 8 characters');
       return;
@@ -159,7 +155,19 @@ const WelcomeOnboarding = ({
           return;
         }
 
-        // Fallback: Move to preferences step (legacy flow)
+        // Fallback: complete signup directly in simplified flow
+        if (simpleSignupMode) {
+          if (onComplete) {
+            onComplete({
+              ...data,
+              email,
+              name: fullName
+            });
+          }
+          return;
+        }
+
+        // Legacy flow: Move to preferences step
         setCurrentStep(3);
       } else {
         const errorMessage = data.detail || data.message || 'Registration failed. Please try again.';
@@ -326,9 +334,8 @@ const WelcomeOnboarding = ({
       <div className="max-w-md w-full">
         <div className="bg-white rounded-3xl shadow-2xl p-8">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold mb-2">Join BuildYourSmartCart</h2>
-            <p className="text-lg text-gray-600">🎉 Start saving money on groceries today!</p>
-            <p className="text-sm text-gray-500">⭐ Join 12,847+ families already saving</p>
+            <h2 className="text-2xl font-bold mb-2">Create your account</h2>
+            <p className="text-gray-600">Sign up to track recipes and meal plans.</p>
           </div>
 
           <form
@@ -420,27 +427,6 @@ const WelcomeOnboarding = ({
               )}
             </div>
 
-            <div className="space-y-2">
-              <label className="flex items-center text-sm">
-                <input
-                  type="checkbox"
-                  checked={registrationData.agreeTerms}
-                  onChange={(e) => setRegistrationData({...registrationData, agreeTerms: e.target.checked})}
-                  className="mr-2"
-                />
-                I agree to Terms & Privacy Policy
-              </label>
-              <label className="flex items-center text-sm text-gray-600">
-                <input
-                  type="checkbox"
-                  checked={registrationData.emailUpdates}
-                  onChange={(e) => setRegistrationData({...registrationData, emailUpdates: e.target.checked})}
-                  className="mr-2"
-                />
-                Send me weekly meal planning tips (optional)
-              </label>
-            </div>
-
             {registrationError && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                 <p className="text-red-700 text-sm">⚠️ {registrationError}</p>
@@ -450,7 +436,6 @@ const WelcomeOnboarding = ({
             <button
               type="submit"
               disabled={
-                !registrationData.agreeTerms ||
                 isRegistering ||
                 (registrationData.confirmPassword && registrationData.password !== registrationData.confirmPassword)
               }
@@ -462,16 +447,16 @@ const WelcomeOnboarding = ({
                   Creating account...
                 </div>
               ) : (
-                '🚀 Create Free Account'
+                'Create account'
               )}
             </button>
           </form>
 
           <div className="text-center mt-6">
             <p className="text-sm text-gray-600">
-              Already have account?{' '}
+              Already have an account?{' '}
               <button onClick={onLoginClick} className="text-blue-600 font-medium">
-                🔑 Login here
+                Log in
               </button>
             </p>
           </div>
@@ -549,6 +534,11 @@ const WelcomeOnboarding = ({
       </div>
     </div>
   );
+
+  // Simplified signup flow renders the registration form directly.
+  if (simpleSignupMode) {
+    return renderRegisterStep();
+  }
 
   // Show demo modal if requested
   if (showDemo) {

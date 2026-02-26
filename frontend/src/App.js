@@ -11,6 +11,7 @@ import WeeklyRecipesScreen from './components/WeeklyRecipesScreen';
 import StarbucksGeneratorScreen from './components/StarbucksGeneratorScreen';
 import RecipeHistoryScreen from './components/RecipeHistoryScreen';
 import SettingsScreen from './components/SettingsScreen';
+import SubscriptionSuccessScreen from './components/SubscriptionSuccessScreen';
 import { authService } from './services/auth';
 import './App.css';
 
@@ -26,6 +27,7 @@ const VIEW_TO_PATH = {
   'recipe-history': '/recipe-history',
   'recipe-detail': '/recipe-detail',
   settings: '/settings',
+  'subscription-success': '/subscription-success',
   'shopping-list': '/shopping-list',
 };
 
@@ -49,6 +51,7 @@ const PATH_ALIASES = {
   '/history': 'recipe-history',
   '/recipe-detail': 'recipe-detail',
   '/settings': 'settings',
+  '/subscription-success': 'subscription-success',
   '/shopping-list': 'shopping-list',
 };
 
@@ -70,7 +73,11 @@ function App() {
       try {
         const userData = JSON.parse(savedUser);
         setUser(userData);
-        setCurrentView('dashboard');
+        const pathView = getViewFromPath(window.location.pathname);
+        // Preserve explicit deep links like subscription return pages.
+        if (['login', 'welcome', 'landing'].includes(pathView)) {
+          setCurrentView('dashboard');
+        }
         console.log('🔄 Restored user session:', userData.email);
       } catch (error) {
         console.error('Error parsing saved user data:', error);
@@ -438,6 +445,21 @@ function App() {
             onBack={() => setCurrentView(user ? 'dashboard' : 'login')}
             onLogout={handleLogout}
             showNotification={showNotification}
+          />
+        );
+
+      case 'subscription-success':
+        return (
+          <SubscriptionSuccessScreen
+            showNotification={showNotification}
+            onClose={() => {
+              if (user) {
+                const updatedUser = { ...user, subscription_status: 'active' };
+                setUser(updatedUser);
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+              }
+              setCurrentView(user ? 'dashboard' : 'login');
+            }}
           />
         );
 

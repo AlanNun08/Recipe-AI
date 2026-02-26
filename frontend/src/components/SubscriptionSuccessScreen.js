@@ -39,6 +39,9 @@ const SubscriptionSuccessScreen = ({ onClose, showNotification }) => {
       if (data.payment_status === 'paid') {
         setPaymentStatus('success');
         showNotification('🎉 Payment successful! Your subscription is now active!', 'success');
+        setTimeout(() => {
+          if (onClose) onClose();
+        }, 1500);
         return;
       } else if (data.status === 'expired') {
         setPaymentStatus('expired');
