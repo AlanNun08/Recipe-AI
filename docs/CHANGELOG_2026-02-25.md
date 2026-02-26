@@ -227,3 +227,29 @@ User DB fields maintained:
 
 Validation performed:
 - `python3 -m py_compile backend/server.py` (passed)
+
+### C. Front-End URL Routing / Page Path Sync
+- Added URL-to-component routing sync in the front-end app shell so direct page URLs load the correct screens
+- Browser path now updates when switching screens in-app
+- Browser back/forward navigation now syncs with the current component view
+
+Examples now supported:
+- `/signup` -> sign-up flow (`welcome` view)
+- `/login` -> login screen
+- `/verify` -> verification screen
+- `/dashboard` -> dashboard screen
+- `/weekly-recipes` -> weekly planner
+- `/recipe-generator` -> recipe generator
+
+Updated file:
+- `frontend/src/App.js`
+
+Functions / logic added:
+- `VIEW_TO_PATH` mapping
+- `PATH_ALIASES` mapping
+- `getViewFromPath(pathname)`
+- `popstate` listener to sync browser navigation with app state
+- URL sync effect to push route changes when `currentView` changes
+
+Git commit:
+- `cce2623` (`feat(frontend): sync component views with URL routes`)
