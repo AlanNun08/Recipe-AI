@@ -167,7 +167,12 @@ else:
 
 # Stripe setup
 stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY')
-stripe_publisher_key = os.environ.get('STRIPE_PUBLISHER_API_KEY')
+# Support multiple common naming conventions for the Stripe publishable key.
+stripe_publisher_key = (
+    os.environ.get('STRIPE_PUBLISHABLE_KEY')
+    or os.environ.get('STRIPE_PUBLISHABLE_API_KEY')
+    or os.environ.get('STRIPE_PUBLISHER_API_KEY')
+)
 stripe_webhook_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
 stripe_subscription_price_id = (
     os.environ.get('STRIPE_SUBSCRIPTION_PRICE_ID')
