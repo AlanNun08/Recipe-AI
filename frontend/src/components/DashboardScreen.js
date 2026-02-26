@@ -160,17 +160,17 @@ const DashboardScreen = ({
       <div className="max-w-7xl mx-auto">
         
         {/* Header with Welcome Message */}
-        <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8 text-center">
-          <div className="text-8xl mb-4 animate-bounce">🤖</div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent mb-4">
+        <div className="bg-white rounded-3xl shadow-2xl p-4 md:p-8 mb-8 text-center">
+          <div className="text-6xl md:text-8xl mb-4 animate-bounce">🤖</div>
+          <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent mb-4 leading-tight">
             Welcome to BuildYourSmartCart!
           </h1>
-          <p className="text-xl text-gray-600 mb-4">
+          <p className="text-base md:text-xl text-gray-600 mb-4">
             Your AI-powered recipe and grocery companion
           </p>
           {user && (
-            <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-2xl p-4 mb-6 inline-block">
-              <p className="text-lg font-semibold text-gray-800">
+            <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-2xl p-4 mb-6 inline-block max-w-full">
+              <p className="text-sm md:text-lg font-semibold text-gray-800 break-all md:break-normal">
                 👋 Hello, <span className="text-purple-600">{user.email}</span>!
               </p>
               <p className="text-gray-600">Ready to cook something amazing?</p>
@@ -264,13 +264,13 @@ const DashboardScreen = ({
         )}
 
         {/* Main Actions Grid */}
-        <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8">
+        <div className="bg-white rounded-3xl shadow-2xl p-4 md:p-8 mb-8">
           <div className="text-center mb-8">
-            <h3 className="text-3xl font-bold text-gray-800 mb-4 flex items-center justify-center">
-              <span className="text-4xl mr-3 animate-bounce">🚀</span>
+            <h3 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4 flex items-center justify-center">
+              <span className="text-3xl md:text-4xl mr-3 animate-bounce">🚀</span>
               What would you like to do today?
             </h3>
-            <p className="text-gray-600 text-lg">Choose from our AI-powered features</p>
+            <p className="text-gray-600 text-base md:text-lg">Choose from our AI-powered features</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -278,7 +278,7 @@ const DashboardScreen = ({
               <button
                 key={action.id}
                 onClick={action.action}
-                className={`group relative overflow-hidden bg-gradient-to-br ${action.gradient} rounded-3xl p-8 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-left`}
+                className={`group relative overflow-hidden bg-gradient-to-br ${action.gradient} rounded-3xl p-5 md:p-8 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-left`}
               >
                 {/* Background Pattern */}
                 <div className="absolute inset-0 opacity-10">

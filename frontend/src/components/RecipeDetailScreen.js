@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { openWalmartCart } from '../utils/externalLinks';
 
 const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
@@ -791,8 +792,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
                               onClick={() => {
                                 const itemIds = Object.values(selectedProducts).map(product => product.id).filter(Boolean);
                                 if (itemIds.length > 0) {
-                                  const cartUrl = `https://affil.walmart.com/cart/addToCart?items=${itemIds.join(',')}`;
-                                  window.open(cartUrl, '_blank');
+                                  openWalmartCart(itemIds, { affiliate: true });
                                   showNotification(`🛒 Opening Walmart cart with ${itemIds.length} items!`, 'success');
                                 } else {
                                   showNotification('Please select some items first', 'warning');
@@ -812,8 +812,8 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
                               onClick={() => {
                                 const itemIds = Object.values(selectedProducts).map(product => product.id).filter(Boolean);
                                 if (itemIds.length > 0) {
-                                  const cartUrl = `https://walmart.com/cart?items=${itemIds.join(',')}`;
-                                  window.open(cartUrl, '_blank');
+                                  openWalmartCart(itemIds);
+                                  showNotification('📱 Opening Walmart cart (mobile-safe link)...', 'info');
                                 } else {
                                   showNotification('Please select some items first', 'warning');
                                 }

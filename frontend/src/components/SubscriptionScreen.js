@@ -156,8 +156,8 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg p-6 md:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading subscription information...</p>
@@ -168,12 +168,12 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[92vh] overflow-y-auto">
+        <div className="p-4 md:p-6">
           {/* Header */}
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">Subscription Management</h2>
+          <div className="flex justify-between items-start gap-3 mb-6">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800">Subscription Management</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 text-2xl"
@@ -186,7 +186,7 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
           {subscriptionStatus && (
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
               <h3 className="text-lg font-semibold mb-3">Current Status</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">Access Status</p>
                   <p className={`font-semibold ${subscriptionStatus.has_access ? 'text-green-600' : 'text-red-600'}`}>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { openWalmartCart } from '../utils/externalLinks';
 
 const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
@@ -561,7 +562,7 @@ function RecipeDetailScreenMobile({ recipeId, recipeSource = 'weekly', onBack, s
 
                 {/* Fixed Footer with Cart Summary */}
                 {Object.keys(selectedProducts).length > 0 && (
-                  <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4">
+                  <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 safe-bottom">
                     <div className="max-w-md mx-auto">
                       <div className="text-center mb-3">
                         <div className="text-sm text-gray-600">{Object.keys(selectedProducts).length} items • ${calculateSelectedTotal().toFixed(2)}</div>
@@ -570,8 +571,7 @@ function RecipeDetailScreenMobile({ recipeId, recipeSource = 'weekly', onBack, s
                         onClick={() => {
                           const itemIds = Object.values(selectedProducts).map(product => product.id).filter(Boolean);
                           if (itemIds.length > 0) {
-                            const cartUrl = `https://walmart.com/cart?items=${itemIds.join(',')}`;
-                            window.open(cartUrl, '_blank');
+                            openWalmartCart(itemIds);
                             showNotification(`🛒 Opening Walmart with ${itemIds.length} items!`, 'success');
                           }
                         }}

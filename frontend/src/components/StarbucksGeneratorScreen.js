@@ -299,57 +299,57 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
         
         {/* Enhanced Header */}
         <div className="text-center mb-8">
-          <div className="text-8xl mb-4 animate-bounce">☕</div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+          <div className="text-6xl md:text-8xl mb-4 animate-bounce">☕</div>
+          <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-green-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 leading-tight">
             ✨ Starbucks Secret Menu ✨
           </h1>
-          <p className="text-xl text-gray-700 font-medium">Generate magical drinks, discover viral hacks, and share your creations!</p>
-          <div className="flex justify-center mt-4 space-x-2">
-            <span className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-sm font-bold animate-pulse">
+          <p className="text-base md:text-xl text-gray-700 font-medium">Generate magical drinks, discover viral hacks, and share your creations!</p>
+          <div className="flex flex-wrap justify-center mt-4 gap-2">
+            <span className="px-3 md:px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-xs md:text-sm font-bold animate-pulse">
               🌟 AI-Powered
             </span>
-            <span className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-full text-sm font-bold animate-pulse">
+            <span className="px-3 md:px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-full text-xs md:text-sm font-bold animate-pulse">
               🚀 Viral Ready
             </span>
           </div>
         </div>
 
         {/* Enhanced Tab Navigation */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-3xl shadow-2xl p-3 flex space-x-3 border-4 border-gradient-to-r from-purple-200 to-pink-200">
+        <div className="mb-8">
+          <div className="bg-white rounded-3xl shadow-2xl p-2 md:p-3 flex gap-2 md:gap-3 border-4 border-gradient-to-r from-purple-200 to-pink-200 overflow-x-auto">
             <button
               onClick={() => setCurrentTab('generator')}
-              className={`px-8 py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 ${
+              className={`shrink-0 px-4 md:px-8 py-3 md:py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 whitespace-nowrap ${
                 currentTab === 'generator'
                   ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              <span className="text-2xl mr-2">🎨</span>
+              <span className="text-xl md:text-2xl mr-2">🎨</span>
               Generator
             </button>
             
             <button
               onClick={() => setCurrentTab('curated')}
-              className={`px-8 py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 ${
+              className={`shrink-0 px-4 md:px-8 py-3 md:py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 whitespace-nowrap ${
                 currentTab === 'curated'
                   ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-lg'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              <span className="text-2xl mr-2">⭐</span>
+              <span className="text-xl md:text-2xl mr-2">⭐</span>
               Curated
             </button>
             
             <button
               onClick={() => setCurrentTab('community')}
-              className={`px-8 py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 ${
+              className={`shrink-0 px-4 md:px-8 py-3 md:py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 whitespace-nowrap ${
                 currentTab === 'community'
                   ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              <span className="text-2xl mr-2">👥</span>
+              <span className="text-xl md:text-2xl mr-2">👥</span>
               Community
             </button>
           </div>
@@ -359,8 +359,8 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
         {currentTab === 'generator' && (
           <>
             {/* Enhanced Generator Form */}
-            <div className="bg-white rounded-3xl shadow-2xl p-10 mb-8 border-4 border-gradient-to-r from-purple-200 to-pink-200">
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 text-center">
+            <div className="bg-white rounded-3xl shadow-2xl p-4 md:p-10 mb-8 border-4 border-gradient-to-r from-purple-200 to-pink-200">
+              <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 text-center">
                 ✨ Create Your Magical Drink ✨
               </h2>
               

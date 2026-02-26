@@ -921,19 +921,19 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
             Back to Dashboard
           </button>
           
-          <div className="text-center bg-white rounded-3xl shadow-lg p-8 mb-8">
-            <div className="text-8xl mb-6 animate-bounce">🍳</div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-4">
+          <div className="text-center bg-white rounded-3xl shadow-lg p-4 md:p-8 mb-8">
+            <div className="text-6xl md:text-8xl mb-6 animate-bounce">🍳</div>
+            <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-4 leading-tight">
               AI Recipe Generator
             </h1>
-            <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
+            <p className="text-base md:text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               Create personalized recipes with AI and get instant Walmart shopping lists
             </p>
           </div>
 
           {trialStatus && !trialStatus.has_access && (
             <div className="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <p className="font-semibold text-gray-900">Generation is paused (trial ended)</p>
                   <p className="text-sm text-gray-600">
@@ -952,7 +952,7 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-white rounded-3xl shadow-xl p-4 md:p-8 border border-gray-100">
           {currentStep <= 4 && <ProgressBar />}
           <StepContent />
           {currentStep <= 4 && <NavigationButtons />}
