@@ -150,6 +150,8 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
     { key: 'starbucks_drinks', label: 'Starbucks Drinks', icon: '☕' },
   ];
 
+  const nextBillingOrPeriodEnd = subscriptionStatus?.next_billing_date || subscriptionStatus?.subscription_end_date;
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -215,7 +217,7 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
                 <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                   <p className="text-green-800 font-semibold">💎 Premium Subscription Active</p>
                   <p className="text-green-700 text-sm">
-                    Next billing: {formatDate(subscriptionStatus.next_billing_date)}
+                    {subscriptionStatus.cancel_at_period_end ? 'Access until' : 'Next billing'}: {formatDate(nextBillingOrPeriodEnd)}
                   </p>
                   <p className="text-green-600 text-xs">
                     Renews: {formatDate(subscriptionStatus.subscription_end_date)}

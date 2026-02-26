@@ -357,6 +357,10 @@ def _build_access_status(user: Dict[str, Any]) -> Dict[str, Any]:
     if subscription_end and subscription_end < now:
         subscription_active = False
 
+    # Stripe sometimes leaves next billing unset while current period end is available.
+    if subscription_active and not next_billing_date and subscription_end:
+        next_billing_date = subscription_end
+
     trial_active = False
     if not subscription_active and raw_subscription_status == "trial":
         trial_active = trial_end > now

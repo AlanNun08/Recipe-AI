@@ -316,6 +316,8 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
     };
   }, [subscriptionStatus]);
 
+  const nextBillingOrPeriodEnd = subscriptionStatus?.next_billing_date || subscriptionStatus?.subscription_end_date;
+
   const handleSubscribe = async () => {
     if (!user?.id) return;
     try {
@@ -645,8 +647,10 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
                         <div className="font-medium mt-1 text-gray-900">{formatDate(subscriptionStatus?.trial_end_date)}</div>
                       </div>
                       <div>
-                        <div className="text-gray-500">Next Billing</div>
-                        <div className="font-medium mt-1 text-gray-900">{formatDate(subscriptionStatus?.next_billing_date)}</div>
+                        <div className="text-gray-500">
+                          {subscriptionStatus?.cancel_at_period_end ? 'Access Until' : 'Next Billing'}
+                        </div>
+                        <div className="font-medium mt-1 text-gray-900">{formatDate(nextBillingOrPeriodEnd)}</div>
                       </div>
                     </div>
                     {subscriptionStatus?.trial_active ? (
@@ -661,7 +665,7 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
                     ) : null}
                     {subscriptionStatus?.cancel_at_period_end ? (
                       <div className="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                        Cancellation scheduled. Access remains active until {formatDate(subscriptionStatus.subscription_end_date || subscriptionStatus.next_billing_date)}.
+                        Cancellation scheduled. Access remains active until {formatDate(nextBillingOrPeriodEnd)}.
                       </div>
                     ) : null}
                   </div>
