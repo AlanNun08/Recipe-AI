@@ -10,6 +10,7 @@ const DashboardScreen = ({
   setCurrentScreen 
 }) => {
   const [dashboardStats, setDashboardStats] = useState(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
@@ -20,17 +21,27 @@ const DashboardScreen = ({
   }, [user]);
 
   const loadDashboardData = async () => {
-    if (!user?.id) {
+    const userId = user?.id || user?.user_id;
+    if (!userId) {
       setLoading(false);
       return;
     }
 
     try {
-      // Load user stats and recent activity
-      const response = await fetch(`${API}/api/user/dashboard/${user.id}`);
-      if (response.ok) {
-        const data = await response.json();
+      // Load dashboard stats + subscription/trial status
+      const [dashboardResponse, subscriptionResponse] = await Promise.allSettled([
+        fetch(`${API}/api/user/dashboard/${userId}`),
+        fetch(`${API}/api/subscription/status/${userId}`)
+      ]);
+
+      if (dashboardResponse.status === 'fulfilled' && dashboardResponse.value.ok) {
+        const data = await dashboardResponse.value.json();
         setDashboardStats(data);
+      }
+
+      if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.ok) {
+        const data = await subscriptionResponse.value.json();
+        setSubscriptionStatus(data);
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -39,6 +50,53 @@ const DashboardScreen = ({
       setLoading(false);
     }
   };
+
+  const getAccountStatusDisplay = () => {
+    if (!subscriptionStatus) {
+      return { label: 'Loading', sublabel: 'Checking plan', color: 'text-gray-600' };
+    }
+
+    if (subscriptionStatus.subscription_active) {
+      return {
+        label: 'Premium',
+        sublabel: subscriptionStatus.cancel_at_period_end ? 'Cancels at period end' : 'Monthly Plan',
+        color: 'text-purple-600'
+      };
+    }
+
+    if (subscriptionStatus.trial_active) {
+      const daysLeft = subscriptionStatus.trial_days_left ?? 0;
+      return {
+        label: 'Trial',
+        sublabel: `${daysLeft} day${daysLeft === 1 ? '' : 's'} left`,
+        color: 'text-blue-600'
+      };
+    }
+
+    if (subscriptionStatus.trial_expired) {
+      return {
+        label: 'Trial Ended',
+        sublabel: 'Upgrade to generate',
+        color: 'text-amber-600'
+      };
+    }
+
+    if (subscriptionStatus.subscription_status === 'past_due') {
+      return {
+        label: 'Payment Due',
+        sublabel: 'Update billing',
+        color: 'text-red-600'
+      };
+    }
+
+    return {
+      label: 'Free',
+      sublabel: 'History access only',
+      color: 'text-gray-600'
+    };
+  };
+
+  const accountStatusDisplay = getAccountStatusDisplay();
 
   const quickActions = [
     {
@@ -128,12 +186,12 @@ const DashboardScreen = ({
         )}
 
         {/* Quick Stats */}
-        {dashboardStats && (
+        {(dashboardStats || subscriptionStatus) && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-white rounded-2xl shadow-xl p-6 text-center hover:shadow-2xl transition-shadow duration-300">
               <div className="text-4xl mb-3">🍳</div>
               <h3 className="text-2xl font-bold text-orange-600 mb-2">
-                {dashboardStats.total_recipes || 0}
+                {dashboardStats?.total_recipes || 0}
               </h3>
               <p className="text-gray-600 font-medium">Recipes Generated</p>
             </div>
@@ -141,7 +199,7 @@ const DashboardScreen = ({
             <div className="bg-white rounded-2xl shadow-xl p-6 text-center hover:shadow-2xl transition-shadow duration-300">
               <div className="text-4xl mb-3">☕</div>
               <h3 className="text-2xl font-bold text-green-600 mb-2">
-                {dashboardStats.total_starbucks || 0}
+                {dashboardStats?.total_starbucks || 0}
               </h3>
               <p className="text-gray-600 font-medium">Starbucks Drinks</p>
             </div>
@@ -149,16 +207,17 @@ const DashboardScreen = ({
             <div className="bg-white rounded-2xl shadow-xl p-6 text-center hover:shadow-2xl transition-shadow duration-300">
               <div className="text-4xl mb-3">🛒</div>
               <h3 className="text-2xl font-bold text-blue-600 mb-2">
-                {dashboardStats.total_shopping_lists || 0}
+                {dashboardStats?.total_shopping_lists || 0}
               </h3>
               <p className="text-gray-600 font-medium">Shopping Lists</p>
             </div>
             
             <div className="bg-white rounded-2xl shadow-xl p-6 text-center hover:shadow-2xl transition-shadow duration-300">
               <div className="text-4xl mb-3">⭐</div>
-              <h3 className="text-2xl font-bold text-purple-600 mb-2">
-                {user?.subscription?.status === 'trialing' ? 'Trial' : 'Premium'}
+              <h3 className={`text-2xl font-bold mb-1 ${accountStatusDisplay.color}`}>
+                {accountStatusDisplay.label}
               </h3>
+              <p className="text-xs text-gray-500 mb-2">{accountStatusDisplay.sublabel}</p>
               <p className="text-gray-600 font-medium">Account Status</p>
             </div>
           </div>
