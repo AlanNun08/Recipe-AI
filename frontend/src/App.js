@@ -14,7 +14,7 @@ import { authService } from './services/auth';
 import './App.css';
 
 const VIEW_TO_PATH = {
-  landing: '/',
+  landing: '/landing',
   welcome: '/signup',
   login: '/login',
   verification: '/verify',
@@ -29,7 +29,7 @@ const VIEW_TO_PATH = {
 };
 
 const PATH_ALIASES = {
-  '/': 'landing',
+  '/': 'login',
   '/landing': 'landing',
   '/welcome': 'welcome',
   '/signup': 'welcome',
@@ -51,7 +51,7 @@ const PATH_ALIASES = {
   '/shopping-list': 'shopping-list',
 };
 
-const getViewFromPath = (pathname) => PATH_ALIASES[pathname] || 'landing';
+const getViewFromPath = (pathname) => PATH_ALIASES[pathname] || 'login';
 
 function App() {
   const [currentView, setCurrentView] = useState(() => getViewFromPath(window.location.pathname));
@@ -211,7 +211,7 @@ function App() {
     setUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('userPreferences');
-    setCurrentView('welcome');
+    setCurrentView('login');
     showNotification('You have been logged out.', 'info');
   };
 
