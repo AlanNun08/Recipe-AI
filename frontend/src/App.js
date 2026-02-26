@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import LandingPage from './components/LandingPage';
 import WelcomeOnboarding from './components/WelcomeOnboarding';
 import LoginComponent from './components/LoginComponent';
 import VerificationPage from './components/VerificationPage';
@@ -16,7 +15,6 @@ import { authService } from './services/auth';
 import './App.css';
 
 const VIEW_TO_PATH = {
-  landing: '/landing',
   welcome: '/signup',
   login: '/login',
   verification: '/verify',
@@ -33,7 +31,7 @@ const VIEW_TO_PATH = {
 
 const PATH_ALIASES = {
   '/': 'login',
-  '/landing': 'landing',
+  '/landing': 'login',
   '/welcome': 'welcome',
   '/signup': 'welcome',
   '/register': 'welcome',
@@ -75,7 +73,7 @@ function App() {
         setUser(userData);
         const pathView = getViewFromPath(window.location.pathname);
         // Preserve explicit deep links like subscription return pages.
-        if (['login', 'welcome', 'landing'].includes(pathView)) {
+        if (['login', 'welcome'].includes(pathView)) {
           setCurrentView('dashboard');
         }
         console.log('🔄 Restored user session:', userData.email);
@@ -235,15 +233,6 @@ function App() {
 
   const renderCurrentView = () => {
     switch (currentView) {
-      case 'landing':
-        return (
-          <LandingPage
-            onVerificationRequired={handleVerificationRequired}
-            onLoginSuccess={handleLoginSuccess}
-            onSignUpClick={() => setCurrentView('welcome')}
-          />
-        );
-
       case 'welcome':
         return (
           <WelcomeOnboarding
