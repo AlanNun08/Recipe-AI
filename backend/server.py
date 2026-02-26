@@ -174,8 +174,10 @@ stripe_publisher_key = (
     or os.environ.get('STRIPE_PUBLISHER_API_KEY')
 )
 stripe_webhook_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
+# Single standard monthly plan price (preferred env name), with legacy aliases supported.
 stripe_subscription_price_id = (
-    os.environ.get('STRIPE_SUBSCRIPTION_PRICE_ID')
+    os.environ.get('STRIPE_STANDARD_PRICE_ID')
+    or os.environ.get('STRIPE_SUBSCRIPTION_PRICE_ID')
     or os.environ.get('STRIPE_PRICE_ID')
 )
 
