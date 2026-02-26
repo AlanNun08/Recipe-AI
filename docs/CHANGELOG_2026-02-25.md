@@ -253,3 +253,57 @@ Functions / logic added:
 
 Git commit:
 - `cce2623` (`feat(frontend): sync component views with URL routes`)
+
+---
+
+## Addendum - 2026-02-26 (Subscription Auto-Renew Choice + Billing Date Backfill)
+
+Date: 2026-02-26
+
+### A. Subscription Auto-Renew Choice at Checkout
+- Added `Auto-renew monthly` option before Stripe checkout starts
+- Users can choose:
+  - monthly recurring (`auto-renew` ON)
+  - one-month-only access (`auto-renew` OFF)
+- If `auto-renew` is OFF, backend disables renewal after checkout completion by setting Stripe subscription to cancel at period end
+
+Updated files:
+- `frontend/src/components/SettingsScreen.js`
+- `frontend/src/components/SubscriptionScreen.js`
+- `backend/server.py`
+
+Functions / logic updated:
+- `SubscriptionCheckoutRequest` (added `auto_renew`)
+- `create_subscription_checkout(...)` (passes `auto_renew` metadata into Stripe Checkout + subscription metadata)
+- `_handle_checkout_session_completed(...)` (turns on `cancel_at_period_end` when `auto_renew=false`)
+
+### B. Monthly Billing Date Coverage / DB Backfill
+- Improved billing date handling so users can see monthly billing timing clearly
+- Active subscriptions now backfill missing billing dates from `subscription_start_date` if Stripe dates are missing
+- Ensures `Next Billing` / `Access Until` can be shown for active users
+
+Updated file:
+- `backend/server.py`
+
+Functions / logic added:
+- `_add_one_month_utc(dt)`
+- `_derive_next_monthly_billing_from_start(subscription_start)`
+- `_persist_missing_billing_dates_from_start(user, source_event)`
+
+Functions / logic updated:
+- `_build_access_status(user)` (monthly fallback billing date derivation)
+- `_sync_user_subscription_from_stripe(...)` (fallback if Stripe period end is missing)
+- `get_subscription_status(user_id)` (lazy DB backfill for missing billing dates)
+
+### C. Settings Billing UI Clarity
+- `Subscription & Billing` now shows `Subscribed On` for premium users instead of showing `Trial Ends`
+- `Next Billing` uses backend billing dates / fallback data
+- `Access Until` is shown when cancellation is scheduled (auto-renew OFF / cancel at period end)
+
+Updated files:
+- `frontend/src/components/SettingsScreen.js`
+- `frontend/src/components/SubscriptionScreen.js`
+
+Git commits:
+- `1dadefc` (`feat(billing): add monthly auto-renew option and billing date backfill`)
+- `5653811` (`fix(settings): use db name and backfill billing dates`)

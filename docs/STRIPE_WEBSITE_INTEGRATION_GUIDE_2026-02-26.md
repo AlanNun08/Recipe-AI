@@ -236,6 +236,47 @@ In Stripe Dashboard -> Webhooks -> your endpoint:
 4. Confirm cancel/reactivate works
 5. Confirm billing portal opens
 
+## Subscription UX Behavior (Current App)
+
+### Auto-Renew Choice at Checkout
+
+Users can choose whether the subscription should auto-renew when starting checkout:
+
+- `Auto-renew monthly` = ON
+  - Stripe subscription renews monthly until the user cancels
+- `Auto-renew monthly` = OFF
+  - Checkout still creates the monthly subscription
+  - Backend disables renewal after checkout completes (`cancel_at_period_end=true`)
+  - User keeps access for the current paid month only
+
+Where users can set this:
+
+- `Settings` -> `Subscription & Billing`
+- `Subscription` modal
+
+### Cancel / Reactivate in Settings
+
+Users can manage an active subscription in `Settings`:
+
+- `Cancel at Period End`
+  - does not immediately remove access
+  - keeps premium access until the current monthly billing period ends
+- `Reactivate Subscription`
+  - removes the scheduled cancellation before the period ends
+
+### Billing Date Display / DB Backfill
+
+The backend stores and returns billing dates for UI display:
+
+- `subscription_start_date`
+- `subscription_end_date`
+- `next_billing_date`
+
+If Stripe billing dates are temporarily missing for an active subscription, the backend backfills monthly dates from `subscription_start_date` so the UI can still show:
+
+- `Next Billing` (auto-renew ON)
+- `Access Until` (auto-renew OFF / cancel at period end)
+
 ## Common Mistakes
 
 - Using `prod_...` in `STRIPE_STANDARD_PRICE_ID` (must be `price_...`)
