@@ -3,7 +3,7 @@ buildyoursmartcart.com FastAPI Backend
 AI Recipe + Grocery Delivery App - Weekly Meal Planning & Walmart Integration
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -168,6 +168,11 @@ else:
 # Stripe setup
 stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY')
 stripe_publisher_key = os.environ.get('STRIPE_PUBLISHER_API_KEY')
+stripe_webhook_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
+stripe_subscription_price_id = (
+    os.environ.get('STRIPE_SUBSCRIPTION_PRICE_ID')
+    or os.environ.get('STRIPE_PRICE_ID')
+)
 
 if stripe_secret_key and not any(placeholder in stripe_secret_key for placeholder in ['your-', 'placeholder', 'here']):
     stripe.api_key = stripe_secret_key
@@ -276,6 +281,12 @@ class VerificationRequest(BaseModel):
 class EmailVerificationRequest(BaseModel):
     email: str
     verification_code: str
+
+
+class SubscriptionCheckoutRequest(BaseModel):
+    user_id: str
+    user_email: Optional[str] = None
+    origin_url: str
 
 # Authentication functions
 import hashlib
@@ -399,6 +410,144 @@ async def _sync_trial_countdown_fields(user: Dict[str, Any], access_status: Dict
         await users_collection.update_one({"id": user["id"]}, {"$set": updates})
     except Exception as sync_error:
         logger.warning(f"⚠️ Trial countdown sync skipped for user {user.get('id')}: {sync_error}")
+
+
+def _stripe_is_configured() -> bool:
+    return bool(
+        stripe_secret_key
+        and not any(placeholder in stripe_secret_key for placeholder in ['your-', 'placeholder', 'here'])
+    )
+
+
+def _json_dt(value: Optional[datetime]) -> Optional[str]:
+    return value.isoformat() if value else None
+
+
+def _stripe_ts_to_dt(value: Optional[int]) -> Optional[datetime]:
+    try:
+        if value is None:
+            return None
+        return datetime.utcfromtimestamp(int(value))
+    except Exception:
+        return None
+
+
+def _stripe_obj_get(obj: Any, key: str, default: Any = None) -> Any:
+    if obj is None:
+        return default
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
+
+
+def _normalize_subscription_status_from_stripe(stripe_status: Optional[str]) -> str:
+    """Map Stripe subscription status into app-level status used by access checks."""
+    status = (stripe_status or "").lower()
+    if status in {"active", "trialing"}:
+        return "active"
+    if status in {"past_due", "unpaid"}:
+        return "past_due"
+    if status in {"canceled", "cancelled"}:
+        return "cancelled"
+    if status in {"incomplete", "incomplete_expired"}:
+        return "incomplete"
+    return "free"
+
+
+async def _find_user_for_stripe(customer_id: Optional[str] = None, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    if user_id:
+        user = await users_collection.find_one({"id": user_id})
+        if user:
+            return user
+    if customer_id:
+        return await users_collection.find_one({"stripe_customer_id": customer_id})
+    return None
+
+
+async def _record_payment_transaction(update_filter: Dict[str, Any], update_fields: Dict[str, Any]) -> None:
+    try:
+        await payment_transactions_collection.update_one(
+            update_filter,
+            {"$set": update_fields},
+            upsert=True
+        )
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to record payment transaction: {e}")
+
+
+async def _sync_user_subscription_from_stripe(
+    *,
+    user: Dict[str, Any],
+    stripe_customer_id: Optional[str],
+    subscription: Any,
+    source_event: str
+) -> None:
+    """Persist Stripe subscription status into the user record."""
+    stripe_status = _stripe_obj_get(subscription, "status")
+    normalized_status = _normalize_subscription_status_from_stripe(stripe_status)
+    current_period_end = _stripe_ts_to_dt(_stripe_obj_get(subscription, "current_period_end"))
+    current_period_start = _stripe_ts_to_dt(_stripe_obj_get(subscription, "current_period_start"))
+    cancel_at_period_end = bool(_stripe_obj_get(subscription, "cancel_at_period_end", False))
+    canceled_at = _stripe_ts_to_dt(_stripe_obj_get(subscription, "canceled_at"))
+    subscription_id = _stripe_obj_get(subscription, "id")
+
+    updates: Dict[str, Any] = {
+        "stripe_customer_id": stripe_customer_id or user.get("stripe_customer_id"),
+        "stripe_subscription_id": subscription_id,
+        "stripe_subscription_status": stripe_status,
+        "subscription_status": normalized_status,
+        "subscription_start_date": current_period_start or user.get("subscription_start_date") or datetime.utcnow(),
+        "subscription_end_date": current_period_end,
+        "next_billing_date": current_period_end,
+        "subscription_cancelled_date": canceled_at,
+        "cancel_at_period_end": cancel_at_period_end,
+        "subscription_last_synced_at": datetime.utcnow(),
+        "subscription_last_event": source_event,
+    }
+
+    if normalized_status == "active":
+        updates["subscription_reactivated_date"] = datetime.utcnow()
+        updates["trial_active"] = False
+        updates["trial_expired"] = False
+
+    await users_collection.update_one({"id": user["id"]}, {"$set": updates})
+
+
+async def _handle_checkout_session_completed(session_obj: Any, source_event: str = "checkout.session.completed") -> None:
+    customer_id = _stripe_obj_get(session_obj, "customer")
+    subscription_id = _stripe_obj_get(session_obj, "subscription")
+    metadata = _stripe_obj_get(session_obj, "metadata", {}) or {}
+    user_id = _stripe_obj_get(metadata, "user_id")
+
+    user = await _find_user_for_stripe(customer_id=customer_id, user_id=user_id)
+    if not user:
+        logger.warning(f"⚠️ Stripe checkout completed but user not found (customer={customer_id}, user_id={user_id})")
+        return
+
+    if subscription_id and _stripe_is_configured():
+        subscription = stripe.Subscription.retrieve(subscription_id)
+        await _sync_user_subscription_from_stripe(
+            user=user,
+            stripe_customer_id=customer_id,
+            subscription=subscription,
+            source_event=source_event
+        )
+
+    await _record_payment_transaction(
+        {"checkout_session_id": _stripe_obj_get(session_obj, "id")},
+        {
+            "checkout_session_id": _stripe_obj_get(session_obj, "id"),
+            "user_id": user["id"],
+            "stripe_customer_id": customer_id,
+            "stripe_subscription_id": subscription_id,
+            "payment_status": _stripe_obj_get(session_obj, "payment_status"),
+            "status": _stripe_obj_get(session_obj, "status"),
+            "amount_total": _stripe_obj_get(session_obj, "amount_total"),
+            "currency": _stripe_obj_get(session_obj, "currency"),
+            "last_event": source_event,
+            "updated_at": datetime.utcnow(),
+        }
+    )
 
 
 async def _enforce_generation_access(user_id: str, feature_label: str) -> Optional[JSONResponse]:
@@ -1796,6 +1945,292 @@ Please respond with a JSON object containing:
                 "openai_key_present": bool(openai_api_key)
             }
         )
+
+
+@app.get("/subscription/status/{user_id}")
+async def get_subscription_status(user_id: str):
+    """Return combined trial + subscription status for a user."""
+    try:
+        user, access_status = await _get_user_access_status(user_id)
+        if not user or not access_status:
+            return JSONResponse(status_code=404, content={"detail": "User not found"})
+
+        response = {
+            **access_status,
+            "cancel_at_period_end": bool(user.get("cancel_at_period_end", False)),
+            "stripe_customer_id": user.get("stripe_customer_id"),
+            "stripe_subscription_id": user.get("stripe_subscription_id"),
+            "stripe_subscription_status": user.get("stripe_subscription_status"),
+            "subscription_start_date": _json_dt(_parse_datetime(user.get("subscription_start_date"))),
+            "subscription_end_date": access_status.get("subscription_end_date"),
+            "next_billing_date": access_status.get("next_billing_date"),
+            "trial_end_date": access_status.get("trial_end_date"),
+            "trial_start_date": access_status.get("trial_start_date"),
+            "stripe_configured": _stripe_is_configured(),
+            "price_configured": bool(stripe_subscription_price_id),
+        }
+        return JSONResponse(status_code=200, content=response)
+    except Exception as e:
+        logger.error(f"❌ Error fetching subscription status: {e}")
+        return JSONResponse(status_code=500, content={"detail": f"Failed to fetch subscription status: {str(e)}"})
+
+
+@app.post("/subscription/create-checkout")
+async def create_subscription_checkout(request: SubscriptionCheckoutRequest):
+    """Create a Stripe Checkout Session for a monthly subscription."""
+    try:
+        if not _stripe_is_configured():
+            return JSONResponse(status_code=503, content={"detail": "Stripe is not configured on the server"})
+        if not stripe_subscription_price_id:
+            return JSONResponse(status_code=503, content={"detail": "Stripe subscription price is not configured"})
+
+        user = await users_collection.find_one({"id": request.user_id})
+        if not user:
+            return JSONResponse(status_code=404, content={"detail": "User not found"})
+
+        origin_url = (request.origin_url or "").strip()
+        if not (origin_url.startswith("http://") or origin_url.startswith("https://")):
+            return JSONResponse(status_code=400, content={"detail": "Invalid origin URL"})
+
+        # Reuse or create Stripe customer.
+        stripe_customer_id = user.get("stripe_customer_id")
+        if not stripe_customer_id:
+            customer = stripe.Customer.create(
+                email=request.user_email or user.get("email"),
+                metadata={"user_id": user["id"]},
+                name=f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or None
+            )
+            stripe_customer_id = customer.id
+            await users_collection.update_one(
+                {"id": user["id"]},
+                {"$set": {"stripe_customer_id": stripe_customer_id}}
+            )
+
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            customer=stripe_customer_id,
+            client_reference_id=user["id"],
+            line_items=[{"price": stripe_subscription_price_id, "quantity": 1}],
+            success_url=f"{origin_url}/subscription-success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{origin_url}/dashboard",
+            allow_promotion_codes=True,
+            metadata={"user_id": user["id"]},
+            subscription_data={
+                "metadata": {"user_id": user["id"], "email": user.get("email", "")}
+            },
+        )
+
+        await _record_payment_transaction(
+            {"checkout_session_id": session.id},
+            {
+                "checkout_session_id": session.id,
+                "user_id": user["id"],
+                "stripe_customer_id": stripe_customer_id,
+                "type": "subscription_checkout",
+                "status": _stripe_obj_get(session, "status"),
+                "payment_status": _stripe_obj_get(session, "payment_status"),
+                "amount_total": _stripe_obj_get(session, "amount_total"),
+                "currency": _stripe_obj_get(session, "currency"),
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow(),
+            }
+        )
+
+        return JSONResponse(
+            status_code=200,
+            content={"url": session.url, "session_id": session.id}
+        )
+    except Exception as e:
+        logger.error(f"❌ Failed to create Stripe checkout session: {e}")
+        return JSONResponse(status_code=500, content={"detail": f"Failed to create checkout session: {str(e)}"})
+
+
+@app.get("/subscription/checkout/status/{session_id}")
+async def get_checkout_status(session_id: str):
+    """Optional client polling endpoint to verify Stripe Checkout completion."""
+    try:
+        if not _stripe_is_configured():
+            return JSONResponse(status_code=503, content={"detail": "Stripe is not configured on the server"})
+
+        session = stripe.checkout.Session.retrieve(session_id)
+        session_status = _stripe_obj_get(session, "status")
+        payment_status = _stripe_obj_get(session, "payment_status")
+
+        # Optional server-side sync fallback if webhook is delayed.
+        if payment_status == "paid" and _stripe_obj_get(session, "mode") == "subscription":
+            await _handle_checkout_session_completed(session, source_event="checkout.status.poll")
+
+        await _record_payment_transaction(
+            {"checkout_session_id": session_id},
+            {
+                "checkout_session_id": session_id,
+                "status": session_status,
+                "payment_status": payment_status,
+                "amount_total": _stripe_obj_get(session, "amount_total"),
+                "currency": _stripe_obj_get(session, "currency"),
+                "stripe_customer_id": _stripe_obj_get(session, "customer"),
+                "stripe_subscription_id": _stripe_obj_get(session, "subscription"),
+                "updated_at": datetime.utcnow(),
+            }
+        )
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "id": _stripe_obj_get(session, "id"),
+                "status": session_status,
+                "payment_status": payment_status,
+                "amount_total": _stripe_obj_get(session, "amount_total"),
+                "currency": _stripe_obj_get(session, "currency"),
+                "customer": _stripe_obj_get(session, "customer"),
+                "subscription": _stripe_obj_get(session, "subscription"),
+            }
+        )
+    except Exception as e:
+        logger.error(f"❌ Failed to check Stripe checkout status: {e}")
+        return JSONResponse(status_code=500, content={"detail": f"Failed to check checkout status: {str(e)}"})
+
+
+@app.post("/subscription/webhook")
+async def stripe_subscription_webhook(request: Request):
+    """Stripe webhook endpoint (source of truth for payment/subscription state)."""
+    if not _stripe_is_configured():
+        return JSONResponse(status_code=503, content={"detail": "Stripe is not configured on the server"})
+
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+
+    try:
+        if stripe_webhook_secret:
+            event = stripe.Webhook.construct_event(payload, sig_header, stripe_webhook_secret)
+        else:
+            logger.warning("⚠️ STRIPE_WEBHOOK_SECRET not set; webhook payload accepted without signature verification")
+            event = json.loads(payload.decode("utf-8"))
+    except Exception as e:
+        logger.error(f"❌ Stripe webhook signature/payload error: {e}")
+        return JSONResponse(status_code=400, content={"detail": "Invalid webhook payload"})
+
+    event_type = event.get("type")
+    data_object = event.get("data", {}).get("object", {})
+    logger.info(f"📩 Stripe webhook received: {event_type}")
+
+    try:
+        if event_type == "checkout.session.completed":
+            await _handle_checkout_session_completed(data_object, source_event=event_type)
+
+        elif event_type in {"customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"}:
+            customer_id = _stripe_obj_get(data_object, "customer")
+            metadata = _stripe_obj_get(data_object, "metadata", {}) or {}
+            user = await _find_user_for_stripe(customer_id=customer_id, user_id=_stripe_obj_get(metadata, "user_id"))
+            if user:
+                await _sync_user_subscription_from_stripe(
+                    user=user,
+                    stripe_customer_id=customer_id,
+                    subscription=data_object,
+                    source_event=event_type
+                )
+
+        elif event_type == "invoice.paid":
+            customer_id = _stripe_obj_get(data_object, "customer")
+            subscription_id = _stripe_obj_get(data_object, "subscription")
+            user = await _find_user_for_stripe(customer_id=customer_id)
+            if user:
+                updates = {
+                    "last_payment_date": datetime.utcnow(),
+                    "subscription_status": "active",
+                    "stripe_customer_id": customer_id,
+                    "stripe_subscription_id": subscription_id or user.get("stripe_subscription_id"),
+                    "subscription_last_event": event_type,
+                    "subscription_last_synced_at": datetime.utcnow(),
+                }
+                next_payment_attempt = _stripe_obj_get(data_object, "next_payment_attempt")
+                if next_payment_attempt:
+                    updates["next_billing_date"] = _stripe_ts_to_dt(next_payment_attempt)
+                await users_collection.update_one({"id": user["id"]}, {"$set": updates})
+
+        elif event_type == "invoice.payment_failed":
+            customer_id = _stripe_obj_get(data_object, "customer")
+            user = await _find_user_for_stripe(customer_id=customer_id)
+            if user:
+                await users_collection.update_one(
+                    {"id": user["id"]},
+                    {"$set": {
+                        "subscription_status": "past_due",
+                        "subscription_last_event": event_type,
+                        "subscription_last_synced_at": datetime.utcnow(),
+                    }}
+                )
+
+        await _record_payment_transaction(
+            {"stripe_event_id": event.get("id")},
+            {
+                "stripe_event_id": event.get("id"),
+                "event_type": event_type,
+                "received_at": datetime.utcnow(),
+                "checkout_session_id": _stripe_obj_get(data_object, "id") if event_type == "checkout.session.completed" else None,
+                "stripe_customer_id": _stripe_obj_get(data_object, "customer"),
+                "stripe_subscription_id": _stripe_obj_get(data_object, "subscription"),
+                "status": _stripe_obj_get(data_object, "status"),
+                "payment_status": _stripe_obj_get(data_object, "payment_status"),
+            }
+        )
+
+        return JSONResponse(status_code=200, content={"received": True})
+    except Exception as e:
+        logger.error(f"❌ Stripe webhook processing failed ({event_type}): {e}")
+        return JSONResponse(status_code=500, content={"detail": "Webhook processing failed"})
+
+
+@app.post("/subscription/cancel/{user_id}")
+async def cancel_subscription(user_id: str):
+    """Cancel subscription at period end."""
+    try:
+        if not _stripe_is_configured():
+            return JSONResponse(status_code=503, content={"detail": "Stripe is not configured on the server"})
+        user = await users_collection.find_one({"id": user_id})
+        if not user:
+            return JSONResponse(status_code=404, content={"detail": "User not found"})
+        subscription_id = user.get("stripe_subscription_id")
+        if not subscription_id:
+            return JSONResponse(status_code=400, content={"detail": "No active Stripe subscription found"})
+
+        subscription = stripe.Subscription.modify(subscription_id, cancel_at_period_end=True)
+        await _sync_user_subscription_from_stripe(
+            user=user,
+            stripe_customer_id=user.get("stripe_customer_id"),
+            subscription=subscription,
+            source_event="subscription.cancel.requested"
+        )
+        return JSONResponse(status_code=200, content={"status": "success", "message": "Subscription will cancel at period end"})
+    except Exception as e:
+        logger.error(f"❌ Failed to cancel subscription: {e}")
+        return JSONResponse(status_code=500, content={"detail": f"Failed to cancel subscription: {str(e)}"})
+
+
+@app.post("/subscription/reactivate/{user_id}")
+async def reactivate_subscription(user_id: str):
+    """Reactivate a subscription that was set to cancel at period end."""
+    try:
+        if not _stripe_is_configured():
+            return JSONResponse(status_code=503, content={"detail": "Stripe is not configured on the server"})
+        user = await users_collection.find_one({"id": user_id})
+        if not user:
+            return JSONResponse(status_code=404, content={"detail": "User not found"})
+        subscription_id = user.get("stripe_subscription_id")
+        if not subscription_id:
+            return JSONResponse(status_code=400, content={"detail": "No Stripe subscription found"})
+
+        subscription = stripe.Subscription.modify(subscription_id, cancel_at_period_end=False)
+        await _sync_user_subscription_from_stripe(
+            user=user,
+            stripe_customer_id=user.get("stripe_customer_id"),
+            subscription=subscription,
+            source_event="subscription.reactivate.requested"
+        )
+        return JSONResponse(status_code=200, content={"status": "success", "message": "Subscription reactivated"})
+    except Exception as e:
+        logger.error(f"❌ Failed to reactivate subscription: {e}")
+        return JSONResponse(status_code=500, content={"detail": f"Failed to reactivate subscription: {str(e)}"})
 
 @app.get("/user/trial-status/{user_id}")
 async def get_trial_status(user_id: str):
