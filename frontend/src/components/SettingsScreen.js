@@ -206,11 +206,16 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
   };
 
   const accountName = useMemo(() => {
+    const backendFirst = subscriptionStatus?.first_name || '';
+    const backendLast = subscriptionStatus?.last_name || '';
+    const backendFullName = `${backendFirst} ${backendLast}`.trim() || subscriptionStatus?.name || '';
+    if (backendFullName) return backendFullName;
+
     if (user?.name) return user.name;
     const first = user?.first_name || '';
     const last = user?.last_name || '';
     return `${first} ${last}`.trim() || 'Not set';
-  }, [user]);
+  }, [subscriptionStatus, user]);
 
   const isVerified = useMemo(() => {
     if (typeof subscriptionStatus?.is_verified === 'boolean') return subscriptionStatus.is_verified;

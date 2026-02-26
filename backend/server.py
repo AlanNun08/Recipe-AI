@@ -2267,10 +2267,35 @@ async def get_subscription_status(user_id: str):
         if not user or not access_status:
             return JSONResponse(status_code=404, content={"detail": "User not found"})
 
+        # Lazy Stripe sync for older records that became active without billing dates populated.
+        if (
+            _stripe_is_configured()
+            and access_status.get("subscription_active")
+            and user.get("stripe_subscription_id")
+            and not (
+                _parse_datetime(user.get("next_billing_date"))
+                or _parse_datetime(user.get("subscription_end_date"))
+            )
+        ):
+            try:
+                stripe_subscription = stripe.Subscription.retrieve(user.get("stripe_subscription_id"))
+                await _sync_user_subscription_from_stripe(
+                    user=user,
+                    stripe_customer_id=user.get("stripe_customer_id"),
+                    subscription=stripe_subscription,
+                    source_event="subscription.status.lazy_sync"
+                )
+                user, access_status = await _get_user_access_status(user_id)
+            except Exception as stripe_sync_error:
+                logger.warning(f"⚠️ Lazy Stripe billing-date sync failed for user {user_id}: {stripe_sync_error}")
+
         usage_limits = await _build_generation_usage_summary(user_id, access_status)
 
         response = {
             **access_status,
+            "first_name": user.get("first_name", ""),
+            "last_name": user.get("last_name", ""),
+            "name": " ".join([user.get("first_name", ""), user.get("last_name", "")]).strip(),
             "is_verified": bool(user.get("is_verified", user.get("verified", False))),
             "verified": bool(user.get("verified", user.get("is_verified", False))),
             "cancel_at_period_end": bool(user.get("cancel_at_period_end", False)),
@@ -2491,6 +2516,18 @@ async def stripe_subscription_webhook(request: Request):
             subscription_id = _stripe_obj_get(data_object, "subscription")
             user = await _find_user_for_stripe(customer_id=customer_id)
             if user:
+                if subscription_id and _stripe_is_configured():
+                    try:
+                        subscription = stripe.Subscription.retrieve(subscription_id)
+                        await _sync_user_subscription_from_stripe(
+                            user=user,
+                            stripe_customer_id=customer_id,
+                            subscription=subscription,
+                            source_event=event_type
+                        )
+                    except Exception as sync_err:
+                        logger.warning(f"⚠️ invoice.paid subscription sync failed: {sync_err}")
+
                 updates = {
                     "last_payment_date": datetime.utcnow(),
                     "subscription_status": "active",
