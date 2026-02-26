@@ -12,6 +12,7 @@ import os
 import logging
 import uuid
 import json
+import calendar
 from datetime import datetime, timedelta, timezone
 import math
 from pathlib import Path
@@ -307,6 +308,7 @@ class SubscriptionCheckoutRequest(BaseModel):
     user_id: str
     user_email: Optional[str] = None
     origin_url: str
+    auto_renew: bool = True
 
 
 class StripeBillingPortalRequest(BaseModel):
@@ -347,6 +349,7 @@ def _build_access_status(user: Dict[str, Any]) -> Dict[str, Any]:
 
     trial_start = _parse_datetime(user.get("trial_start_date")) or _parse_datetime(user.get("created_at")) or now
     trial_end = _parse_datetime(user.get("trial_end_date")) or (trial_start + timedelta(days=TRIAL_LENGTH_DAYS))
+    subscription_start = _parse_datetime(user.get("subscription_start_date"))
 
     raw_subscription_status = (user.get("subscription_status") or "free").lower()
 
@@ -360,6 +363,20 @@ def _build_access_status(user: Dict[str, Any]) -> Dict[str, Any]:
     # Stripe sometimes leaves next billing unset while current period end is available.
     if subscription_active and not next_billing_date and subscription_end:
         next_billing_date = subscription_end
+
+    # Monthly-plan fallback if Stripe sync has not populated billing dates yet.
+    if subscription_active and not (subscription_end or next_billing_date) and subscription_start:
+        def _add_one_month(dt: datetime) -> datetime:
+            year = dt.year + (1 if dt.month == 12 else 0)
+            month = 1 if dt.month == 12 else dt.month + 1
+            day = min(dt.day, calendar.monthrange(year, month)[1])
+            return dt.replace(year=year, month=month, day=day)
+
+        derived_period_end = _add_one_month(subscription_start)
+        while derived_period_end <= now:
+            derived_period_end = _add_one_month(derived_period_end)
+        subscription_end = derived_period_end
+        next_billing_date = derived_period_end
 
     trial_active = False
     if not subscription_active and raw_subscription_status == "trial":
@@ -386,6 +403,50 @@ def _build_access_status(user: Dict[str, Any]) -> Dict[str, Any]:
         "subscription_end_date": subscription_end.isoformat() if subscription_end else None,
         "next_billing_date": next_billing_date.isoformat() if next_billing_date else None,
     }
+
+
+def _add_one_month_utc(dt: datetime) -> datetime:
+    year = dt.year + (1 if dt.month == 12 else 0)
+    month = 1 if dt.month == 12 else dt.month + 1
+    day = min(dt.day, calendar.monthrange(year, month)[1])
+    return dt.replace(year=year, month=month, day=day)
+
+
+def _derive_next_monthly_billing_from_start(subscription_start: Optional[datetime]) -> Optional[datetime]:
+    if not subscription_start:
+        return None
+    now = datetime.utcnow()
+    candidate = _add_one_month_utc(subscription_start)
+    while candidate <= now:
+        candidate = _add_one_month_utc(candidate)
+    return candidate
+
+
+async def _persist_missing_billing_dates_from_start(user: Dict[str, Any], source_event: str) -> None:
+    """Backfill monthly billing dates for active subscriptions when Stripe dates are missing."""
+    try:
+        raw_status = (user.get("subscription_status") or "").lower()
+        if raw_status != "active":
+            return
+        if _parse_datetime(user.get("next_billing_date")) or _parse_datetime(user.get("subscription_end_date")):
+            return
+
+        subscription_start = _parse_datetime(user.get("subscription_start_date"))
+        derived_next_billing = _derive_next_monthly_billing_from_start(subscription_start)
+        if not derived_next_billing:
+            return
+
+        await users_collection.update_one(
+            {"id": user["id"]},
+            {"$set": {
+                "subscription_end_date": derived_next_billing,
+                "next_billing_date": derived_next_billing,
+                "subscription_last_synced_at": datetime.utcnow(),
+                "subscription_last_event": source_event,
+            }}
+        )
+    except Exception as backfill_error:
+        logger.warning(f"⚠️ Failed to backfill subscription billing dates for user {user.get('id')}: {backfill_error}")
 
 
 async def _get_user_access_status(user_id: str) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
@@ -560,6 +621,8 @@ async def _sync_user_subscription_from_stripe(
     normalized_status = _normalize_subscription_status_from_stripe(stripe_status)
     current_period_end = _stripe_ts_to_dt(_stripe_obj_get(subscription, "current_period_end"))
     current_period_start = _stripe_ts_to_dt(_stripe_obj_get(subscription, "current_period_start"))
+    if not current_period_end:
+        current_period_end = _derive_next_monthly_billing_from_start(current_period_start or _parse_datetime(user.get("subscription_start_date")))
     cancel_at_period_end = bool(_stripe_obj_get(subscription, "cancel_at_period_end", False))
     canceled_at = _stripe_ts_to_dt(_stripe_obj_get(subscription, "canceled_at"))
     subscription_id = _stripe_obj_get(subscription, "id")
@@ -591,6 +654,8 @@ async def _handle_checkout_session_completed(session_obj: Any, source_event: str
     subscription_id = _stripe_obj_get(session_obj, "subscription")
     metadata = _stripe_obj_get(session_obj, "metadata", {}) or {}
     user_id = _stripe_obj_get(metadata, "user_id")
+    auto_renew_value = str(_stripe_obj_get(metadata, "auto_renew", "true")).strip().lower()
+    auto_renew = auto_renew_value in {"true", "1", "yes", "y", "on"}
 
     user = await _find_user_for_stripe(customer_id=customer_id, user_id=user_id)
     if not user:
@@ -599,6 +664,11 @@ async def _handle_checkout_session_completed(session_obj: Any, source_event: str
 
     if subscription_id and _stripe_is_configured():
         subscription = stripe.Subscription.retrieve(subscription_id)
+        if not auto_renew and not bool(_stripe_obj_get(subscription, "cancel_at_period_end", False)):
+            try:
+                subscription = stripe.Subscription.modify(subscription_id, cancel_at_period_end=True)
+            except Exception as cancel_toggle_error:
+                logger.warning(f"⚠️ Failed to disable auto-renew for subscription {subscription_id}: {cancel_toggle_error}")
         await _sync_user_subscription_from_stripe(
             user=user,
             stripe_customer_id=customer_id,
@@ -2289,6 +2359,13 @@ async def get_subscription_status(user_id: str):
             except Exception as stripe_sync_error:
                 logger.warning(f"⚠️ Lazy Stripe billing-date sync failed for user {user_id}: {stripe_sync_error}")
 
+        if access_status.get("subscription_active") and not (
+            _parse_datetime(user.get("next_billing_date"))
+            or _parse_datetime(user.get("subscription_end_date"))
+        ):
+            await _persist_missing_billing_dates_from_start(user, source_event="subscription.status.monthly_backfill")
+            user, access_status = await _get_user_access_status(user_id)
+
         usage_limits = await _build_generation_usage_summary(user_id, access_status)
 
         response = {
@@ -2356,9 +2433,13 @@ async def create_subscription_checkout(request: SubscriptionCheckoutRequest):
             success_url=f"{origin_url}/subscription-success?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{origin_url}/dashboard",
             allow_promotion_codes=True,
-            metadata={"user_id": user["id"]},
+            metadata={"user_id": user["id"], "auto_renew": str(bool(request.auto_renew)).lower()},
             subscription_data={
-                "metadata": {"user_id": user["id"], "email": user.get("email", "")}
+                "metadata": {
+                    "user_id": user["id"],
+                    "email": user.get("email", ""),
+                    "auto_renew": str(bool(request.auto_renew)).lower(),
+                }
             },
         )
 

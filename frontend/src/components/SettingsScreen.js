@@ -76,6 +76,7 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
   const [processingBilling, setProcessingBilling] = useState(false);
   const [processingSubscriptionAction, setProcessingSubscriptionAction] = useState(false);
   const [processingSecurityAction, setProcessingSecurityAction] = useState(false);
+  const [autoRenewOnSubscribe, setAutoRenewOnSubscribe] = useState(true);
   const [error, setError] = useState('');
   const [passwordResetFlow, setPasswordResetFlow] = useState({
     open: false,
@@ -335,6 +336,7 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
           user_id: user.id,
           user_email: user.email,
           origin_url: window.location.origin,
+          auto_renew: autoRenewOnSubscribe,
         }),
       });
       const data = await response.json();
@@ -648,8 +650,16 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
                         </div>
                       </div>
                       <div>
-                        <div className="text-gray-500">Trial Ends</div>
-                        <div className="font-medium mt-1 text-gray-900">{formatDate(subscriptionStatus?.trial_end_date)}</div>
+                        <div className="text-gray-500">
+                          {subscriptionStatus?.subscription_active ? 'Subscribed On' : 'Trial Ends'}
+                        </div>
+                        <div className="font-medium mt-1 text-gray-900">
+                          {formatDate(
+                            subscriptionStatus?.subscription_active
+                              ? subscriptionStatus?.subscription_start_date
+                              : subscriptionStatus?.trial_end_date
+                          )}
+                        </div>
                       </div>
                       <div>
                         <div className="text-gray-500">
@@ -714,13 +724,36 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
 
                   <div className="flex flex-wrap gap-3">
                     {!subscriptionStatus?.subscription_active ? (
-                      <button
-                        onClick={handleSubscribe}
-                        disabled={processingBilling}
-                        className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
-                      >
-                        {processingBilling ? 'Opening Checkout...' : 'Subscribe to Premium'}
-                      </button>
+                      <div className="w-full space-y-3">
+                        <label className="flex items-start gap-3 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                          <input
+                            type="checkbox"
+                            checked={autoRenewOnSubscribe}
+                            onChange={(e) => setAutoRenewOnSubscribe(e.target.checked)}
+                            className="mt-0.5"
+                          />
+                          <span>
+                            <span className="font-medium text-gray-900">Auto-renew monthly</span>
+                            <span className="block text-xs text-gray-600">
+                              {autoRenewOnSubscribe
+                                ? 'Renews every month until you cancel.'
+                                : 'One month only. Auto-renew will be disabled after checkout.'}
+                            </span>
+                          </span>
+                        </label>
+
+                        <button
+                          onClick={handleSubscribe}
+                          disabled={processingBilling}
+                          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+                        >
+                          {processingBilling
+                            ? 'Opening Checkout...'
+                            : autoRenewOnSubscribe
+                              ? 'Subscribe to Premium ($9.99/month)'
+                              : 'Subscribe for 1 Month ($9.99)'}
+                        </button>
+                      </div>
                     ) : null}
 
                     {subscriptionStatus?.subscription_active && !subscriptionStatus?.cancel_at_period_end ? (

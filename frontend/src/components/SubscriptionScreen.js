@@ -5,6 +5,7 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [processingSubscriptionAction, setProcessingSubscriptionAction] = useState(false);
+  const [autoRenewOnSubscribe, setAutoRenewOnSubscribe] = useState(true);
   const [error, setError] = useState('');
 
   // Use environment variable
@@ -39,7 +40,8 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
       const checkoutRequest = {
         user_id: user.id,
         user_email: user.email,
-        origin_url: window.location.origin
+        origin_url: window.location.origin,
+        auto_renew: autoRenewOnSubscribe,
       };
 
       const response = await fetch(`${backendUrl}/api/subscription/create-checkout`, {
@@ -277,7 +279,7 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
                 <div className="text-3xl font-bold text-purple-600 mt-2">
                   $9.99<span className="text-lg text-gray-500">/month</span>
                 </div>
-                <p className="text-gray-600 text-sm mt-1">After 7-day free trial</p>
+                <p className="text-gray-600 text-sm mt-1">Billed monthly after your 7-day free trial</p>
               </div>
 
               <div className="mb-6">
@@ -312,26 +314,45 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
 
               {/* Action Button */}
               {subscriptionStatus && !subscriptionStatus.subscription_active ? (
-                <button
-                  onClick={handleSubscribe}
-                  disabled={processingPayment}
-                  className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-colors ${
-                    processingPayment
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-purple-600 hover:bg-purple-700'
-                  }`}
-                >
-                  {processingPayment ? (
-                    <span className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Processing...
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <input
+                      type="checkbox"
+                      checked={autoRenewOnSubscribe}
+                      onChange={(e) => setAutoRenewOnSubscribe(e.target.checked)}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      <span className="font-medium text-gray-900">Auto-renew monthly</span>
+                      <span className="block text-xs text-gray-600">
+                        {autoRenewOnSubscribe
+                          ? 'Your subscription renews each month until you cancel.'
+                          : 'One month only. Auto-renew will be turned off after checkout.'}
+                      </span>
                     </span>
-                  ) : subscriptionStatus.trial_active ? (
-                    'Subscribe Now - Trial Will Continue'
-                  ) : (
-                    'Start Your Subscription'
-                  )}
-                </button>
+                  </label>
+
+                  <button
+                    onClick={handleSubscribe}
+                    disabled={processingPayment}
+                    className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-colors ${
+                      processingPayment
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-purple-600 hover:bg-purple-700'
+                    }`}
+                  >
+                    {processingPayment ? (
+                      <span className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Processing...
+                      </span>
+                    ) : subscriptionStatus.trial_active ? (
+                      autoRenewOnSubscribe ? 'Subscribe Monthly - Trial Continues' : 'Subscribe for 1 Month - Trial Continues'
+                    ) : (
+                      autoRenewOnSubscribe ? 'Start Monthly Subscription' : 'Start 1-Month Subscription'
+                    )}
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-3">
                   <div className="text-center py-1 text-green-600 font-semibold">
