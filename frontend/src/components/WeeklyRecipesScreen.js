@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import {
+  loadSavedUserSettings,
+  normalizeDietaryPreferencesList,
+  householdSizeToNumber,
+  budgetStyleToWeeklyBudget,
+} from '../utils/userSettings';
 
 const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) => {
   const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
@@ -26,6 +32,21 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
     loadCurrentPlan();
     loadTrialStatus();
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const savedSettings = loadSavedUserSettings(user);
+    const dietaryPrefs = normalizeDietaryPreferencesList(savedSettings.preferences?.dietaryPreferences);
+    const familySize = householdSizeToNumber(savedSettings.preferences?.householdSize, 2);
+    const budget = budgetStyleToWeeklyBudget(savedSettings.preferences?.budgetStyle, 100);
+
+    setFormData((prev) => ({
+      ...prev,
+      family_size: prev.family_size === 2 ? familySize : prev.family_size,
+      budget: prev.budget === 100 ? budget : prev.budget,
+      dietary_preferences: prev.dietary_preferences.length ? prev.dietary_preferences : dietaryPrefs,
+    }));
+  }, [user?.id, user?.user_id]);
 
   const hasGenerationAccess = trialStatus ? Boolean(trialStatus.has_access) : true;
 
@@ -80,12 +101,18 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
     try {
       console.log('📅 Generating weekly plan with OpenAI API...');
       showNotification('📅 Creating your weekly meal plan with AI...', 'info');
+
+      const savedSettings = loadSavedUserSettings(user);
+      const savedDietaryPrefs = normalizeDietaryPreferencesList(savedSettings.preferences?.dietaryPreferences);
+      const effectiveFamilySize = parseInt(formData.family_size, 10) || householdSizeToNumber(savedSettings.preferences?.householdSize, 2);
+      const effectiveBudget = parseFloat(formData.budget) || budgetStyleToWeeklyBudget(savedSettings.preferences?.budgetStyle, 100);
+      const effectiveDietaryPrefs = formData.dietary_preferences.length > 0 ? formData.dietary_preferences : savedDietaryPrefs;
       
       const response = await axios.post(`${API}/api/weekly-recipes/generate`, {
         user_id: user.id,
-        family_size: parseInt(formData.family_size),
-        budget: parseFloat(formData.budget),
-        dietary_preferences: formData.dietary_preferences.length > 0 ? formData.dietary_preferences : [],
+        family_size: effectiveFamilySize,
+        budget: effectiveBudget,
+        dietary_preferences: effectiveDietaryPrefs,
         cuisines: formData.cuisines.length > 0 ? formData.cuisines : [],
         meal_types: ['breakfast', 'lunch', 'dinner'], // Default meal types
         cooking_time_preference: 'medium'

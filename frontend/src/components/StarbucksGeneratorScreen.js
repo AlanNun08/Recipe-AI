@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { loadSavedUserSettings, buildStarbucksPreferenceHint } from '../utils/userSettings';
 
 // Starbucks Secret Menu Generator Screen with Community Features
 const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) => {
@@ -96,11 +97,17 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
     try {
       console.log('☕ Generating Starbucks drink with OpenAI API...');
       showNotification('☕ Creating your unique Starbucks drink with AI...', 'info');
+
+      const savedSettings = loadSavedUserSettings(user);
+      const preferenceHint = buildStarbucksPreferenceHint(savedSettings);
+      const mergedFlavorInspiration = [flavorInspiration?.trim(), preferenceHint]
+        .filter(Boolean)
+        .join(', ') || null;
       
       const response = await axios.post(`${API}/api/generate-starbucks-drink`, {
         user_id: user.id,
         drink_type: drinkType,
-        flavor_inspiration: flavorInspiration || null
+        flavor_inspiration: mergedFlavorInspiration
       });
 
       console.log('✅ Starbucks drink generated successfully:', response.data);

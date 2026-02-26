@@ -124,6 +124,7 @@ db = client[db_name]
 # Collections
 users_collection = db["users"]
 verification_codes_collection = db["verification_codes"]
+password_reset_codes_collection = db["password_reset_codes"]
 recipes_collection = db["recipes"]
 weekly_recipes_collection = db["weekly_recipes"]
 starbucks_recipes_collection = db["starbucks_recipes"]
@@ -144,6 +145,8 @@ async def create_database_indexes():
         # Verification codes collection indexes
         await verification_codes_collection.create_index("email")
         await verification_codes_collection.create_index("expires_at", expireAfterSeconds=0)  # TTL index
+        await password_reset_codes_collection.create_index("email")
+        await password_reset_codes_collection.create_index("expires_at", expireAfterSeconds=0)  # TTL index
         
         logger.info("✅ Database indexes created successfully")
     except Exception as e:
@@ -290,6 +293,16 @@ class EmailVerificationRequest(BaseModel):
     verification_code: str
 
 
+class PasswordResetRequest(BaseModel):
+    email: str
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    email: str
+    verification_code: str
+    new_password: str
+
+
 class SubscriptionCheckoutRequest(BaseModel):
     user_id: str
     user_email: Optional[str] = None
@@ -304,6 +317,9 @@ class StripeBillingPortalRequest(BaseModel):
 import hashlib
 
 TRIAL_LENGTH_DAYS = 7
+TRIAL_INDIVIDUAL_RECIPES_LIMIT = 50
+TRIAL_WEEKLY_PLANS_LIMIT = 5
+TRIAL_STARBUCKS_DRINKS_LIMIT = 10
 
 
 def _parse_datetime(value: Any) -> Optional[datetime]:
@@ -375,6 +391,47 @@ async def _get_user_access_status(user_id: str) -> Tuple[Optional[Dict[str, Any]
     access_status = _build_access_status(user)
     await _sync_trial_countdown_fields(user, access_status)
     return user, access_status
+
+
+async def _build_generation_usage_summary(user_id: str, access_status: Dict[str, Any]) -> Dict[str, Any]:
+    """Return generation usage counts and trial remaining values for UI/subscription screens."""
+    individual_used = await recipes_collection.count_documents({"user_id": user_id})
+    weekly_used = await weekly_recipes_collection.count_documents({"user_id": user_id})
+    starbucks_used = await starbucks_recipes_collection.count_documents({"user_id": user_id})
+
+    trial_active = bool(access_status.get("trial_active"))
+    subscription_active = bool(access_status.get("subscription_active"))
+
+    trial_limits = {
+        "individual_recipes": TRIAL_INDIVIDUAL_RECIPES_LIMIT,
+        "weekly_plans": TRIAL_WEEKLY_PLANS_LIMIT,
+        "starbucks_drinks": TRIAL_STARBUCKS_DRINKS_LIMIT,
+    }
+
+    usage = {
+        "individual_recipes": {
+            "used": individual_used,
+            "trial_limit": trial_limits["individual_recipes"],
+            "trial_remaining": max(0, trial_limits["individual_recipes"] - individual_used) if trial_active else 0,
+        },
+        "weekly_plans": {
+            "used": weekly_used,
+            "trial_limit": trial_limits["weekly_plans"],
+            "trial_remaining": max(0, trial_limits["weekly_plans"] - weekly_used) if trial_active else 0,
+        },
+        "starbucks_drinks": {
+            "used": starbucks_used,
+            "trial_limit": trial_limits["starbucks_drinks"],
+            "trial_remaining": max(0, trial_limits["starbucks_drinks"] - starbucks_used) if trial_active else 0,
+        },
+    }
+
+    return {
+        "trial_mode": trial_active,
+        "subscription_active": subscription_active,
+        "plan_generation_limits": "unlimited" if subscription_active else "trial_limited",
+        "usage": usage,
+    }
 
 
 async def _sync_trial_countdown_fields(user: Dict[str, Any], access_status: Dict[str, Any]) -> None:
@@ -562,14 +619,53 @@ async def _handle_checkout_session_completed(session_obj: Any, source_event: str
     )
 
 
-async def _enforce_generation_access(user_id: str, feature_label: str) -> Optional[JSONResponse]:
+async def _enforce_generation_access(
+    user_id: str,
+    feature_label: str,
+    usage_type: Optional[str] = None
+) -> Optional[JSONResponse]:
     """Return a response when access should be denied; otherwise None."""
     user, access_status = await _get_user_access_status(user_id)
 
     if not user:
         return JSONResponse(status_code=404, content={"detail": "User not found"})
 
-    if access_status and access_status.get("has_access"):
+    if access_status and access_status.get("subscription_active"):
+        return None
+
+    usage_summary: Optional[Dict[str, Any]] = None
+
+    # Enforce per-feature trial generation caps while trial is still active.
+    if access_status and access_status.get("trial_active"):
+        if usage_type:
+            usage_summary = await _build_generation_usage_summary(user_id, access_status)
+            usage_entry = ((usage_summary or {}).get("usage") or {}).get(usage_type) or {}
+            trial_limit = int(usage_entry.get("trial_limit") or 0)
+            used = int(usage_entry.get("used") or 0)
+
+            if trial_limit > 0 and used >= trial_limit:
+                enriched_trial_status = {
+                    **(access_status or {}),
+                    "usage_limits": usage_summary
+                }
+                return JSONResponse(
+                    status_code=429,
+                    content={
+                        "detail": {
+                            "message": f"You've reached your free-trial limit for {feature_label}. Upgrade to continue.",
+                            "upgrade_required": True,
+                            "reason": "trial_generation_limit_reached",
+                            "feature": feature_label,
+                            "usage_type": usage_type,
+                            "trial_limit": trial_limit,
+                            "used": used,
+                            "remaining": 0,
+                            "can_access_history": True,
+                        },
+                        "trial_status": enriched_trial_status
+                    }
+                )
+
         return None
 
     return JSONResponse(
@@ -582,7 +678,10 @@ async def _enforce_generation_access(user_id: str, feature_label: str) -> Option
                 "feature": feature_label,
                 "can_access_history": True,
             },
-            "trial_status": access_status or {}
+            "trial_status": {
+                **(access_status or {}),
+                **({"usage_limits": usage_summary} if usage_summary else {})
+            }
         }
     )
 import secrets
@@ -712,6 +811,65 @@ async def send_verification_email(email: str, code: str) -> bool:
         import traceback
         logger.error(f"❌ Stack trace: {traceback.format_exc()}")
         # Return True anyway to not block registration
+        return True
+
+
+async def send_password_reset_email(email: str, code: str) -> bool:
+    """Send password reset code using Mailjet API."""
+    try:
+        logger.info(f"📧 Sending password reset code to {email}")
+
+        if not mailjet_api_key or not mailjet_secret_key:
+            logger.warning(f"⚠️ Mailjet credentials not configured. Password reset code would be: {code}")
+            logger.info(f"🔐 Password reset code for {email}: {code}")
+            return True
+
+        email_subject = "Reset Your Recipe-AI Password"
+        html_content = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <h1 style="color: #333; text-align: center;">🔐 Reset Your Password</h1>
+                    <p style="color: #666; font-size: 16px; margin-bottom: 20px;">
+                        Use the code below to reset your Recipe-AI password.
+                    </p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <div style="background-color: #f0f0f0; padding: 20px; border-radius: 10px; font-family: 'Courier New', monospace;">
+                            <h2 style="color: #007bff; margin: 0; letter-spacing: 5px;">{code}</h2>
+                        </div>
+                    </div>
+                    <p style="color: #666; font-size: 14px;"><strong>This code expires in 15 minutes.</strong></p>
+                    <p style="color: #666; font-size: 14px; margin-top: 20px;">
+                        If you did not request a password reset, you can ignore this email.
+                    </p>
+                </div>
+            </body>
+        </html>
+        """
+        text_content = f"Reset your Recipe-AI password using this code: {code}\n\nThis code expires in 15 minutes."
+
+        mailjet = Client(auth=(mailjet_api_key, mailjet_secret_key), version='v3.1')
+        data = {
+            "Messages": [
+                {
+                    "From": {"Email": sender_email, "Name": "Recipe-AI Team"},
+                    "To": [{"Email": email, "Name": "User"}],
+                    "Subject": email_subject,
+                    "TextPart": text_content,
+                    "HTMLPart": html_content
+                }
+            ]
+        }
+
+        result = mailjet.send.create(data=data)
+        if result.status_code == 200:
+            logger.info(f"✅ Password reset email sent successfully to {email}")
+            return True
+
+        logger.error(f"❌ Mailjet password reset email error: {result.status_code} - {result.json()}")
+        return False
+    except Exception as e:
+        logger.error(f"❌ Failed to send password reset email: {e}")
         return True
 
 @app.post("/auth/register")
@@ -1138,6 +1296,132 @@ async def resend_verification(request: dict):
             content={"detail": f"Failed to resend verification: {str(e)}"}
         )
 
+
+@app.post("/auth/request-password-reset")
+async def request_password_reset(request: PasswordResetRequest):
+    """Send a password reset code to the user's email."""
+    try:
+        email = (request.email or "").strip().lower()
+        if not email:
+            return JSONResponse(status_code=400, content={"detail": "Email is required"})
+
+        user = await users_collection.find_one({"email": email})
+        if not user:
+            return JSONResponse(status_code=404, content={"detail": "User not found"})
+
+        code = generate_verification_code()
+        now = datetime.utcnow()
+        await password_reset_codes_collection.update_one(
+            {"email": email},
+            {
+                "$set": {
+                    "email": email,
+                    "code": code,
+                    "created_at": now,
+                    "expires_at": now + timedelta(minutes=15),
+                    "used": False,
+                    "verified_at": None
+                }
+            },
+            upsert=True
+        )
+
+        email_sent = await send_password_reset_email(email, code)
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "success",
+                "message": "Password reset code sent",
+                "email": email,
+                "email_sent": email_sent
+            }
+        )
+    except Exception as e:
+        logger.error(f"❌ Password reset request failed: {e}")
+        return JSONResponse(status_code=500, content={"detail": f"Failed to send reset code: {str(e)}"})
+
+
+@app.post("/auth/verify-password-reset-code")
+async def verify_password_reset_code(request: EmailVerificationRequest):
+    """Verify password reset code before changing password."""
+    try:
+        email = (request.email or "").strip().lower()
+        submitted_code = str(request.verification_code).strip()
+        if not email or not submitted_code:
+            return JSONResponse(status_code=400, content={"detail": "Email and code are required"})
+
+        reset_code_doc = await password_reset_codes_collection.find_one(
+            {"email": email, "used": False},
+            sort=[("created_at", DESCENDING)]
+        )
+        if not reset_code_doc:
+            return JSONResponse(status_code=400, content={"detail": "Invalid or expired reset code"})
+
+        if datetime.utcnow() > reset_code_doc["expires_at"]:
+            return JSONResponse(status_code=400, content={"detail": "Reset code expired"})
+
+        if str(reset_code_doc.get("code", "")).strip() != submitted_code:
+            return JSONResponse(status_code=400, content={"detail": "Invalid reset code"})
+
+        await password_reset_codes_collection.update_one(
+            {"_id": reset_code_doc["_id"]},
+            {"$set": {"verified_at": datetime.utcnow()}}
+        )
+
+        return JSONResponse(status_code=200, content={"status": "success", "message": "Reset code verified"})
+    except Exception as e:
+        logger.error(f"❌ Password reset code verification failed: {e}")
+        return JSONResponse(status_code=500, content={"detail": f"Failed to verify reset code: {str(e)}"})
+
+
+@app.post("/auth/reset-password")
+async def reset_password(request: PasswordResetConfirmRequest):
+    """Reset password after verifying reset code."""
+    try:
+        email = (request.email or "").strip().lower()
+        submitted_code = str(request.verification_code).strip()
+        new_password = request.new_password or ""
+
+        if not email or not submitted_code:
+            return JSONResponse(status_code=400, content={"detail": "Email and reset code are required"})
+        if len(new_password) < 8:
+            return JSONResponse(status_code=400, content={"detail": "Password must be at least 8 characters long"})
+
+        user = await users_collection.find_one({"email": email})
+        if not user:
+            return JSONResponse(status_code=404, content={"detail": "User not found"})
+
+        reset_code_doc = await password_reset_codes_collection.find_one(
+            {"email": email, "used": False},
+            sort=[("created_at", DESCENDING)]
+        )
+        if not reset_code_doc:
+            return JSONResponse(status_code=400, content={"detail": "Invalid or expired reset code"})
+
+        if datetime.utcnow() > reset_code_doc["expires_at"]:
+            return JSONResponse(status_code=400, content={"detail": "Reset code expired"})
+
+        if str(reset_code_doc.get("code", "")).strip() != submitted_code:
+            return JSONResponse(status_code=400, content={"detail": "Invalid reset code"})
+
+        if not reset_code_doc.get("verified_at"):
+            return JSONResponse(status_code=400, content={"detail": "Please verify the reset code first"})
+
+        await users_collection.update_one(
+            {"email": email},
+            {"$set": {"password_hash": hash_password(new_password), "password_reset_at": datetime.utcnow()}}
+        )
+
+        await password_reset_codes_collection.update_one(
+            {"_id": reset_code_doc["_id"]},
+            {"$set": {"used": True, "used_at": datetime.utcnow()}}
+        )
+
+        return JSONResponse(status_code=200, content={"status": "success", "message": "Password updated successfully"})
+    except Exception as e:
+        logger.error(f"❌ Password reset failed: {e}")
+        return JSONResponse(status_code=500, content={"detail": f"Failed to reset password: {str(e)}"})
+
 @app.post("/user/preferences")
 async def save_user_preferences(request: dict):
     """Save user preferences from onboarding"""
@@ -1194,7 +1478,11 @@ async def generate_recipe(request: RecipeGenerationRequest):
         logger.info(f"🥗 Dietary preferences: {request.dietary_preferences}")
         logger.info(f"🥘 Ingredients on hand: {request.ingredients_on_hand}")
 
-        access_denied = await _enforce_generation_access(request.user_id, "generating AI recipes")
+        access_denied = await _enforce_generation_access(
+            request.user_id,
+            "AI recipe generation",
+            "individual_recipes"
+        )
         if access_denied:
             return access_denied
         
@@ -1626,7 +1914,11 @@ async def generate_weekly_plan(request: WeeklyPlanRequest):
     try:
         logger.info(f"📅 Weekly plan generation for user: {request.user_id}")
 
-        access_denied = await _enforce_generation_access(request.user_id, "generating weekly meal plans")
+        access_denied = await _enforce_generation_access(
+            request.user_id,
+            "weekly meal plan generation",
+            "weekly_plans"
+        )
         if access_denied:
             return access_denied
         
@@ -1863,7 +2155,11 @@ async def generate_starbucks_drink(request: StarbucksDrinkRequest):
         logger.info(f"🔍 OpenAI client available: {bool(openai_client)}")
         logger.info(f"🔍 OpenAI API key present: {bool(openai_api_key)}")
 
-        access_denied = await _enforce_generation_access(request.user_id, "generating AI drinks")
+        access_denied = await _enforce_generation_access(
+            request.user_id,
+            "Starbucks drink generation",
+            "starbucks_drinks"
+        )
         if access_denied:
             return access_denied
         
@@ -1967,8 +2263,12 @@ async def get_subscription_status(user_id: str):
         if not user or not access_status:
             return JSONResponse(status_code=404, content={"detail": "User not found"})
 
+        usage_limits = await _build_generation_usage_summary(user_id, access_status)
+
         response = {
             **access_status,
+            "is_verified": bool(user.get("is_verified", user.get("verified", False))),
+            "verified": bool(user.get("verified", user.get("is_verified", False))),
             "cancel_at_period_end": bool(user.get("cancel_at_period_end", False)),
             "stripe_customer_id": user.get("stripe_customer_id"),
             "stripe_subscription_id": user.get("stripe_subscription_id"),
@@ -1980,6 +2280,7 @@ async def get_subscription_status(user_id: str):
             "trial_start_date": access_status.get("trial_start_date"),
             "stripe_configured": _stripe_is_configured(),
             "price_configured": bool(stripe_subscription_price_id),
+            "usage_limits": usage_limits,
         }
         return JSONResponse(status_code=200, content=response)
     except Exception as e:
@@ -2295,15 +2596,7 @@ async def get_trial_status(user_id: str):
                 content={"detail": "User not found"}
             )
 
-        # Lightweight usage counts for UI
-        recipes_generated = await recipes_collection.count_documents({"user_id": user_id})
-        weekly_plans_generated = await weekly_recipes_collection.count_documents({"user_id": user_id})
-        trial_status["usage_limits"] = {
-            "recipes_generated": recipes_generated,
-            "recipes_limit": 50 if trial_status["trial_active"] else 0,
-            "weekly_plans_generated": weekly_plans_generated,
-            "weekly_plans_limit": 5 if trial_status["trial_active"] else 0
-        }
+        trial_status["usage_limits"] = await _build_generation_usage_summary(user_id, trial_status)
         
         return JSONResponse(
             status_code=200,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { loadSavedUserSettings, normalizeDietaryPreferencesList, householdSizeToNumber } from '../utils/userSettings';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -84,6 +85,19 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
       loadTrialStatus(userId);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const savedSettings = loadSavedUserSettings(user);
+    const dietaryPrefs = normalizeDietaryPreferencesList(savedSettings.preferences?.dietaryPreferences);
+    const preferredServings = householdSizeToNumber(savedSettings.preferences?.householdSize, 4);
+
+    setFormData((prev) => ({
+      ...prev,
+      dietary_restrictions: prev.dietary_restrictions || dietaryPrefs.join(', '),
+      servings: prev.servings === '4' ? String(preferredServings) : prev.servings,
+    }));
+  }, [user?.id, user?.user_id]);
 
   const loadTrialStatus = async (userId) => {
     try {
@@ -181,15 +195,21 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
       showNotification('🤖 Generating your recipe with AI...', 'info');
       
       // Send properly formatted request to backend - FIX: Use correct user_id
+      const savedSettings = loadSavedUserSettings(user);
+      const savedDietaryPrefs = normalizeDietaryPreferencesList(savedSettings.preferences?.dietaryPreferences);
+      const requestDietaryPrefs = formData.dietary_restrictions
+        ? formData.dietary_restrictions.split(',').map(d => d.trim()).filter(d => d)
+        : savedDietaryPrefs;
+      const effectiveServings = parseInt(formData.servings, 10) || householdSizeToNumber(savedSettings.preferences?.householdSize, 4);
+
       const requestData = {
         user_id: user?.user_id || user?.id || 'demo_user', // FIX: Use the correct user ID field
         cuisine_type: formData.cuisine,
         meal_type: formData.meal_type,
         difficulty: formData.difficulty,
-        servings: parseInt(formData.servings) || 4,
+        servings: effectiveServings,
         prep_time_max: formData.prep_time ? parseInt(formData.prep_time.split(' ')[0]) : null,
-        dietary_preferences: formData.dietary_restrictions ? 
-          formData.dietary_restrictions.split(',').map(d => d.trim()).filter(d => d) : [],
+        dietary_preferences: requestDietaryPrefs,
         ingredients_on_hand: formData.ingredients ? 
           formData.ingredients.split(',').map(i => i.trim()).filter(i => i) : []
       };

@@ -243,6 +243,20 @@ function App() {
     setCurrentView('dashboard');
   };
 
+  const getStoredUserForRecovery = () => {
+    const rawLocal = localStorage.getItem('user');
+    const rawSession = sessionStorage.getItem('user');
+    const storageType = rawLocal ? 'local' : (rawSession ? 'session' : null);
+    const raw = rawLocal || rawSession;
+    if (!raw) return { user: null, storageType: null };
+
+    try {
+      return { user: JSON.parse(raw), storageType };
+    } catch (e) {
+      return { user: null, storageType: null };
+    }
+  };
+
   const renderCurrentView = () => {
     switch (currentView) {
       case 'welcome':
@@ -436,12 +450,24 @@ function App() {
           <SubscriptionSuccessScreen
             showNotification={showNotification}
             onClose={() => {
-              if (user) {
-                const updatedUser = { ...user, subscription_status: 'active' };
+              const recovered = getStoredUserForRecovery();
+              const activeUser = user || recovered.user;
+
+              if (activeUser) {
+                const updatedUser = { ...activeUser, subscription_status: 'active' };
                 setUser(updatedUser);
-                localStorage.setItem('user', JSON.stringify(updatedUser));
+
+                if (recovered.storageType === 'session') {
+                  sessionStorage.setItem('user', JSON.stringify(updatedUser));
+                } else {
+                  localStorage.setItem('user', JSON.stringify(updatedUser));
+                }
+
+                setCurrentView('dashboard');
+                return;
               }
-              setCurrentView(user ? 'dashboard' : 'login');
+
+              setCurrentView('login');
             }}
           />
         );

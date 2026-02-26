@@ -77,6 +77,15 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
   const [processingSubscriptionAction, setProcessingSubscriptionAction] = useState(false);
   const [processingSecurityAction, setProcessingSecurityAction] = useState(false);
   const [error, setError] = useState('');
+  const [passwordResetFlow, setPasswordResetFlow] = useState({
+    open: false,
+    step: 'request', // request -> verify -> reset -> done
+    email: user?.email || '',
+    code: '',
+    newPassword: '',
+    confirmPassword: '',
+    message: '',
+  });
 
   const settingsStorageKey = user?.id ? `userSettings:${user.id}` : 'userSettings:anonymous';
 
@@ -89,6 +98,13 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
     loadLocalSettings();
     fetchSubscriptionStatus();
   }, [user?.id]);
+
+  useEffect(() => {
+    setPasswordResetFlow((prev) => ({
+      ...prev,
+      email: prev.email || user?.email || '',
+    }));
+  }, [user?.email]);
 
   const loadLocalSettings = () => {
     try {
@@ -196,6 +212,21 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
     return `${first} ${last}`.trim() || 'Not set';
   }, [user]);
 
+  const isVerified = useMemo(() => {
+    if (typeof subscriptionStatus?.is_verified === 'boolean') return subscriptionStatus.is_verified;
+    if (typeof subscriptionStatus?.verified === 'boolean') return subscriptionStatus.verified;
+    return Boolean(user?.verified);
+  }, [subscriptionStatus, user]);
+
+  const generationUsageRows = useMemo(() => {
+    const usage = subscriptionStatus?.usage_limits?.usage || {};
+    return [
+      { key: 'individual_recipes', label: 'Individual Recipes', icon: '🍳', data: usage.individual_recipes },
+      { key: 'weekly_plans', label: 'Weekly Plans', icon: '🗓️', data: usage.weekly_plans },
+      { key: 'starbucks_drinks', label: 'Starbucks Drinks', icon: '☕', data: usage.starbucks_drinks },
+    ];
+  }, [subscriptionStatus]);
+
   const accountStatusDisplay = useMemo(() => {
     if (!subscriptionStatus) {
       return { label: 'Loading', detail: 'Checking access', tone: 'bg-gray-100 text-gray-700' };
@@ -237,6 +268,51 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
       label: 'Trial Ended',
       detail: 'History is still available. Upgrade to generate recipes again.',
       tone: 'bg-orange-100 text-orange-800',
+    };
+  }, [subscriptionStatus]);
+
+  const quickSummary = useMemo(() => {
+    if (!subscriptionStatus) {
+      return {
+        planLabel: 'Loading',
+        accessLabel: 'Checking',
+        periodLabel: 'N/A',
+        periodValue: 'Loading',
+      };
+    }
+
+    if (subscriptionStatus.subscription_active) {
+      return {
+        planLabel: subscriptionStatus.cancel_at_period_end ? 'Premium (Ending)' : 'Premium Monthly',
+        accessLabel: 'Full Access',
+        periodLabel: subscriptionStatus.cancel_at_period_end ? 'Ends On' : 'Next Billing',
+        periodValue: formatDate(subscriptionStatus.subscription_end_date || subscriptionStatus.next_billing_date),
+      };
+    }
+
+    if (subscriptionStatus.subscription_status === 'past_due') {
+      return {
+        planLabel: 'Payment Due',
+        accessLabel: subscriptionStatus.has_access ? 'Limited Access' : 'History Only',
+        periodLabel: 'Action',
+        periodValue: 'Update payment method',
+      };
+    }
+
+    if (subscriptionStatus.trial_active) {
+      return {
+        planLabel: '7-Day Trial',
+        accessLabel: 'Trial Access',
+        periodLabel: 'Trial Ends',
+        periodValue: formatDate(subscriptionStatus.trial_end_date),
+      };
+    }
+
+    return {
+      planLabel: 'Trial Ended',
+      accessLabel: 'History Only',
+      periodLabel: 'Upgrade',
+      periodValue: 'Subscribe to restore generation',
     };
   }, [subscriptionStatus]);
 
@@ -339,23 +415,123 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
     }
   };
 
-  const handleResendVerification = async () => {
+  const updatePasswordResetFlow = (patch) => {
+    setPasswordResetFlow((prev) => ({ ...prev, ...patch }));
+  };
+
+  const handleSendPasswordResetCode = async () => {
     try {
       setProcessingSecurityAction(true);
       setError('');
-      const response = await fetch(`${backendUrl}/api/auth/resend-verification`, {
+      const normalizedEmail = (passwordResetFlow.email || '').trim().toLowerCase();
+      if (!normalizedEmail) {
+        setError('Enter your account email to receive a reset code');
+        return;
+      }
+
+      const response = await fetch(`${backendUrl}/api/auth/request-password-reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email }),
+        body: JSON.stringify({ email: normalizedEmail }),
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.detail || 'Failed to resend verification email');
+        setError(data.detail || 'Failed to send reset code');
         return;
       }
-      showNotification('Verification code sent to your email', 'success');
+      updatePasswordResetFlow({
+        step: 'verify',
+        email: normalizedEmail,
+        message: 'Reset code sent. Check your email and enter the code below.',
+      });
+      showNotification('Password reset code sent to your email', 'success');
     } catch (e) {
-      setError('Failed to resend verification email');
+      setError('Failed to send reset code');
+    } finally {
+      setProcessingSecurityAction(false);
+    }
+  };
+
+  const handleVerifyPasswordResetCode = async () => {
+    try {
+      setProcessingSecurityAction(true);
+      setError('');
+      const email = (passwordResetFlow.email || '').trim().toLowerCase();
+      const code = (passwordResetFlow.code || '').trim();
+      if (!email || !code) {
+        setError('Enter your account email and the code from your email');
+        return;
+      }
+
+      const response = await fetch(`${backendUrl}/api/auth/verify-password-reset-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, verification_code: code }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.detail || 'Failed to verify reset code');
+        return;
+      }
+
+      updatePasswordResetFlow({
+        step: 'reset',
+        message: 'Code verified. Enter your new password below.',
+      });
+      showNotification('Reset code verified', 'success');
+    } catch (e) {
+      setError('Failed to verify reset code');
+    } finally {
+      setProcessingSecurityAction(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    try {
+      setProcessingSecurityAction(true);
+      setError('');
+      const email = (passwordResetFlow.email || '').trim().toLowerCase();
+      const code = (passwordResetFlow.code || '').trim();
+      const newPassword = passwordResetFlow.newPassword || '';
+      const confirmPassword = passwordResetFlow.confirmPassword || '';
+
+      if (!email || !code) {
+        setError('Missing email or reset code');
+        return;
+      }
+      if (newPassword.length < 8) {
+        setError('New password must be at least 8 characters');
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setError('New passwords do not match');
+        return;
+      }
+
+      const response = await fetch(`${backendUrl}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          verification_code: code,
+          new_password: newPassword,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.detail || 'Failed to update password');
+        return;
+      }
+
+      updatePasswordResetFlow({
+        step: 'done',
+        newPassword: '',
+        confirmPassword: '',
+        message: 'Password updated successfully.',
+      });
+      showNotification('Password changed successfully', 'success');
+    } catch (e) {
+      setError('Failed to update password');
     } finally {
       setProcessingSecurityAction(false);
     }
@@ -424,12 +600,6 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
                   <div className="text-sm font-medium text-gray-900 mt-1 break-all">{user.email || 'Unknown'}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Verified</div>
-                  <div className={`text-sm font-medium mt-1 ${user.verified ? 'text-green-700' : 'text-amber-700'}`}>
-                    {user.verified ? 'Yes' : 'No'}
-                  </div>
-                </div>
-                <div>
                   <div className="text-xs text-gray-500 uppercase tracking-wide">Joined</div>
                   <div className="text-sm font-medium text-gray-900 mt-1">
                     {formatDate(user.created_at || subscriptionStatus?.trial_start_date)}
@@ -494,6 +664,43 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
                         Cancellation scheduled. Access remains active until {formatDate(subscriptionStatus.subscription_end_date || subscriptionStatus.next_billing_date)}.
                       </div>
                     ) : null}
+                  </div>
+
+                  <div className="rounded-xl border border-gray-200 bg-white p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-sm font-semibold text-gray-900">Generation Usage</div>
+                      <div className="text-xs text-gray-500">
+                        {subscriptionStatus?.subscription_active
+                          ? 'Premium tracking'
+                          : subscriptionStatus?.trial_active
+                            ? 'Trial limits'
+                            : 'Usage history'}
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      {generationUsageRows.map((row) => (
+                        <div key={row.key} className="flex items-center justify-between gap-3 text-sm">
+                          <div className="text-gray-700">
+                            <span className="mr-2">{row.icon}</span>
+                            {row.label}
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium text-gray-900">
+                              Used: {row.data?.used ?? 0}
+                            </div>
+                            {subscriptionStatus?.trial_active ? (
+                              <div className="text-xs text-blue-700">
+                                Remaining: {row.data?.trial_remaining ?? 0} / {row.data?.trial_limit ?? 0}
+                              </div>
+                            ) : subscriptionStatus?.subscription_active ? (
+                              <div className="text-xs text-green-700">Included with plan</div>
+                            ) : (
+                              <div className="text-xs text-gray-500">Trial ended</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap gap-3">
@@ -657,37 +864,142 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
               </div>
             </SettingsSection>
 
-            <SettingsSection title="Security" subtitle="Verification and session controls">
+            <SettingsSection title="Security" subtitle="Password and account session controls">
               <div className="space-y-4">
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div className="flex items-center justify-between gap-3 mb-3">
                     <div>
-                      <div className="text-sm font-medium text-gray-800">Email verification</div>
+                      <div className="text-sm font-medium text-gray-800">Change Password</div>
                       <div className="text-xs text-gray-600 mt-1">
-                        {user.verified
-                          ? 'Your email address is verified.'
-                          : 'Your email is not verified. Resend a verification code if needed.'}
+                        Send a code to your account email, verify it, then set a new password.
                       </div>
                     </div>
-                    {!user.verified ? (
-                      <button
-                        onClick={handleResendVerification}
-                        disabled={processingSecurityAction}
-                        className="px-4 py-2 rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 disabled:opacity-50"
-                      >
-                        {processingSecurityAction ? 'Sending...' : 'Resend Verification Code'}
-                      </button>
-                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updatePasswordResetFlow({
+                          open: !passwordResetFlow.open,
+                          step: passwordResetFlow.open ? 'request' : passwordResetFlow.step,
+                          message: '',
+                          email: passwordResetFlow.email || user?.email || '',
+                        })
+                      }
+                      className="px-4 py-2 rounded-lg border border-blue-300 text-blue-700 hover:bg-blue-50"
+                    >
+                      {passwordResetFlow.open ? 'Close' : 'Change Password'}
+                    </button>
                   </div>
-                </div>
 
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                  <ToggleRow
-                    label="Reduced motion"
-                    description="Prefer fewer UI animations and transitions."
-                    checked={settings.general.reducedMotion}
-                    onChange={(value) => updateSettings('general', { reducedMotion: value })}
-                  />
+                  {passwordResetFlow.open ? (
+                    <div className="space-y-3 border-t border-gray-200 pt-3">
+                      {passwordResetFlow.message ? (
+                        <div className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                          {passwordResetFlow.message}
+                        </div>
+                      ) : null}
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Account Email</label>
+                        <input
+                          type="email"
+                          value={passwordResetFlow.email}
+                          onChange={(e) => updatePasswordResetFlow({ email: e.target.value })}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          placeholder="you@example.com"
+                        />
+                      </div>
+
+                      {passwordResetFlow.step !== 'request' ? (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Reset Code</label>
+                          <input
+                            type="text"
+                            value={passwordResetFlow.code}
+                            onChange={(e) => updatePasswordResetFlow({ code: e.target.value })}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm tracking-widest"
+                            placeholder="123456"
+                            maxLength={6}
+                          />
+                        </div>
+                      ) : null}
+
+                      {passwordResetFlow.step === 'reset' ? (
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                            <input
+                              type="password"
+                              value={passwordResetFlow.newPassword}
+                              onChange={(e) => updatePasswordResetFlow({ newPassword: e.target.value })}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                              placeholder="At least 8 characters"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                            <input
+                              type="password"
+                              value={passwordResetFlow.confirmPassword}
+                              onChange={(e) => updatePasswordResetFlow({ confirmPassword: e.target.value })}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                              placeholder="Retype new password"
+                            />
+                          </div>
+                        </>
+                      ) : null}
+
+                      {passwordResetFlow.step === 'done' ? (
+                        <div className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                          Password changed successfully. Use your new password next time you log in.
+                        </div>
+                      ) : null}
+
+                      <div className="flex flex-wrap gap-2">
+                        {passwordResetFlow.step === 'request' ? (
+                          <button
+                            type="button"
+                            onClick={handleSendPasswordResetCode}
+                            disabled={processingSecurityAction}
+                            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+                          >
+                            {processingSecurityAction ? 'Sending...' : 'Send Code'}
+                          </button>
+                        ) : null}
+
+                        {passwordResetFlow.step === 'verify' ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={handleVerifyPasswordResetCode}
+                              disabled={processingSecurityAction}
+                              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+                            >
+                              {processingSecurityAction ? 'Verifying...' : 'Verify Code'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleSendPasswordResetCode}
+                              disabled={processingSecurityAction}
+                              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                            >
+                              Resend Code
+                            </button>
+                          </>
+                        ) : null}
+
+                        {passwordResetFlow.step === 'reset' ? (
+                          <button
+                            type="button"
+                            onClick={handleResetPassword}
+                            disabled={processingSecurityAction}
+                            className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:bg-green-400"
+                          >
+                            {processingSecurityAction ? 'Updating...' : 'Update Password'}
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="flex flex-wrap gap-3">
@@ -696,14 +1008,6 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
                     className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
                   >
                     Log Out
-                  </button>
-                  <button
-                    type="button"
-                    disabled
-                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-400 cursor-not-allowed"
-                    title="Password change UI can be added next"
-                  >
-                    Change Password (Next)
                   </button>
                 </div>
               </div>
@@ -716,11 +1020,13 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
                 <div className="flex justify-between gap-3">
                   <span className="text-gray-600">Plan</span>
                   <span className="font-medium text-gray-900">
-                    {subscriptionStatus?.subscription_active
-                      ? 'Premium'
-                      : subscriptionStatus?.trial_active
-                        ? 'Trial'
-                        : 'Free'}
+                    {quickSummary.planLabel}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-gray-600">{quickSummary.periodLabel}</span>
+                  <span className="font-medium text-gray-900 text-right">
+                    {quickSummary.periodValue}
                   </span>
                 </div>
                 <div className="flex justify-between gap-3">
@@ -732,13 +1038,21 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
                 <div className="flex justify-between gap-3">
                   <span className="text-gray-600">Access</span>
                   <span className={`font-medium ${subscriptionStatus?.has_access ? 'text-green-700' : 'text-orange-700'}`}>
-                    {subscriptionStatus?.has_access ? 'Enabled' : 'History only'}
+                    {quickSummary.accessLabel}
                   </span>
                 </div>
                 <div className="flex justify-between gap-3">
                   <span className="text-gray-600">Verified</span>
-                  <span className={`font-medium ${user.verified ? 'text-green-700' : 'text-amber-700'}`}>
-                    {user.verified ? 'Yes' : 'No'}
+                  <span className={`font-medium ${isVerified ? 'text-green-700' : 'text-amber-700'}`}>
+                    {isVerified ? 'Yes' : 'No'}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-gray-600">Free Trial Recipe Uses Left</span>
+                  <span className="font-medium text-gray-900">
+                    {subscriptionStatus?.trial_active
+                      ? (subscriptionStatus?.usage_limits?.usage?.individual_recipes?.trial_remaining ?? 0)
+                      : 0}
                   </span>
                 </div>
               </div>

@@ -136,6 +136,20 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
     return Math.max(0, diffDays);
   };
 
+  const getTrialDaysLeftDisplay = () => {
+    const apiDaysLeft = subscriptionStatus?.trial_days_left;
+    if (typeof apiDaysLeft === 'number' && Number.isFinite(apiDaysLeft)) {
+      return Math.max(0, apiDaysLeft);
+    }
+    return getDaysRemaining(subscriptionStatus?.trial_end_date);
+  };
+
+  const generationUsageRows = [
+    { key: 'individual_recipes', label: 'Individual Recipes', icon: '🍳' },
+    { key: 'weekly_plans', label: 'Weekly Plans', icon: '🗓️' },
+    { key: 'starbucks_drinks', label: 'Starbucks Drinks', icon: '☕' },
+  ];
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -188,7 +202,7 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-blue-800 font-semibold">🎉 Free Trial Active</p>
                   <p className="text-blue-700 text-sm">
-                    {getDaysRemaining(subscriptionStatus.trial_end_date)} days remaining
+                    {getTrialDaysLeftDisplay()} days remaining
                   </p>
                   <p className="text-blue-600 text-xs">
                     Trial expires: {formatDate(subscriptionStatus.trial_end_date)}
@@ -213,6 +227,37 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
                   )}
                 </div>
               )}
+
+              <div className="mt-4 p-3 bg-white border border-gray-200 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="font-semibold text-gray-800">Generation Usage</p>
+                  <p className="text-xs text-gray-500">
+                    {subscriptionStatus.subscription_active
+                      ? 'Premium tracking'
+                      : subscriptionStatus.trial_active
+                        ? 'Trial limits'
+                        : 'Usage history'}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {generationUsageRows.map((row) => {
+                    const data = subscriptionStatus.usage_limits?.usage?.[row.key];
+                    return (
+                      <div key={row.key} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-gray-700">{row.icon} {row.label}</span>
+                        <span className="text-right">
+                          <span className="font-medium text-gray-900">Used: {data?.used ?? 0}</span>
+                          {subscriptionStatus.trial_active ? (
+                            <span className="block text-xs text-blue-700">
+                              Remaining: {data?.trial_remaining ?? 0} / {data?.trial_limit ?? 0}
+                            </span>
+                          ) : null}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
 
