@@ -611,7 +611,12 @@ async def register(request: UserRegistrationRequest):
             "expires_at": now + timedelta(minutes=15),
             "used": False
         }
-        await verification_codes_collection.insert_one(verification_document)
+        # Keep one current code record per email to avoid stale-code lookup issues.
+        await verification_codes_collection.update_one(
+            {"email": email},
+            {"$set": verification_document},
+            upsert=True
+        )
         logger.info(f"✅ Verification code saved for: {email}")
         
         # Send verification email
@@ -783,24 +788,26 @@ async def login(request: UserLoginRequest):
 async def verify_email(request: EmailVerificationRequest):
     """Verify user email with verification code"""
     try:
-        logger.info(f"🔍 Verification attempt for email: {request.email}")
+        email = request.email.strip().lower()
+        submitted_code = str(request.verification_code).strip()
+        logger.info(f"🔍 Verification attempt for email: {email}")
         
-        # Find verification code
+        # Find latest unused verification code for this email
         verification = await verification_codes_collection.find_one({
-            "email": request.email,
+            "email": email,
             "used": False
-        })
+        }, sort=[("created_at", DESCENDING)])
         
         if not verification:
-            logger.warning(f"⚠️ No valid verification code found for: {request.email}")
+            logger.warning(f"⚠️ No valid verification code found for: {email}")
             return JSONResponse(
                 status_code=400,
                 content={"detail": "Invalid or expired verification code"}
             )
         
         # Check if code matches
-        if verification["code"] != request.verification_code:
-            logger.warning(f"⚠️ Invalid verification code for: {request.email}")
+        if str(verification.get("code", "")).strip() != submitted_code:
+            logger.warning(f"⚠️ Invalid verification code for: {email}")
             return JSONResponse(
                 status_code=400,
                 content={"detail": "Invalid verification code"}
@@ -808,7 +815,7 @@ async def verify_email(request: EmailVerificationRequest):
         
         # Check if code is expired
         if datetime.utcnow() > verification["expires_at"]:
-            logger.warning(f"⚠️ Verification code expired for: {request.email}")
+            logger.warning(f"⚠️ Verification code expired for: {email}")
             return JSONResponse(
                 status_code=400,
                 content={"detail": "Verification code expired"}
@@ -816,7 +823,7 @@ async def verify_email(request: EmailVerificationRequest):
         
         # Mark user as verified (set both field names for compatibility)
         result = await users_collection.update_one(
-            {"email": request.email},
+            {"email": email},
             {
                 "$set": {
                     "is_verified": True,
@@ -845,7 +852,7 @@ async def verify_email(request: EmailVerificationRequest):
             content={
                 "status": "success",
                 "message": "Email verified successfully",
-                "email": request.email,
+                "email": email,
                 "verified": True
             }
         )
@@ -861,7 +868,7 @@ async def verify_email(request: EmailVerificationRequest):
 async def resend_verification(request: dict):
     """Resend verification code"""
     try:
-        email = request.get("email")
+        email = (request.get("email") or "").strip().lower()
         if not email:
             return JSONResponse(
                 status_code=400,
