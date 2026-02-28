@@ -54,6 +54,16 @@ const PATH_ALIASES = {
 };
 
 const getViewFromPath = (pathname) => PATH_ALIASES[pathname] || 'login';
+const FOOTER_VIEWS = new Set([
+  'dashboard',
+  'recipe-generator',
+  'weekly-recipes',
+  'starbucks-generator',
+  'recipe-history',
+  'recipe-detail',
+  'settings',
+  'shopping-list',
+]);
 
 function App() {
   const [currentView, setCurrentView] = useState(() => getViewFromPath(window.location.pathname));
@@ -506,6 +516,8 @@ function App() {
     }
   };
 
+  const shouldShowGlobalLegalFooter = FOOTER_VIEWS.has(currentView);
+
   return (
     <div className="App">
       {/* Global Notification */}
@@ -530,6 +542,24 @@ function App() {
 
       {/* Main Content */}
       {renderCurrentView()}
+
+      {shouldShowGlobalLegalFooter ? (
+        <footer className="border-t border-gray-200 bg-white/95 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-4 py-3 text-center text-xs sm:text-sm text-gray-600">
+            <a href="/privacy.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">
+              Privacy Policy
+            </a>
+            {' · '}
+            <a href="/terms.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">
+              Terms of Service
+            </a>
+            {' · '}
+            <a href="/security.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">
+              Security
+            </a>
+          </div>
+        </footer>
+      ) : null}
     </div>
   );
 }
