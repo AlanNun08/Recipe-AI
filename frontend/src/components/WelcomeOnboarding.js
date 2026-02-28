@@ -459,6 +459,21 @@ const WelcomeOnboarding = ({
                 Log in
               </button>
             </p>
+            <p className="text-xs text-gray-500 mt-3 leading-relaxed">
+              By creating an account, you agree to our{' '}
+              <a href="/terms.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">
+                Terms of Service
+              </a>{' '}
+              and acknowledge our{' '}
+              <a href="/privacy.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">
+                Privacy Policy
+              </a>.
+            </p>
+            <div className="mt-2 text-xs">
+              <a href="/security.html" target="_blank" rel="noreferrer" className="text-gray-500 hover:text-gray-700 underline">
+                Security
+              </a>
+            </div>
           </div>
         </div>
       </div>

@@ -222,6 +222,20 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
           )}
         </button>
       </form>
+
+      <div className="pt-2 border-t border-gray-100 text-center text-xs text-gray-500 leading-relaxed">
+        <a href="/privacy.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">
+          Privacy Policy
+        </a>
+        {' · '}
+        <a href="/terms.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">
+          Terms of Service
+        </a>
+        {' · '}
+        <a href="/security.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">
+          Security
+        </a>
+      </div>
     </div>
   );
 };

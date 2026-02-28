@@ -1054,6 +1054,44 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
                 </div>
               </div>
             </SettingsSection>
+
+            <SettingsSection title="Privacy & Legal" subtitle="Policies and account data requests">
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-3">
+                  <a
+                    href="/privacy.html"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm"
+                  >
+                    Privacy Policy
+                  </a>
+                  <a
+                    href="/terms.html"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm"
+                  >
+                    Terms of Service
+                  </a>
+                  <a
+                    href="/security.html"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm"
+                  >
+                    Security
+                  </a>
+                </div>
+                <div className="text-sm text-gray-600">
+                  Need help with your data? Email{' '}
+                  <a className="text-blue-600 hover:text-blue-800 underline" href="mailto:alannunezsilva0310@gmail.com">
+                    alannunezsilva0310@gmail.com
+                  </a>{' '}
+                  to request account deletion or a copy/correction of your account data.
+                </div>
+              </div>
+            </SettingsSection>
           </div>
 
           <div className="space-y-6">
