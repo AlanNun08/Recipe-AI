@@ -86,7 +86,6 @@ function App() {
         if (['login', 'welcome'].includes(pathView)) {
           setCurrentView('dashboard');
         }
-        console.log('🔄 Restored user session:', userData.email);
       } catch (error) {
         console.error('Error parsing saved user data:', error);
         localStorage.removeItem('user');
@@ -134,7 +133,6 @@ function App() {
   };
 
   const handleLoginSuccess = (userData) => {
-    console.log('✅ Login successful, saving user data:', userData);
     
     // FIX: Ensure consistent user object structure
     const normalizedUser = {
@@ -163,7 +161,6 @@ function App() {
   };
 
   const handleVerificationRequired = (data) => {
-    console.log('⚠️ Verification required:', data);
     setVerificationEmail(data.email);
     setPendingVerificationLogin(null);
     setCurrentView('verification');
@@ -171,7 +168,6 @@ function App() {
   };
 
   const handleRegistrationVerificationRequired = (data, credentials) => {
-    console.log('📝 Registration complete, verification required:', data);
     setVerificationEmail(data.email);
     setPendingVerificationLogin(credentials || null);
     setCurrentView('verification');
@@ -179,7 +175,6 @@ function App() {
   };
 
   const handleVerificationSuccess = async (data) => {
-    console.log('✅ Email verified successfully:', data);
 
     if (
       pendingVerificationLogin?.email &&
@@ -214,7 +209,6 @@ function App() {
   };
 
   const handleRegistrationComplete = (userData) => {
-    console.log('✅ Registration complete, saving user data:', userData);
     
     // FIX: Ensure consistent user object structure
     const normalizedUser = {
@@ -233,7 +227,6 @@ function App() {
   };
 
   const handleLogout = () => {
-    console.log('🚪 Logging out user');
     setUser(null);
     localStorage.removeItem('user');
     sessionStorage.removeItem('user');

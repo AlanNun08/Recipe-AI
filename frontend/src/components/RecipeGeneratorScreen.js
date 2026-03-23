@@ -190,8 +190,6 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
     setIsGenerating(true);
     
     try {
-      console.log('🤖 Generating recipe with OpenAI API...');
-      console.log('👤 Current user:', user);
       showNotification('🤖 Generating your recipe with AI...', 'info');
       
       // Send properly formatted request to backend - FIX: Use correct user_id
@@ -214,34 +212,7 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
           formData.ingredients.split(',').map(i => i.trim()).filter(i => i) : []
       };
 
-      console.log('📤 Sending request to API:', requestData);
-      console.log('📤 Request payload keys:', Object.keys(requestData));
-      console.log('📤 Request validation:', {
-        has_user_id: !!requestData.user_id,
-        has_cuisine_type: !!requestData.cuisine_type,
-        has_meal_type: !!requestData.meal_type,
-        has_difficulty: !!requestData.difficulty,
-        has_servings: !!requestData.servings
-      });
-
-      const startTime = Date.now();
-      console.log(`⏱️ Request started at: ${new Date().toISOString()}`);
-      
       const response = await axios.post(`${API}/api/recipes/generate`, requestData);
-      
-      const elapsedTime = Date.now() - startTime;
-      console.log(`✅ Response received after ${elapsedTime}ms`);
-      console.log('📥 Received response from API:', response.data);
-      console.log('📥 Response status:', response.status);
-      console.log('📥 Response headers:', response.headers);
-      console.log('📥 Response validation:', {
-        has_name: !!response.data.name,
-        has_ingredients: !!response.data.ingredients,
-        has_instructions: !!response.data.instructions,
-        has_id: !!response.data.id,
-        ingredients_count: response.data.ingredients?.length || 0,
-        instructions_count: response.data.instructions?.length || 0
-      });
       
       // Validate the response has required data
       if (!response.data.name || !response.data.ingredients || !response.data.instructions) {
@@ -253,7 +224,6 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
       showNotification('🎉 Recipe generated successfully with AI!', 'success');
       
       // Auto-navigate to detail screen to fetch cart options immediately
-      console.log('📱 Auto-navigating to recipe detail to fetch Walmart items...');
       if (onViewRecipe) {
         // Pass a callback to trigger Walmart fetch after navigation
         onViewRecipe(response.data.id, 'generated', {
@@ -320,7 +290,6 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
 
   const viewRecipeDetail = () => {
     if (generatedRecipe && onViewRecipe) {
-      console.log('👀 Viewing recipe detail:', generatedRecipe.id);
       // FIX: Ensure we navigate to recipe detail properly
       onViewRecipe(generatedRecipe.id, 'generated');
     } else {

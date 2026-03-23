@@ -104,10 +104,6 @@ const WelcomeOnboarding = ({
       const email = registrationData.email.trim().toLowerCase();
       const fullName = `${registrationData.firstName} ${registrationData.lastName}`.trim();
       
-      console.log('📝 Registering new user...');
-      console.log('  📧 Email:', email);
-      console.log('  👤 Name:', fullName);
-      console.log('  🔗 API URL:', `${API}/api/auth/register`);
 
       const requestData = {
         email: email,
@@ -116,7 +112,6 @@ const WelcomeOnboarding = ({
         phone: '' // Optional field
       };
       
-      console.log('📤 Sending registration request:', requestData);
 
       const response = await fetch(`${API}/api/auth/register`, {
         method: 'POST',
@@ -126,15 +121,9 @@ const WelcomeOnboarding = ({
         body: JSON.stringify(requestData),
       });
 
-      console.log('📡 Response status:', response.status);
       const data = await response.json();
-      console.log('� Registration response:', data);
 
       if (response.ok && data.status === 'success') {
-        console.log('✅ Registration successful!');
-        console.log('  👤 User ID:', data.user_id);
-        console.log('  📧 Email:', data.email);
-        console.log('  ⏰ Trial End Date:', data.trial_end_date);
         
         // Store registration info for next step
         sessionStorage.setItem('registeredEmail', email);

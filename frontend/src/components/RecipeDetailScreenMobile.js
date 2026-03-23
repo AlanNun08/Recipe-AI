@@ -59,7 +59,6 @@ function RecipeDetailScreenMobile({ recipeId, recipeSource = 'weekly', onBack, s
 
   const fetchCartOptions = async () => {
     if (!recipeId || cartLoadedRef.current) {
-      console.log('🛒 Cart fetch early return: recipeId=', recipeId, 'cartLoadedRef.current=', cartLoadedRef.current);
       return;
     }
 
@@ -67,19 +66,14 @@ function RecipeDetailScreenMobile({ recipeId, recipeSource = 'weekly', onBack, s
       setIsLoadingCart(true);
       cartLoadedRef.current = true;
 
-      console.log('🛒 Loading cart options for:', recipeId);
       const response = await fetch(`${API}/api/recipes/${recipeId}/cart-options`);
-      console.log('📊 Cart options response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('📦 Cart options data:', data);
         
         const walmartOption = data.cart_options?.[0];
         
         if (walmartOption && walmartOption.products) {
-          console.log('✅ Found Walmart products:', walmartOption.products.length);
-          
           const productsByIngredient = {};
           walmartOption.products.forEach(product => {
             const ingredient = product.ingredient_match;
@@ -88,8 +82,6 @@ function RecipeDetailScreenMobile({ recipeId, recipeSource = 'weekly', onBack, s
             }
             productsByIngredient[ingredient].push(product);
           });
-          
-          console.log('🛒 Products grouped by ingredient:', Object.keys(productsByIngredient).length, 'ingredients');
           
           setCartOptions([{
             ...walmartOption,

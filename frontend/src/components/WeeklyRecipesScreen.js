@@ -99,7 +99,6 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
     setIsGenerating(true);
     
     try {
-      console.log('📅 Generating weekly plan with OpenAI API...');
       showNotification('📅 Creating your weekly meal plan with AI...', 'info');
 
       const savedSettings = loadSavedUserSettings(user);
@@ -118,7 +117,6 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
         cooking_time_preference: 'medium'
       });
 
-      console.log('✅ Weekly plan generated successfully:', response.data);
       setCurrentPlan(response.data);
       showNotification('🎉 Weekly meal plan generated successfully!', 'success');
       setShowGenerator(false);

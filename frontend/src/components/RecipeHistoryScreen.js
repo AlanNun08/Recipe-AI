@@ -32,16 +32,13 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
       hasFetched.current = true;
 
       try {
-        console.log('🔍 Fetching real recipe history for user:', user.user_id);
         setApiStatus('checking');
         
         const response = await fetch(`${API}/api/recipes/history/${user.user_id}`);
         
-        console.log('📡 API Response status:', response.status);
         
         if (response.status === 404 || response.status === 405) {
           // API endpoint not implemented yet
-          console.log('⚠️ Recipe History API not implemented yet');
           setApiStatus('unavailable');
           setError('Recipe history API not available yet');
           setRecipes([]);
@@ -51,17 +48,14 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
         } else {
           // API is available and working
           const data = await response.json();
-          console.log('✅ Real recipe data received:', data);
           
           setApiStatus('available');
           
           // Handle different possible response formats
           if (data.recipes && Array.isArray(data.recipes)) {
             setRecipes(data.recipes);
-            console.log(`📊 Loaded ${data.recipes.length} real recipes from MongoDB`);
           } else if (Array.isArray(data)) {
             setRecipes(data);
-            console.log(`📊 Loaded ${data.length} real recipes from MongoDB`);
           } else {
             console.warn('⚠️ Unexpected response format:', data);
             setRecipes([]);
@@ -116,7 +110,6 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
     if (!confirm('Delete this recipe from your history?')) return;
     
     try {
-      console.log('🗑️ Deleting recipe:', recipeId);
       const response = await fetch(`${API}/api/recipes/${recipeId}`, { 
         method: 'DELETE',
         headers: {
@@ -128,7 +121,6 @@ function RecipeHistoryScreen({ user, onBack, showNotification, onViewRecipe, onV
         // Remove from local state
         setRecipes(prev => prev.filter(r => r.id !== recipeId));
         showNotification('✅ Recipe deleted from your history', 'success');
-        console.log('✅ Recipe deleted successfully');
       } else {
         throw new Error(`Delete failed: ${response.status}`);
       }

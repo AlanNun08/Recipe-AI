@@ -95,7 +95,6 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
     setIsGenerating(true);
     
     try {
-      console.log('☕ Generating Starbucks drink with OpenAI API...');
       showNotification('☕ Creating your unique Starbucks drink with AI...', 'info');
 
       const savedSettings = loadSavedUserSettings(user);
@@ -110,7 +109,6 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
         flavor_inspiration: mergedFlavorInspiration
       });
 
-      console.log('✅ Starbucks drink generated successfully:', response.data);
       setGeneratedDrink(response.data);
       showNotification('🎉 Your secret menu drink is ready!', 'success');
     } catch (error) {
@@ -119,25 +117,18 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
       if (error.response?.status === 503) {
         // OpenAI API not configured
         showNotification('❌ AI drink generation is currently unavailable. Please contact support.', 'error');
-      } else if (error.response?.status === 429) {
-        // Usage limit error
-        const errorData = error.response.data.detail;
-        
+      } else if ([402, 429].includes(error.response?.status)) {
+        const errorData = error.response?.data?.detail;
+
         if (typeof errorData === 'object' && errorData.upgrade_required) {
-          showNotification(
-            `⚠️ ${errorData.message} Redirecting to upgrade...`, 
-            'warning'
-          );
-          
+          showNotification(`⚠️ ${errorData.message}`, 'warning');
+
           setTimeout(() => {
             if (setCurrentScreen) {
-              setCurrentScreen('dashboard');
-              setTimeout(() => {
-                showNotification('💎 Upgrade to generate more Starbucks drinks!', 'info');
-              }, 500);
+              setCurrentScreen('settings');
             }
-          }, 2000);
-          
+          }, 1200);
+
           return;
         }
       } else {

@@ -46,7 +46,6 @@ const VerificationPage = ({ email, onVerificationSuccess, onBackToLogin }) => {
     
     try {
       const result = await authService.verifyCode(email, verificationCode);
-      console.log('Verification successful:', result);
       
       // Call success callback with user data
       if (onVerificationSuccess) {

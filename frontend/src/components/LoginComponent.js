@@ -16,8 +16,6 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
     setError('');
     
     try {
-      console.log('🔐 Attempting login for:', email);
-      console.log('🔗 API URL:', `${API}/api/auth/login`);
 
       // Call the backend login endpoint
       const response = await fetch(`${API}/api/auth/login`, {
@@ -31,15 +29,11 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
         }),
       });
 
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
 
       const data = await response.json();
-      console.log('📥 Login response:', data);
 
       // Handle different response cases
       if (response.status === 403 && data.status === 'verification_required') {
-        console.log('⚠️ Verification required');
         if (onVerificationRequired) {
           onVerificationRequired(data);
         } else {
@@ -47,13 +41,15 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
         }
         
       } else if (response.ok && data.status === 'success') {
-        console.log('✅ Login successful:', data);
-        
+        const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ').trim();
         const userData = {
           user_id: data.user_id,
           email: data.email,
-          name: data.name,
-          verified: data.verified,
+          name: data.name || fullName,
+          first_name: data.first_name || '',
+          last_name: data.last_name || '',
+          verified: data.verified ?? data.is_verified ?? false,
+          is_verified: data.is_verified ?? data.verified ?? false,
           subscription_status: data.subscription_status,
           rememberMe
         };
@@ -102,10 +98,8 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
 
   const testAPIConnection = async () => {
     try {
-      console.log('🧪 Testing API connection...');
       const response = await fetch(`${API}/api/health`);
       const data = await response.json();
-      console.log('🧪 API Health:', data);
       
       if (response.ok) {
         setError('✅ API connection successful! Try logging in again.');

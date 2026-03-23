@@ -151,6 +151,18 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
     { key: 'weekly_plans', label: 'Weekly Plans', icon: '🗓️' },
     { key: 'starbucks_drinks', label: 'Starbucks Drinks', icon: '☕' },
   ];
+  const trialLimitFallback = {
+    individual_recipes: 50,
+    weekly_plans: 5,
+    starbucks_drinks: 10,
+  };
+  const getTrialLimitFor = (key) => {
+    const value = subscriptionStatus?.usage_limits?.usage?.[key]?.trial_limit;
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    return trialLimitFallback[key] ?? 0;
+  };
 
   const nextBillingOrPeriodEnd = subscriptionStatus?.next_billing_date || subscriptionStatus?.subscription_end_date;
 
@@ -282,34 +294,40 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
                 <p className="text-gray-600 text-sm mt-1">Billed monthly after your 7-day free trial</p>
               </div>
 
-              <div className="mb-6">
-                <h5 className="font-semibold text-gray-800 mb-2">Premium Features:</h5>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center">
-                    <span className="text-green-500 mr-2">✓</span>
-                    Unlimited AI recipe generation
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 mr-2">✓</span>
-                    Starbucks secret menu drink generator
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 mr-2">✓</span>
-                    Walmart grocery cart integration
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 mr-2">✓</span>
-                    Recipe history and favorites
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 mr-2">✓</span>
-                    Community recipe sharing
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 mr-2">✓</span>
-                    Advanced dietary preferences
-                  </li>
-                </ul>
+              <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                  <h5 className="font-semibold text-blue-900 mb-2">Free Trial (7 Days)</h5>
+                  <ul className="space-y-1.5 text-sm text-blue-800">
+                    {generationUsageRows.map((row) => (
+                      <li key={`trial-${row.key}`} className="flex items-center">
+                        <span className="mr-2">{row.icon}</span>
+                        Up to {getTrialLimitFor(row.key)} {row.label.toLowerCase()}
+                      </li>
+                    ))}
+                    <li className="flex items-center">
+                      <span className="mr-2">📚</span>
+                      Keep recipe history access after trial
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border border-purple-200 bg-purple-50 p-4">
+                  <h5 className="font-semibold text-purple-900 mb-2">Premium ($9.99/month)</h5>
+                  <ul className="space-y-1.5 text-sm text-purple-800">
+                    <li className="flex items-center">
+                      <span className="text-green-600 mr-2">✓</span>
+                      Unlimited recipe, weekly plan, and Starbucks generation
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-green-600 mr-2">✓</span>
+                      Walmart cart integration + advanced preferences
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-green-600 mr-2">✓</span>
+                      Community recipe sharing and full premium access
+                    </li>
+                  </ul>
+                </div>
               </div>
 
               {/* Action Button */}
@@ -404,8 +422,8 @@ const SubscriptionScreen = ({ user, onClose, onSubscriptionUpdate }) => {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h4 className="font-semibold text-blue-800 mb-2">🎁 7-Day Free Trial</h4>
             <p className="text-blue-700 text-sm">
-              New users get full access to all premium features for 7 days completely free. 
-              No credit card required to start your trial. You can subscribe anytime during or after your trial.
+              New users start on a 7-day trial with no credit card required. After trial expiry, saved history stays available,
+              and generation unlocks again when you subscribe.
             </p>
           </div>
         </div>
