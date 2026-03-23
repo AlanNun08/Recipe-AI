@@ -343,7 +343,7 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
     setCurrentStep(1);
   };
 
-  const ProgressBar = () => (
+  const renderProgressBar = () => (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
         {Array.from({ length: totalSteps }, (_, i) => (
@@ -371,7 +371,7 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
     </div>
   );
 
-  const StepContent = () => {
+  const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return (
@@ -876,7 +876,7 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
     }
   };
 
-  const NavigationButtons = () => (
+  const renderNavigationButtons = () => (
     <div className="flex justify-between mt-8">
       <button
         onClick={prevStep}
@@ -953,9 +953,9 @@ function RecipeGeneratorScreen({ user, onBack, showNotification, onViewRecipe })
 
         {/* Main Content */}
         <div className="bg-white rounded-3xl shadow-xl p-4 md:p-8 border border-gray-100">
-          {currentStep <= 4 && <ProgressBar />}
-          <StepContent />
-          {currentStep <= 4 && <NavigationButtons />}
+          {currentStep <= 4 && renderProgressBar()}
+          {renderStepContent()}
+          {currentStep <= 4 && renderNavigationButtons()}
         </div>
       </div>
     </div>

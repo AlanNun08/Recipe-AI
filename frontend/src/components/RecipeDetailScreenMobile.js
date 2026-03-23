@@ -572,12 +572,12 @@ function RecipeDetailScreenMobile({ recipeId, recipeSource = 'weekly', onBack, s
                           const itemIds = Object.values(selectedProducts).map(product => product.id).filter(Boolean);
                           if (itemIds.length > 0) {
                             openWalmartCart(itemIds);
-                            showNotification(`🛒 Opening Walmart with ${itemIds.length} items!`, 'success');
+                            showNotification(`🛒 Opening Walmart app with ${itemIds.length} items!`, 'success');
                           }
                         }}
                         className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-bold"
                       >
-                        🛒 Checkout on Walmart
+                        🛒 Open in Walmart App
                       </button>
                     </div>
                   </div>

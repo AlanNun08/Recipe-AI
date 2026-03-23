@@ -792,8 +792,8 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
                               onClick={() => {
                                 const itemIds = Object.values(selectedProducts).map(product => product.id).filter(Boolean);
                                 if (itemIds.length > 0) {
-                                  openWalmartCart(itemIds, { affiliate: true });
-                                  showNotification(`🛒 Opening Walmart cart with ${itemIds.length} items!`, 'success');
+                                  openWalmartCart(itemIds);
+                                  showNotification(`🛒 Opening Walmart app with ${itemIds.length} items!`, 'success');
                                 } else {
                                   showNotification('Please select some items first', 'warning');
                                 }
@@ -806,21 +806,6 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
                               }`}
                             >
                               🛒 Open in Walmart App
-                            </button>
-                            
-                            <button
-                              onClick={() => {
-                                const itemIds = Object.values(selectedProducts).map(product => product.id).filter(Boolean);
-                                if (itemIds.length > 0) {
-                                  openWalmartCart(itemIds);
-                                  showNotification('📱 Opening Walmart cart (mobile-safe link)...', 'info');
-                                } else {
-                                  showNotification('Please select some items first', 'warning');
-                                }
-                              }}
-                              className="w-full py-2 px-4 rounded-lg font-medium text-sm bg-blue-500 hover:bg-blue-600 text-white transition-colors"
-                            >
-                              📱 Continue on Walmart.com
                             </button>
                             
                             <button
