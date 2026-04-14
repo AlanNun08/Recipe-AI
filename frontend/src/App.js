@@ -287,9 +287,6 @@ function App() {
                 <LoginComponent
                   onLoginSuccess={handleLoginSuccess}
                   onVerificationRequired={handleVerificationRequired}
-                  onForgotPassword={() => {
-                    showNotification('Password reset coming soon!', 'info');
-                  }}
                 />
 
                 {/* Register Option */}

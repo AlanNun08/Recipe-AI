@@ -1067,8 +1067,16 @@ async def register(request: UserRegistrationRequest):
         )
         logger.info(f"✅ Verification code saved for: {email}")
         
-        # Send verification email
+        # Send verification email and fail fast if delivery is unavailable.
         email_sent = await send_verification_email(request.email, verification_code)
+        if not email_sent:
+            logger.error(f"❌ Registration aborted because verification email could not be sent to {email}")
+            await users_collection.delete_one({"_id": result.inserted_id})
+            await verification_codes_collection.delete_one({"email": email})
+            return JSONResponse(
+                status_code=503,
+                content={"detail": "We couldn't send your verification email. Please try again in a few minutes."}
+            )
         
         logger.info(f"✅ User registered successfully: {request.email}")
         
@@ -1177,7 +1185,12 @@ async def login(request: UserLoginRequest):
             logger.info(f"✅ Verification code updated in MongoDB")
             
             # Send verification email
-            await send_verification_email(email, verification_code)
+            email_sent = await send_verification_email(email, verification_code)
+            if not email_sent:
+                return JSONResponse(
+                    status_code=503,
+                    content={"detail": "We couldn't send your verification email. Please try again in a few minutes."}
+                )
             
             return JSONResponse(
                 status_code=403,
@@ -1185,8 +1198,7 @@ async def login(request: UserLoginRequest):
                     "status": "verification_required",
                     "message": "Account not verified. Please check your email for verification code.",
                     "email": email,
-                    "user_id": user["id"],
-                    "verification_code": verification_code  # For development only
+                    "user_id": user["id"]
                 }
             )
         
@@ -1352,6 +1364,11 @@ async def resend_verification(request: dict):
         
         # Send verification email
         email_sent = await send_verification_email(email, verification_code)
+        if not email_sent:
+            return JSONResponse(
+                status_code=503,
+                content={"detail": "We couldn't send your verification email. Please try again in a few minutes."}
+            )
         
         return JSONResponse(
             status_code=200,
@@ -1401,6 +1418,12 @@ async def request_password_reset(request: PasswordResetRequest):
         )
 
         email_sent = await send_password_reset_email(email, code)
+        if not email_sent:
+            await password_reset_codes_collection.delete_one({"email": email})
+            return JSONResponse(
+                status_code=503,
+                content={"detail": "We couldn't send the password reset email. Please try again in a few minutes."}
+            )
         return JSONResponse(
             status_code=200,
             content={

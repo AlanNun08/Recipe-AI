@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 
-const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
-
 const WelcomeOnboarding = ({
   onComplete,
   onSkip,
@@ -97,6 +95,11 @@ const WelcomeOnboarding = ({
       return;
     }
 
+    if (!registrationData.agreeTerms) {
+      setRegistrationError('You must agree to the Terms of Service and Privacy Policy.');
+      return;
+    }
+
     setIsRegistering(true);
     setRegistrationError('');
 
@@ -113,7 +116,7 @@ const WelcomeOnboarding = ({
       };
       
 
-      const response = await fetch(`${API}/api/auth/register`, {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

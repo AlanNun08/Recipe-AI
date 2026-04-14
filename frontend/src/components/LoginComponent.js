@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-
-const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
+import { authService } from '../services/auth';
 
 const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPassword }) => {
   const [email, setEmail] = useState('');
@@ -9,6 +8,16 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resetMode, setResetMode] = useState('request');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showResetConfirmPassword, setShowResetConfirmPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -18,7 +27,7 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
     try {
 
       // Call the backend login endpoint
-      const response = await fetch(`${API}/api/auth/login`, {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,7 +107,7 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
 
   const testAPIConnection = async () => {
     try {
-      const response = await fetch(`${API}/api/health`);
+      const response = await fetch('/api/health');
       const data = await response.json();
       
       if (response.ok) {
@@ -109,6 +118,113 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
     } catch (error) {
       console.error('🧪 API test failed:', error);
       setError('❌ Cannot connect to API server.');
+    }
+  };
+
+  const resetForgotPasswordState = () => {
+    setShowForgotPassword(false);
+    setResetMode('request');
+    setResetEmail(email.trim().toLowerCase());
+    setResetCode('');
+    setResetPassword('');
+    setResetConfirmPassword('');
+    setResetMessage('');
+    setError('');
+    setShowResetPassword(false);
+    setShowResetConfirmPassword(false);
+  };
+
+  const openForgotPassword = () => {
+    setShowForgotPassword(true);
+    setResetMode('request');
+    setResetEmail(email.trim().toLowerCase());
+    setResetCode('');
+    setResetPassword('');
+    setResetConfirmPassword('');
+    setResetMessage('');
+    setError('');
+  };
+
+  const handleSendResetCode = async (e) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) {
+      setError('Enter your email to receive a reset code.');
+      return;
+    }
+
+    setResetLoading(true);
+    setError('');
+    setResetMessage('');
+
+    try {
+      const normalizedEmail = resetEmail.trim().toLowerCase();
+      await authService.requestPasswordReset(normalizedEmail);
+      setResetEmail(normalizedEmail);
+      setResetMode('verify');
+      setResetMessage('Reset code sent. Check your email.');
+    } catch (resetError) {
+      setError(resetError.message || 'Failed to send reset code.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleVerifyResetCode = async (e) => {
+    e.preventDefault();
+    if (resetCode.length !== 6) {
+      setError('Enter the 6-digit reset code.');
+      return;
+    }
+
+    setResetLoading(true);
+    setError('');
+    setResetMessage('');
+
+    try {
+      await authService.verifyPasswordResetCode(resetEmail, resetCode);
+      setResetMode('reset');
+      setResetMessage('Code verified. Enter your new password.');
+    } catch (resetError) {
+      setError(resetError.message || 'Failed to verify reset code.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (resetPassword.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
+    if (resetPassword !== resetConfirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setResetLoading(true);
+    setError('');
+    setResetMessage('');
+
+    try {
+      await authService.resetPassword(resetEmail, resetCode, resetPassword);
+      const updatedEmail = resetEmail;
+      setPassword('');
+      setShowForgotPassword(false);
+      setResetMode('request');
+      setResetCode('');
+      setResetPassword('');
+      setResetConfirmPassword('');
+      setResetMessage('Your password was updated. Sign in with your new password.');
+      setEmail(updatedEmail);
+      setResetEmail('');
+      setShowResetPassword(false);
+      setShowResetConfirmPassword(false);
+      setError('');
+    } catch (resetError) {
+      setError(resetError.message || 'Failed to reset password.');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -140,6 +256,153 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
         </div>
       )}
       
+      {showForgotPassword ? (
+        <div className="space-y-4">
+          <div className="text-left">
+            <h3 className="text-lg font-semibold text-gray-800">Reset your password</h3>
+            <p className="text-sm text-gray-600">
+              {resetMode === 'request' && 'Enter your email to receive a 6-digit reset code.'}
+              {resetMode === 'verify' && 'Enter the code we emailed you.'}
+              {resetMode === 'reset' && 'Choose a new password for your account.'}
+            </p>
+          </div>
+
+          {resetMessage && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-700">
+              {resetMessage}
+            </div>
+          )}
+
+          {resetMode === 'request' && (
+            <form onSubmit={handleSendResetCode} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">📧 Email</label>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="email@example.com"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className={`w-full py-3 px-4 rounded-lg font-bold text-white transition-all duration-200 ${
+                  resetLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {resetLoading ? 'Sending code...' : 'Send Reset Code'}
+              </button>
+            </form>
+          )}
+
+          {resetMode === 'verify' && (
+            <form onSubmit={handleVerifyResetCode} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">🔢 Reset Code</label>
+                <input
+                  type="text"
+                  value={resetCode}
+                  onChange={(e) => setResetCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  required
+                  maxLength="6"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center tracking-[0.3em] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="123456"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={resetLoading || resetCode.length !== 6}
+                className={`w-full py-3 px-4 rounded-lg font-bold text-white transition-all duration-200 ${
+                  resetLoading || resetCode.length !== 6 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {resetLoading ? 'Verifying code...' : 'Verify Reset Code'}
+              </button>
+            </form>
+          )}
+
+          {resetMode === 'reset' && (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">🔒 New Password</label>
+                <div className="relative">
+                  <input
+                    type={showResetPassword ? 'text' : 'password'}
+                    value={resetPassword}
+                    onChange={(e) => setResetPassword(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    placeholder="At least 8 characters"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResetPassword(!showResetPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showResetPassword ? '🙈' : '👁'}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">🔒 Confirm Password</label>
+                <div className="relative">
+                  <input
+                    type={showResetConfirmPassword ? 'text' : 'password'}
+                    value={resetConfirmPassword}
+                    onChange={(e) => setResetConfirmPassword(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    placeholder="Re-enter your password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResetConfirmPassword(!showResetConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showResetConfirmPassword ? '🙈' : '👁'}
+                  </button>
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className={`w-full py-3 px-4 rounded-lg font-bold text-white transition-all duration-200 ${
+                  resetLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                {resetLoading ? 'Updating password...' : 'Update Password'}
+              </button>
+            </form>
+          )}
+
+          <div className="flex items-center justify-between text-sm">
+            <button
+              type="button"
+              onClick={() => {
+                setResetMode('request');
+                setResetCode('');
+                setResetPassword('');
+                setResetConfirmPassword('');
+                setResetMessage('');
+                setError('');
+              }}
+              className="text-blue-600 hover:text-blue-800 font-medium"
+            >
+              Start over
+            </button>
+            <button
+              type="button"
+              onClick={resetForgotPasswordState}
+              className="text-gray-600 hover:text-gray-800 font-medium"
+            >
+              Back to login
+            </button>
+          </div>
+        </div>
+      ) : (
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -190,7 +453,7 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
           </label>
           <button
             type="button"
-            onClick={onForgotPassword}
+            onClick={openForgotPassword}
             className="text-sm text-blue-600 hover:text-blue-800 font-medium"
           >
             🔗 Forgot password?
@@ -216,6 +479,7 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
           )}
         </button>
       </form>
+      )}
 
       <div className="pt-2 border-t border-gray-100 text-center text-xs text-gray-500 leading-relaxed">
         <a href="/privacy.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">

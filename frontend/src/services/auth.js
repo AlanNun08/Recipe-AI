@@ -74,6 +74,64 @@ export const authService = {
     return data;
   },
 
+  async requestPasswordReset(email) {
+    const response = await fetch('/api/auth/request-password-reset', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to send reset code');
+    }
+
+    return data;
+  },
+
+  async verifyPasswordResetCode(email, verificationCode) {
+    const response = await fetch('/api/auth/verify-password-reset-code', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, verification_code: verificationCode }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to verify reset code');
+    }
+
+    return data;
+  },
+
+  async resetPassword(email, verificationCode, newPassword) {
+    const response = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        verification_code: verificationCode,
+        new_password: newPassword,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to reset password');
+    }
+
+    return data;
+  },
+
   getPendingVerification() {
     const stored = localStorage.getItem('pendingVerification');
     return stored ? JSON.parse(stored) : null;
