@@ -4,7 +4,7 @@ export const isMobileBrowser = () => {
   return /android|iphone|ipad|ipod|mobile/i.test(ua) || window.innerWidth <= 768;
 };
 
-export const openExternalLink = (url, { preferSameTabOnMobile = false } = {}) => {
+export const openExternalLink = (url, { preferSameTabOnMobile = false, allowSameTabFallback = true } = {}) => {
   if (!url || typeof window === 'undefined') return false;
 
   if (preferSameTabOnMobile && isMobileBrowser()) {
@@ -26,8 +26,12 @@ export const openExternalLink = (url, { preferSameTabOnMobile = false } = {}) =>
     // fall through to same-tab fallback
   }
 
-  window.location.assign(url);
-  return true;
+  if (allowSameTabFallback) {
+    window.location.assign(url);
+    return true;
+  }
+
+  return false;
 };
 
 export const buildWalmartCartUrl = (itemIds, { affiliate = false } = {}) => {
@@ -42,5 +46,8 @@ export const buildWalmartCartUrl = (itemIds, { affiliate = false } = {}) => {
 export const openWalmartCart = (itemIds, options = {}) => {
   const url = buildWalmartCartUrl(itemIds, options);
   if (!url) return false;
-  return openExternalLink(url, { preferSameTabOnMobile: true });
+  return openExternalLink(url, {
+    preferSameTabOnMobile: false,
+    allowSameTabFallback: false,
+  });
 };

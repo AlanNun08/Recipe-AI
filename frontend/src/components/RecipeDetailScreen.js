@@ -784,8 +784,12 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
                               onClick={() => {
                                 const itemIds = Object.values(selectedProducts).map(product => product.id).filter(Boolean);
                                 if (itemIds.length > 0) {
-                                  openWalmartCart(itemIds);
-                                  showNotification(`🛒 Opening Walmart app with ${itemIds.length} items!`, 'success');
+                                  const opened = openWalmartCart(itemIds);
+                                  if (opened) {
+                                    showNotification(`🛒 Opened Walmart in a new tab with ${itemIds.length} items.`, 'success');
+                                  } else {
+                                    showNotification('Pop-up blocked. Please allow pop-ups for Walmart links.', 'warning');
+                                  }
                                 } else {
                                   showNotification('Please select some items first', 'warning');
                                 }
