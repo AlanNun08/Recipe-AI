@@ -1,7 +1,15 @@
 import React, { useEffect } from 'react';
 import { getLegalDocument } from './legalDocuments';
 
-function LegalDocumentModal({ documentId, onClose }) {
+function LegalDocumentModal({
+  documentId,
+  onClose,
+  subtitle = 'Review without leaving your current screen.',
+  primaryActionLabel = '',
+  onPrimaryAction = null,
+  showFooterCloseButton = true,
+  showDefaultActions = true
+}) {
   const legalDocument = getLegalDocument(documentId);
 
   useEffect(() => {
@@ -36,23 +44,16 @@ function LegalDocumentModal({ documentId, onClose }) {
         <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div>
             <h2 className="text-lg md:text-xl font-semibold text-slate-900">{legalDocument.title}</h2>
-            <p className="text-sm text-slate-500">Review without leaving your current screen.</p>
+            <p className="text-sm text-slate-500">{subtitle}</p>
           </div>
           <div className="flex items-center gap-3">
-            <a
-              href={legalDocument.path}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Open in new tab
-            </a>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              aria-label="Close legal document"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 text-2xl leading-none text-slate-700 hover:bg-slate-100"
             >
-              Close
+              ×
             </button>
           </div>
         </div>
@@ -63,6 +64,39 @@ function LegalDocumentModal({ documentId, onClose }) {
             src={legalDocument.path}
             className="h-[72vh] w-full rounded-2xl border border-slate-200 bg-white"
           />
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
+          {showDefaultActions ? (
+            <a
+              href={legalDocument.path}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Open in new tab
+            </a>
+          ) : null}
+
+          {showFooterCloseButton ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Close
+            </button>
+          ) : null}
+
+          {primaryActionLabel ? (
+            <button
+              type="button"
+              onClick={onPrimaryAction}
+              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              {primaryActionLabel}
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

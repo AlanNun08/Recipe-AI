@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import LegalDocumentLink from './LegalDocumentLink';
+import LegalDocumentModal from './LegalDocumentModal';
 
 const WelcomeOnboarding = ({
   onComplete,
@@ -17,6 +18,7 @@ const WelcomeOnboarding = ({
   const [registrationError, setRegistrationError] = useState('');
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
+  const [activeConsentDocument, setActiveConsentDocument] = useState(null);
   const [userPreferences, setUserPreferences] = useState({
     quickPrefs: [],
     budget: '',
@@ -81,6 +83,35 @@ const WelcomeOnboarding = ({
     }));
   };
 
+  const openLegalConsentFlow = () => {
+    setRegistrationError('');
+
+    if (!registrationData.agreeTerms) {
+      setActiveConsentDocument('terms');
+      return;
+    }
+
+    if (!registrationData.agreePrivacy) {
+      setActiveConsentDocument('privacy');
+      return;
+    }
+
+    setActiveConsentDocument('terms');
+  };
+
+  const handleLegalConsentAgree = () => {
+    if (activeConsentDocument === 'terms') {
+      setRegistrationData((prev) => ({ ...prev, agreeTerms: true }));
+      setActiveConsentDocument('privacy');
+      return;
+    }
+
+    if (activeConsentDocument === 'privacy') {
+      setRegistrationData((prev) => ({ ...prev, agreePrivacy: true }));
+      setActiveConsentDocument(null);
+    }
+  };
+
   const handleRegisterAccount = async () => {
     // Validate registration data
     if (!registrationData.firstName || !registrationData.lastName || !registrationData.email || !registrationData.password || !registrationData.confirmPassword) {
@@ -100,6 +131,7 @@ const WelcomeOnboarding = ({
 
     if (!registrationData.agreeTerms || !registrationData.agreePrivacy) {
       setRegistrationError('You must agree to the Terms of Service and Privacy Policy to create an account.');
+      setActiveConsentDocument(registrationData.agreeTerms ? 'privacy' : 'terms');
       return;
     }
 
@@ -326,7 +358,7 @@ const WelcomeOnboarding = ({
 
   const renderRegisterStep = () => (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="max-w-5xl w-full">
+      <div className="max-w-3xl w-full">
         <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-8">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold mb-2">Create your account</h2>
@@ -340,172 +372,121 @@ const WelcomeOnboarding = ({
               handleRegisterAccount();
             }}
           >
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">👤 First Name</label>
-                    <input
-                      type="text"
-                      value={registrationData.firstName}
-                      onChange={(e) => setRegistrationData({...registrationData, firstName: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="John"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">👤 Last Name</label>
-                    <input
-                      type="text"
-                      value={registrationData.lastName}
-                      onChange={(e) => setRegistrationData({...registrationData, lastName: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Smith"
-                    />
-                  </div>
-                </div>
-
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1">📧 Email Address</label>
+                  <label className="block text-sm font-medium mb-1">👤 First Name</label>
                   <input
-                    type="email"
-                    value={registrationData.email}
-                    onChange={(e) => setRegistrationData({...registrationData, email: e.target.value})}
+                    type="text"
+                    value={registrationData.firstName}
+                    onChange={(e) => setRegistrationData({...registrationData, firstName: e.target.value})}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="john.smith@email.com"
+                    placeholder="John"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium mb-1">🔒 Create Password</label>
-                  <div className="relative">
-                    <input
-                      type={showRegisterPassword ? "text" : "password"}
-                      value={registrationData.password}
-                      onChange={(e) => setRegistrationData({...registrationData, password: e.target.value})}
-                      className="w-full p-3 pr-16 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="••••••••••••••••••"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowRegisterPassword((prev) => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      {showRegisterPassword ? 'Hide' : 'Show'}
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">💪 Strong password (8+ chars, mix of letters/numbers)</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">🔒 Confirm Password</label>
-                  <div className="relative">
-                    <input
-                      type={showRegisterConfirmPassword ? "text" : "password"}
-                      value={registrationData.confirmPassword}
-                      onChange={(e) => setRegistrationData({...registrationData, confirmPassword: e.target.value})}
-                      className={`w-full p-3 pr-16 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                        registrationData.confirmPassword && registrationData.password !== registrationData.confirmPassword
-                          ? 'border-red-300'
-                          : 'border-gray-300'
-                      }`}
-                      placeholder="••••••••••••••••••"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowRegisterConfirmPassword((prev) => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      {showRegisterConfirmPassword ? 'Hide' : 'Show'}
-                    </button>
-                  </div>
-                  {registrationData.confirmPassword && registrationData.password !== registrationData.confirmPassword && (
-                    <p className="text-xs text-red-600 mt-1">Passwords do not match.</p>
-                  )}
+                  <label className="block text-sm font-medium mb-1">👤 Last Name</label>
+                  <input
+                    type="text"
+                    value={registrationData.lastName}
+                    onChange={(e) => setRegistrationData({...registrationData, lastName: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Smith"
+                  />
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Review Before You Sign Up</h3>
-                      <p className="text-sm text-gray-600">
-                        Read both documents below, then confirm you agree to each one.
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-sm">
-                      <LegalDocumentLink
-                        document="terms"
-                        onOpen={onOpenLegalDocument}
-                        className="text-blue-600 hover:text-blue-800 underline"
-                      />
-                      <span className="text-gray-400">·</span>
-                      <LegalDocumentLink
-                        document="privacy"
-                        onOpen={onOpenLegalDocument}
-                        className="text-blue-600 hover:text-blue-800 underline"
-                      />
-                    </div>
-                  </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">📧 Email Address</label>
+                <input
+                  type="email"
+                  value={registrationData.email}
+                  onChange={(e) => setRegistrationData({...registrationData, email: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="john.smith@email.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">🔒 Create Password</label>
+                <div className="relative">
+                  <input
+                    type={showRegisterPassword ? "text" : "password"}
+                    value={registrationData.password}
+                    onChange={(e) => setRegistrationData({...registrationData, password: e.target.value})}
+                    className="w-full p-3 pr-16 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="••••••••••••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegisterPassword((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    {showRegisterPassword ? 'Hide' : 'Show'}
+                  </button>
                 </div>
+                <p className="text-xs text-gray-500 mt-1">💪 Strong password (8+ chars, mix of letters/numbers)</p>
+              </div>
 
-                <div className="grid gap-4 xl:grid-cols-2">
-                  <div className="rounded-2xl border border-gray-200 overflow-hidden">
-                    <div className="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3">
-                      <h4 className="font-semibold text-gray-900">Terms of Service</h4>
-                      <LegalDocumentLink
-                        document="terms"
-                        onOpen={onOpenLegalDocument}
-                        className="text-sm text-blue-600 hover:text-blue-800 underline"
-                      >
-                        Open larger
-                      </LegalDocumentLink>
-                    </div>
-                    <iframe
-                      title="Terms of Service"
-                      src="/terms"
-                      loading="lazy"
-                      className="h-72 w-full bg-white"
-                    />
-                    <label className="flex items-start gap-3 border-t border-gray-200 px-4 py-3 text-sm text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={registrationData.agreeTerms}
-                        onChange={(e) => setRegistrationData({...registrationData, agreeTerms: e.target.checked})}
-                        className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>I have read and agree to the Terms of Service.</span>
-                    </label>
-                  </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">🔒 Confirm Password</label>
+                <div className="relative">
+                  <input
+                    type={showRegisterConfirmPassword ? "text" : "password"}
+                    value={registrationData.confirmPassword}
+                    onChange={(e) => setRegistrationData({...registrationData, confirmPassword: e.target.value})}
+                    className={`w-full p-3 pr-16 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                      registrationData.confirmPassword && registrationData.password !== registrationData.confirmPassword
+                        ? 'border-red-300'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="••••••••••••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegisterConfirmPassword((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    {showRegisterConfirmPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                {registrationData.confirmPassword && registrationData.password !== registrationData.confirmPassword && (
+                  <p className="text-xs text-red-600 mt-1">Passwords do not match.</p>
+                )}
+              </div>
+            </div>
 
-                  <div className="rounded-2xl border border-gray-200 overflow-hidden">
-                    <div className="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3">
-                      <h4 className="font-semibold text-gray-900">Privacy Policy</h4>
-                      <LegalDocumentLink
-                        document="privacy"
-                        onOpen={onOpenLegalDocument}
-                        className="text-sm text-blue-600 hover:text-blue-800 underline"
-                      >
-                        Open larger
-                      </LegalDocumentLink>
-                    </div>
-                    <iframe
-                      title="Privacy Policy"
-                      src="/privacy"
-                      loading="lazy"
-                      className="h-72 w-full bg-white"
-                    />
-                    <label className="flex items-start gap-3 border-t border-gray-200 px-4 py-3 text-sm text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={registrationData.agreePrivacy}
-                        onChange={(e) => setRegistrationData({...registrationData, agreePrivacy: e.target.checked})}
-                        className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>I have read and agree to the Privacy Policy.</span>
-                    </label>
-                  </div>
+            <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Review Before You Sign Up</h3>
+                  <p className="text-sm text-gray-600">
+                    Terms opens first. When you agree, Privacy opens next. Only one legal window is shown at a time.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={openLegalConsentFlow}
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                  {registrationData.agreeTerms && registrationData.agreePrivacy
+                    ? 'Review Legal Documents Again'
+                    : 'Open Terms and Privacy'}
+                </button>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className={`rounded-xl border px-4 py-3 text-sm ${
+                  registrationData.agreeTerms ? 'border-green-200 bg-green-50 text-green-800' : 'border-amber-200 bg-amber-50 text-amber-800'
+                }`}>
+                  <div className="font-semibold">Terms of Service</div>
+                  <div>{registrationData.agreeTerms ? 'Agreed' : 'Pending agreement'}</div>
+                </div>
+                <div className={`rounded-xl border px-4 py-3 text-sm ${
+                  registrationData.agreePrivacy ? 'border-green-200 bg-green-50 text-green-800' : 'border-amber-200 bg-amber-50 text-amber-800'
+                }`}>
+                  <div className="font-semibold">Privacy Policy</div>
+                  <div>{registrationData.agreePrivacy ? 'Agreed' : 'Pending agreement'}</div>
                 </div>
               </div>
             </div>
@@ -544,17 +525,21 @@ const WelcomeOnboarding = ({
             </p>
             <p className="text-xs text-gray-500 mt-3 leading-relaxed">
               You can review the full documents again anytime:{' '}
-              <LegalDocumentLink
-                document="terms"
-                onOpen={onOpenLegalDocument}
+              <button
+                type="button"
+                onClick={openLegalConsentFlow}
                 className="text-blue-600 hover:text-blue-800 underline"
-              />{' '}
+              >
+                Terms of Service
+              </button>{' '}
               and{' '}
-              <LegalDocumentLink
-                document="privacy"
-                onOpen={onOpenLegalDocument}
+              <button
+                type="button"
+                onClick={() => setActiveConsentDocument(registrationData.agreeTerms ? 'privacy' : 'terms')}
                 className="text-blue-600 hover:text-blue-800 underline"
-              />.
+              >
+                Privacy Policy
+              </button>.
             </p>
             <div className="mt-2 text-xs">
               <LegalDocumentLink
@@ -566,6 +551,21 @@ const WelcomeOnboarding = ({
           </div>
         </div>
       </div>
+
+      <LegalDocumentModal
+        documentId={activeConsentDocument}
+        onClose={() => setActiveConsentDocument(null)}
+        subtitle={activeConsentDocument === 'terms'
+          ? 'Step 1 of 2. Agree to continue to the Privacy Policy.'
+          : 'Step 2 of 2. Agree to finish the legal review.'}
+        primaryActionLabel={activeConsentDocument === 'terms'
+          ? 'Agree and Continue'
+          : activeConsentDocument === 'privacy'
+            ? 'Agree and Finish'
+            : ''}
+        onPrimaryAction={handleLegalConsentAgree}
+        showFooterCloseButton={false}
+      />
     </div>
   );
 
