@@ -224,28 +224,40 @@ if FRONTEND_BUILD_DIR.exists():
     
     # Mount static files
     app.mount("/static", StaticFiles(directory=FRONTEND_BUILD_DIR / "static"), name="static")
+
+    def serve_frontend_file(filename: str) -> FileResponse:
+        file_path = FRONTEND_BUILD_DIR / filename
+        if file_path.exists():
+            return FileResponse(file_path)
+        raise HTTPException(status_code=404, detail=f"{filename} not found")
     
     # Serve manifest.json, favicon.ico, sw.js
     @app.get("/manifest.json")
     async def manifest():
-        manifest_path = FRONTEND_BUILD_DIR / "manifest.json"
-        if manifest_path.exists():
-            return FileResponse(manifest_path)
-        raise HTTPException(status_code=404, detail="Manifest not found")
+        return serve_frontend_file("manifest.json")
     
     @app.get("/favicon.ico")
     async def favicon():
-        favicon_path = FRONTEND_BUILD_DIR / "favicon.ico"
-        if favicon_path.exists():
-            return FileResponse(favicon_path)
-        raise HTTPException(status_code=404, detail="Favicon not found")
+        return serve_frontend_file("favicon.ico")
     
     @app.get("/sw.js")
     async def service_worker():
-        sw_path = FRONTEND_BUILD_DIR / "sw.js"
-        if sw_path.exists():
-            return FileResponse(sw_path)
-        raise HTTPException(status_code=404, detail="Service worker not found")
+        return serve_frontend_file("sw.js")
+
+    @app.get("/privacy")
+    @app.get("/privacy.html")
+    async def privacy_policy():
+        return serve_frontend_file("privacy.html")
+
+    @app.get("/terms")
+    @app.get("/terms.html")
+    async def terms_of_service():
+        return serve_frontend_file("terms.html")
+
+    @app.get("/security")
+    @app.get("/security.html")
+    async def security_page():
+        return serve_frontend_file("security.html")
     
     # Serve React app for all other routes
     @app.exception_handler(404)

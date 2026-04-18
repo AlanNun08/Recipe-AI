@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import LegalDocumentLink from './LegalDocumentLink';
 
 const DEFAULT_SETTINGS = {
   general: {
@@ -67,7 +68,7 @@ const ToggleRow = ({ label, description, checked, onChange, disabled }) => (
   </label>
 );
 
-const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
+const SettingsScreen = ({ user, onBack, onLogout, showNotification, onOpenLegalDocument }) => {
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
@@ -1058,30 +1059,21 @@ const SettingsScreen = ({ user, onBack, onLogout, showNotification }) => {
             <SettingsSection title="Privacy & Legal" subtitle="Policies and account data requests">
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-3">
-                  <a
-                    href="/privacy.html"
-                    target="_blank"
-                    rel="noreferrer"
+                  <LegalDocumentLink
+                    document="privacy"
+                    onOpen={onOpenLegalDocument}
                     className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm"
-                  >
-                    Privacy Policy
-                  </a>
-                  <a
-                    href="/terms.html"
-                    target="_blank"
-                    rel="noreferrer"
+                  />
+                  <LegalDocumentLink
+                    document="terms"
+                    onOpen={onOpenLegalDocument}
                     className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm"
-                  >
-                    Terms of Service
-                  </a>
-                  <a
-                    href="/security.html"
-                    target="_blank"
-                    rel="noreferrer"
+                  />
+                  <LegalDocumentLink
+                    document="security"
+                    onOpen={onOpenLegalDocument}
                     className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm"
-                  >
-                    Security
-                  </a>
+                  />
                 </div>
                 <div className="text-sm text-gray-600">
                   Need help with your data? Email{' '}

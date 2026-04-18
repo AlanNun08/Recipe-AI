@@ -11,6 +11,8 @@ import StarbucksGeneratorScreen from './components/StarbucksGeneratorScreen';
 import RecipeHistoryScreen from './components/RecipeHistoryScreen';
 import SettingsScreen from './components/SettingsScreen';
 import SubscriptionSuccessScreen from './components/SubscriptionSuccessScreen';
+import LegalDocumentLink from './components/LegalDocumentLink';
+import LegalDocumentModal from './components/LegalDocumentModal';
 import { authService } from './services/auth';
 import './App.css';
 
@@ -73,6 +75,7 @@ function App() {
   const [verificationEmail, setVerificationEmail] = useState('');
   const [pendingVerificationLogin, setPendingVerificationLogin] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [activeLegalDocument, setActiveLegalDocument] = useState(null);
 
   // Check for existing user session on app load
   useEffect(() => {
@@ -270,6 +273,7 @@ function App() {
             showLoginOption={true}
             onLoginClick={() => setCurrentView('login')}
             onRegistrationVerificationRequired={handleRegistrationVerificationRequired}
+            onOpenLegalDocument={setActiveLegalDocument}
           />
         );
 
@@ -287,6 +291,7 @@ function App() {
                 <LoginComponent
                   onLoginSuccess={handleLoginSuccess}
                   onVerificationRequired={handleVerificationRequired}
+                  onOpenLegalDocument={setActiveLegalDocument}
                 />
 
                 {/* Register Option */}
@@ -442,6 +447,7 @@ function App() {
             onBack={() => setCurrentView(user ? 'dashboard' : 'login')}
             onLogout={handleLogout}
             showNotification={showNotification}
+            onOpenLegalDocument={setActiveLegalDocument}
           />
         );
 
@@ -536,20 +542,31 @@ function App() {
       {shouldShowGlobalLegalFooter ? (
         <footer className="border-t border-gray-200 bg-white/95 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-4 py-3 text-center text-xs sm:text-sm text-gray-600">
-            <a href="/privacy.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">
-              Privacy Policy
-            </a>
+            <LegalDocumentLink
+              document="privacy"
+              onOpen={setActiveLegalDocument}
+              className="text-blue-600 hover:text-blue-800 underline"
+            />
             {' · '}
-            <a href="/terms.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">
-              Terms of Service
-            </a>
+            <LegalDocumentLink
+              document="terms"
+              onOpen={setActiveLegalDocument}
+              className="text-blue-600 hover:text-blue-800 underline"
+            />
             {' · '}
-            <a href="/security.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">
-              Security
-            </a>
+            <LegalDocumentLink
+              document="security"
+              onOpen={setActiveLegalDocument}
+              className="text-blue-600 hover:text-blue-800 underline"
+            />
           </div>
         </footer>
       ) : null}
+
+      <LegalDocumentModal
+        documentId={activeLegalDocument}
+        onClose={() => setActiveLegalDocument(null)}
+      />
     </div>
   );
 }

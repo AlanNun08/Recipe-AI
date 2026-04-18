@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { authService } from '../services/auth';
+import LegalDocumentLink from './LegalDocumentLink';
 
-const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPassword }) => {
+const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPassword, onOpenLegalDocument }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -482,17 +483,23 @@ const LoginComponent = ({ onVerificationRequired, onLoginSuccess, onForgotPasswo
       )}
 
       <div className="pt-2 border-t border-gray-100 text-center text-xs text-gray-500 leading-relaxed">
-        <a href="/privacy.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">
-          Privacy Policy
-        </a>
+        <LegalDocumentLink
+          document="privacy"
+          onOpen={onOpenLegalDocument}
+          className="text-blue-600 hover:text-blue-800 underline"
+        />
         {' · '}
-        <a href="/terms.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">
-          Terms of Service
-        </a>
+        <LegalDocumentLink
+          document="terms"
+          onOpen={onOpenLegalDocument}
+          className="text-blue-600 hover:text-blue-800 underline"
+        />
         {' · '}
-        <a href="/security.html" target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline">
-          Security
-        </a>
+        <LegalDocumentLink
+          document="security"
+          onOpen={onOpenLegalDocument}
+          className="text-blue-600 hover:text-blue-800 underline"
+        />
       </div>
     </div>
   );
