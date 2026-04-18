@@ -704,6 +704,7 @@ const DrinkCard = ({
   const color = drink.color || "";
   const bestSeason = drink.best_season || "";
   const difficultyLevel = drink.difficulty_level || "";
+  const validatedStarbucksIngredients = Boolean(drink.validated_starbucks_ingredients);
   
   // Get category emoji
   const getCategoryEmoji = (category) => {
@@ -762,6 +763,11 @@ const DrinkCard = ({
             <div className="inline-block bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-4 py-2 rounded-full text-sm font-bold">
               ✨ {category.charAt(0).toUpperCase() + category.slice(1)} ✨
             </div>
+            {validatedStarbucksIngredients && (
+              <div className="inline-block bg-gradient-to-r from-emerald-500 to-green-600 text-white px-4 py-2 rounded-full text-sm font-bold">
+                ✅ Starbucks Ingredients Only
+              </div>
+            )}
             {estimatedPrice > 0 && (
               <div className="inline-block bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-full text-sm font-bold">
                 💰 ~${estimatedPrice.toFixed(2)}
@@ -848,6 +854,11 @@ const DrinkCard = ({
               <span className="text-3xl mr-3 animate-bounce">🧪</span>
               Secret Ingredients ({ingredients.length})
             </h3>
+            {validatedStarbucksIngredients && (
+              <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+                This drink was validated server-side to use Starbucks-supported ingredients and customizations.
+              </div>
+            )}
             <div className="bg-gradient-to-r from-pink-100 to-orange-100 p-6 rounded-2xl border-l-4 border-pink-500 shadow-inner">
               <ul className="space-y-3">
                 {ingredients.map((ingredient, index) => (

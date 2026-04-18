@@ -249,6 +249,340 @@ async def startup_event():
     except Exception as e:
         logger.error(f"❌ Startup error: {e}")
 
+STARBUCKS_BASE_DRINKS_BY_TYPE = {
+    "frappuccino": {
+        "coffee frappuccino",
+        "creme frappuccino",
+        "espresso frappuccino",
+        "vanilla bean creme frappuccino",
+        "strawberry creme frappuccino",
+        "matcha creme frappuccino",
+        "frappuccino",
+    },
+    "refresher": {
+        "strawberry acai refresher",
+        "mango dragonfruit refresher",
+        "pineapple passionfruit refresher",
+        "summer-berry refresher",
+        "summer berry refresher",
+        "energy refresher",
+        "refresher",
+    },
+    "lemonade": {
+        "lemonade",
+        "blended strawberry lemonade",
+        "black tea lemonade",
+        "green tea lemonade",
+        "passion tango tea lemonade",
+        "strawberry acai lemonade refresher",
+        "mango dragonfruit lemonade refresher",
+        "pineapple passionfruit lemonade refresher",
+        "summer-berry lemonade refresher",
+        "summer berry lemonade refresher",
+        "energy lemonade refresher",
+    },
+    "iced_matcha_latte": {
+        "iced matcha latte",
+    },
+}
+
+STARBUCKS_ALLOWED_COMPONENT_TOKENS = sorted({
+    "2% milk",
+    "affogato shot",
+    "almondmilk",
+    "apple brown sugar syrup",
+    "black tea",
+    "blonde espresso",
+    "brown sugar syrup",
+    "caramel drizzle",
+    "caramel syrup",
+    "chai",
+    "chai concentrate",
+    "chai tea concentrate",
+    "cinnamon dolce syrup",
+    "cinnamon dolce topping",
+    "cinnamon powder",
+    "classic syrup",
+    "coconutmilk",
+    "cold brew",
+    "coffee base syrup",
+    "coffee frappuccino syrup",
+    "cookie crumble topping",
+    "creme base syrup",
+    "dark caramel sauce",
+    "decaf espresso",
+    "dragonfruit inclusions",
+    "energy refresher base",
+    "espresso",
+    "extra caffeine",
+    "frappuccino chips",
+    "frappuccino roast",
+    "green tea",
+    "hazelnut syrup",
+    "heavy cream",
+    "horchata syrup",
+    "ice",
+    "iced coffee",
+    "java chips",
+    "lemonade",
+    "liquid cane syrup",
+    "mango dragonfruit refresher base",
+    "matcha powder",
+    "mocha drizzle",
+    "mocha sauce",
+    "non-dairy cold foam",
+    "nonfat milk",
+    "oatmilk",
+    "passion tango tea",
+    "peppermint syrup",
+    "pineapple passionfruit refresher base",
+    "plain protein cold foam",
+    "premium chai",
+    "protein cold foam",
+    "protein-boosted milk",
+    "raspberry syrup",
+    "ristretto shot",
+    "salted brown butter topping",
+    "salted caramel cream cold foam",
+    "soymilk",
+    "strawberry acai refresher base",
+    "strawberry inclusions",
+    "strawberry puree",
+    "sugar-free vanilla syrup",
+    "sugar-free vanilla protein cold foam",
+    "summer berry pearls",
+    "summer-berry refresher base",
+    "summer berry refresher base",
+    "sweet cream",
+    "toffee nut syrup",
+    "unsweetened matcha powder",
+    "vanilla bean powder",
+    "vanilla sweet cream",
+    "vanilla sweet cream cold foam",
+    "vanilla syrup",
+    "water",
+    "white chocolate mocha sauce",
+    "whole milk",
+    "whipped cream",
+}, key=len, reverse=True)
+
+STARBUCKS_DISALLOWED_COMPONENT_TOKENS = {
+    "alcohol",
+    "boba",
+    "brownie",
+    "cheesecake",
+    "cookie dough",
+    "gatorade",
+    "gummy",
+    "ice cream",
+    "jelly",
+    "monster",
+    "nutella",
+    "oreo",
+    "pudding",
+    "red bull",
+    "rum",
+    "sprite",
+    "tapioca",
+    "tequila",
+    "vodka",
+    "whiskey",
+    "wine",
+    "yakult",
+}
+
+STARBUCKS_ALLOWED_MODIFICATION_PATTERNS = [
+    re.compile(r"\b(light|extra|no)\s+ice\b", re.IGNORECASE),
+    re.compile(r"\b(light|extra|no)\s+water\b", re.IGNORECASE),
+    re.compile(r"\b(light|extra|no)\s+room\b", re.IGNORECASE),
+    re.compile(r"\b(light|no)\s+whip(?:ped cream)?\b", re.IGNORECASE),
+    re.compile(r"\bdouble[- ]blended\b", re.IGNORECASE),
+    re.compile(r"\bblended\b", re.IGNORECASE),
+    re.compile(r"\bcaffeine[- ]free\b", re.IGNORECASE),
+    re.compile(r"\bupside down\b", re.IGNORECASE),
+]
+
+STARBUCKS_ALLOWED_SEASONS = {"spring", "summer", "fall", "winter", "all year"}
+STARBUCKS_ALLOWED_DIFFICULTY_LEVELS = {"easy", "medium", "hard"}
+
+
+def _normalize_text(value: Any) -> str:
+    if value is None:
+        return ""
+    return re.sub(r"\s+", " ", str(value)).strip()
+
+
+def _normalize_text_list(values: Any) -> List[str]:
+    if not isinstance(values, list):
+        return []
+
+    normalized: List[str] = []
+    seen = set()
+
+    for value in values:
+        cleaned = _normalize_text(value).strip(" -•")
+        if not cleaned:
+            continue
+
+        dedupe_key = cleaned.lower()
+        if dedupe_key in seen:
+            continue
+
+        seen.add(dedupe_key)
+        normalized.append(cleaned)
+
+    return normalized
+
+
+def _coerce_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return round(float(value), 2)
+    except (TypeError, ValueError):
+        return default
+
+
+def _normalize_starbucks_category(category: str, requested_type: str) -> str:
+    if requested_type != "random":
+        return requested_type
+
+    normalized = _normalize_text(category).lower().replace(" ", "_")
+    return normalized if normalized in STARBUCKS_BASE_DRINKS_BY_TYPE else "random"
+
+
+def _is_supported_starbucks_base(base_drink: str, requested_type: str) -> bool:
+    normalized_base = _normalize_text(base_drink).lower()
+    if not normalized_base:
+        return False
+
+    if any(token in normalized_base for token in STARBUCKS_DISALLOWED_COMPONENT_TOKENS):
+        return False
+
+    if requested_type == "random":
+        return any(
+            allowed_base in normalized_base
+            for base_options in STARBUCKS_BASE_DRINKS_BY_TYPE.values()
+            for allowed_base in base_options
+        )
+
+    return any(
+        allowed_base in normalized_base
+        for allowed_base in STARBUCKS_BASE_DRINKS_BY_TYPE.get(requested_type, set())
+    )
+
+
+def _contains_allowed_starbucks_component(text: str) -> bool:
+    normalized = _normalize_text(text).lower()
+    return any(token in normalized for token in STARBUCKS_ALLOWED_COMPONENT_TOKENS)
+
+
+def _is_supported_starbucks_component(text: str) -> bool:
+    normalized = _normalize_text(text).lower()
+    if not normalized:
+        return False
+
+    if any(token in normalized for token in STARBUCKS_DISALLOWED_COMPONENT_TOKENS):
+        return False
+
+    return _contains_allowed_starbucks_component(normalized)
+
+
+def _is_supported_starbucks_modification(text: str) -> bool:
+    normalized = _normalize_text(text).lower()
+    if not normalized:
+        return False
+
+    if any(token in normalized for token in STARBUCKS_DISALLOWED_COMPONENT_TOKENS):
+        return False
+
+    if _contains_allowed_starbucks_component(normalized):
+        return True
+
+    return any(pattern.search(normalized) for pattern in STARBUCKS_ALLOWED_MODIFICATION_PATTERNS)
+
+
+def _build_starbucks_catalog_text(requested_type: str) -> str:
+    selected_bases = STARBUCKS_BASE_DRINKS_BY_TYPE.get(requested_type)
+    if requested_type == "random" or not selected_bases:
+        selected_bases = {
+            base
+            for base_options in STARBUCKS_BASE_DRINKS_BY_TYPE.values()
+            for base in base_options
+        }
+
+    base_list = ", ".join(sorted(selected_bases))
+    component_list = ", ".join(STARBUCKS_ALLOWED_COMPONENT_TOKENS)
+
+    return (
+        f"Allowed base drinks for this request: {base_list}.\n"
+        f"Allowed Starbucks ingredients and customizations: {component_list}.\n"
+        "Only use ingredients and modifications that can reasonably be ordered at Starbucks."
+    )
+
+
+def _build_starbucks_ordering_script(drink_data: Dict[str, Any]) -> str:
+    base_drink = drink_data.get("base_drink", "drink")
+    modifications = drink_data.get("modifications", [])
+    ingredients = drink_data.get("ingredients", [])
+
+    parts = [f"I'd like a {base_drink}"]
+    if modifications:
+        parts.append(f"with {', '.join(modifications)}")
+    if ingredients:
+        parts.append(f"and add {', '.join(ingredients)}")
+
+    return " ".join(parts)
+
+
+def _validate_and_normalize_starbucks_drink(drink_data: Dict[str, Any], requested_type: str) -> Tuple[Dict[str, Any], List[str]]:
+    normalized = {
+        **(drink_data or {}),
+        "drink_name": _normalize_text((drink_data or {}).get("drink_name") or "Custom Starbucks Drink"),
+        "description": _normalize_text((drink_data or {}).get("description") or "A custom Starbucks drink made with in-store ingredients."),
+        "category": _normalize_starbucks_category((drink_data or {}).get("category", ""), requested_type),
+        "base_drink": _normalize_text((drink_data or {}).get("base_drink")),
+        "ingredients": _normalize_text_list((drink_data or {}).get("ingredients")),
+        "modifications": _normalize_text_list((drink_data or {}).get("modifications")),
+        "flavor_profile": _normalize_text((drink_data or {}).get("flavor_profile")),
+        "color": _normalize_text((drink_data or {}).get("color")),
+        "estimated_price": _coerce_float((drink_data or {}).get("estimated_price"), default=0.0),
+        "difficulty_level": _normalize_text((drink_data or {}).get("difficulty_level") or "easy").lower(),
+        "best_season": _normalize_text((drink_data or {}).get("best_season") or "all year").lower(),
+        "ai_generated": True,
+    }
+
+    errors: List[str] = []
+
+    if not _is_supported_starbucks_base(normalized["base_drink"], requested_type):
+        errors.append(f"Unsupported Starbucks base drink: {normalized['base_drink'] or 'missing base drink'}")
+
+    if not normalized["ingredients"]:
+        errors.append("Drink must include at least one Starbucks ingredient.")
+
+    invalid_ingredients = [
+        ingredient for ingredient in normalized["ingredients"]
+        if not _is_supported_starbucks_component(ingredient)
+    ]
+    if invalid_ingredients:
+        errors.append("Unsupported Starbucks ingredients: " + ", ".join(invalid_ingredients))
+
+    invalid_modifications = [
+        modification for modification in normalized["modifications"]
+        if not _is_supported_starbucks_modification(modification)
+    ]
+    if invalid_modifications:
+        errors.append("Unsupported Starbucks modifications: " + ", ".join(invalid_modifications))
+
+    if normalized["difficulty_level"] not in STARBUCKS_ALLOWED_DIFFICULTY_LEVELS:
+        normalized["difficulty_level"] = "easy"
+
+    if normalized["best_season"] not in STARBUCKS_ALLOWED_SEASONS:
+        normalized["best_season"] = "all year"
+
+    normalized["validated_starbucks_ingredients"] = not errors
+    normalized["ordering_script"] = _build_starbucks_ordering_script(normalized)
+
+    return normalized, errors
+
 # Pydantic models for recipe creation
 class RecipeGenerationRequest(BaseModel):
     user_id: str
@@ -2272,48 +2606,96 @@ async def generate_starbucks_drink(request: StarbucksDrinkRequest):
             )
         
         flavor_text = f" with {request.flavor_inspiration} flavors" if request.flavor_inspiration else ""
-        
-        prompt = f"""Create a unique Starbucks secret menu {request.drink_type}{flavor_text}:
+        catalog_text = _build_starbucks_catalog_text(request.drink_type)
+
+        prompt = f"""Create a unique Starbucks secret menu {request.drink_type}{flavor_text}.
+
+CRITICAL REQUIREMENTS:
+- Use only ingredients, bases, milks, syrups, sauces, foams, powders, inclusions, and modifiers that are actually used at Starbucks.
+- Do not invent ingredients Starbucks does not stock.
+- If the flavor inspiration suggests something Starbucks does not have, approximate it using the closest Starbucks ingredients instead.
+- The base drink must be a real Starbucks base for the requested category.
+
+{catalog_text}
 
 Please respond with a JSON object containing:
 {{
     "drink_name": "Creative drink name",
     "description": "Appetizing description of taste and appearance",
     "category": "{request.drink_type}",
-    "base_drink": "Base Starbucks drink to order (e.g., Iced Coffee, Latte, etc.)",
-    "ingredients": ["ingredient 1 with amount", "ingredient 2 with amount", "ingredient 3 with amount"],
-    "modifications": ["modification 1", "modification 2", "modification 3"],
+    "base_drink": "Base Starbucks drink to order",
+    "ingredients": ["Starbucks ingredient 1", "Starbucks ingredient 2", "Starbucks ingredient 3"],
+    "modifications": ["Starbucks modification 1", "Starbucks modification 2"],
     "flavor_profile": "Taste description",
     "color": "Visual appearance",
     "estimated_price": 5.50,
     "difficulty_level": "easy",
     "best_season": "summer",
     "ai_generated": true
-}}"""
+}}
+
+Return JSON only."""
+
+        system_prompt = (
+            "You are a Starbucks menu and customization expert. "
+            "Only use real Starbucks-style ingredients and modifiers that a barista can actually prepare. "
+            "Always respond with valid JSON."
+        )
 
         logger.info("🤖 Sending request to OpenAI for Starbucks drink...")
-        
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a Starbucks drink expert who creates viral secret menu drinks. Always respond with valid JSON."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=1500,
-            temperature=0.8
-        )
-        
-        logger.info("✅ OpenAI response received for Starbucks drink")
-        
-        drink_text = response.choices[0].message.content.strip()
-        
-        # Clean up JSON
-        if drink_text.startswith("```json"):
-            drink_text = drink_text[7:]
-        if drink_text.endswith("```"):
-            drink_text = drink_text[:-3]
-        
-        drink_data = json.loads(drink_text)
+
+        drink_data = None
+        validation_errors: List[str] = []
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt},
+        ]
+
+        for attempt in range(2):
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                max_tokens=1500,
+                temperature=0.6
+            )
+
+            logger.info("✅ OpenAI response received for Starbucks drink")
+
+            drink_text = response.choices[0].message.content.strip()
+
+            if drink_text.startswith("```json"):
+                drink_text = drink_text[7:]
+            if drink_text.endswith("```"):
+                drink_text = drink_text[:-3]
+
+            candidate_data = json.loads(drink_text)
+            normalized_drink_data, validation_errors = _validate_and_normalize_starbucks_drink(candidate_data, request.drink_type)
+
+            if not validation_errors:
+                drink_data = normalized_drink_data
+                break
+
+            logger.warning(
+                "⚠️ Starbucks drink validation failed on attempt %s: %s",
+                attempt + 1,
+                "; ".join(validation_errors)
+            )
+
+            messages.append({
+                "role": "user",
+                "content": (
+                    "Regenerate the drink. The previous answer used unsupported Starbucks ingredients or bases. "
+                    f"Problems to fix: {'; '.join(validation_errors)}. "
+                    "Return JSON only and use only real Starbucks ingredients."
+                )
+            })
+
+        if not drink_data:
+            raise ValueError(
+                "Could not generate a Starbucks drink using only supported Starbucks ingredients. "
+                + "; ".join(validation_errors)
+            )
         
         # Add metadata
         drink_data["id"] = str(uuid.uuid4())
