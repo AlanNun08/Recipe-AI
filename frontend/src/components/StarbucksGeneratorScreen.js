@@ -3,7 +3,13 @@ import axios from 'axios';
 import { loadSavedUserSettings, buildStarbucksPreferenceHint } from '../utils/userSettings';
 
 // Starbucks Secret Menu Generator Screen with Community Features
-const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) => {
+const StarbucksGeneratorScreen = ({
+  showNotification,
+  setCurrentScreen,
+  user,
+  initialDrink = null,
+  backDestination = 'dashboard'
+}) => {
   // Use environment variable instead of prop
   const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
   
@@ -49,6 +55,15 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
     { value: 'iced_matcha_latte', label: 'Iced Matcha', emoji: '🍵' },
     { value: 'random', label: 'Other', emoji: '🎲' }
   ];
+
+  useEffect(() => {
+    if (!initialDrink) {
+      return;
+    }
+
+    setGeneratedDrink(initialDrink);
+    setCurrentTab('generator');
+  }, [initialDrink]);
 
   // Load curated and community recipes
   useEffect(() => {
@@ -578,10 +593,10 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
         {/* Back Button */}
         <div className="text-center mt-8">
           <button
-            onClick={() => setCurrentScreen && setCurrentScreen('dashboard')}
+            onClick={() => setCurrentScreen && setCurrentScreen(backDestination)}
             className="bg-gray-500 hover:bg-gray-600 text-white px-8 py-3 rounded-xl font-bold transition-all duration-200"
           >
-            ← Back to Dashboard
+            {backDestination === 'recipe-history' ? '← Back to Recipe History' : '← Back to Dashboard'}
           </button>
         </div>
       </div>

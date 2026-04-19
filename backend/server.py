@@ -2214,10 +2214,10 @@ IMPORTANT INSTRUCTIONS FOR ingredients_clean:
 async def get_user_recipe_history(user_id: str):
     """Get user's recipe history from MongoDB"""
     try:
-        # Query recipes collection for user's recipes
+        history_items = []
+
+        # Query regular recipes collection for user's recipes
         recipes_cursor = recipes_collection.find({"user_id": user_id})
-        recipes = []
-        
         async for recipe in recipes_cursor:
             # id normalization (support both stored uuid id or Mongo _id)
             raw_id = recipe.get("id") if recipe.get("id") else recipe.get("_id")
@@ -2266,16 +2266,68 @@ async def get_user_recipe_history(user_id: str):
                 "type": rtype
             }
 
-            recipes.append(recipe_data)
-        
-        logger.info(f"📚 Found {len(recipes)} recipes for user {user_id}")
+            history_items.append(recipe_data)
+
+        # Query Starbucks drinks collection for user's drinks
+        starbucks_cursor = starbucks_recipes_collection.find({"user_id": user_id})
+        async for drink in starbucks_cursor:
+            raw_id = drink.get("id") if drink.get("id") else drink.get("_id")
+            try:
+                rid = str(raw_id)
+            except Exception:
+                rid = ""
+
+            created_at = drink.get("created_at", "")
+            if isinstance(created_at, datetime):
+                created_at = created_at.isoformat()
+
+            drink_data = {
+                "id": rid,
+                "_id": rid,
+                "name": drink.get("drink_name", drink.get("name", "")),
+                "drink_name": drink.get("drink_name", drink.get("name", "")),
+                "description": drink.get("description", ""),
+                "ingredients": drink.get("ingredients", []),
+                "instructions": [],
+                "prep_time": "",
+                "cook_time": "",
+                "servings": "",
+                "difficulty": drink.get("difficulty_level", ""),
+                "cuisine_type": "",
+                "meal_type": "",
+                "estimated_cost": drink.get("estimated_price", ""),
+                "nutrition": {},
+                "cooking_tips": [],
+                "drink_type": drink.get("category", ""),
+                "base_drink": drink.get("base_drink", ""),
+                "modifications": drink.get("modifications", []),
+                "flavor_profile": drink.get("flavor_profile", ""),
+                "color": drink.get("color", ""),
+                "best_season": drink.get("best_season", ""),
+                "validated_starbucks_ingredients": drink.get("validated_starbucks_ingredients", False),
+                "user_id": drink.get("user_id", ""),
+                "created_at": created_at,
+                "ai_generated": drink.get("ai_generated", False),
+                "is_starbucks_drink": True,
+                "category": "starbucks",
+                "type": "starbucks"
+            }
+
+            history_items.append(drink_data)
+
+        def history_sort_key(item: Dict[str, Any]) -> str:
+            return str(item.get("created_at") or "")
+
+        history_items.sort(key=history_sort_key, reverse=True)
+
+        logger.info(f"📚 Found {len(history_items)} total history items for user {user_id}")
         
         return JSONResponse(
             status_code=200,
             content={
                 "status": "success",
-                "recipes": recipes,
-                "total": len(recipes)
+                "recipes": history_items,
+                "total": len(history_items)
             }
         )
         
@@ -2365,12 +2417,17 @@ async def delete_recipe(recipe_id: str):
     """Delete a recipe"""
     try:
         from bson import ObjectId
-        
-        # Try to delete by ObjectId or string ID
-        try:
-            result = await recipes_collection.delete_one({"_id": ObjectId(recipe_id)})
-        except:
-            result = await recipes_collection.delete_one({"id": recipe_id})
+
+        async def delete_from_collection(collection):
+            try:
+                return await collection.delete_one({"_id": ObjectId(recipe_id)})
+            except Exception:
+                return await collection.delete_one({"id": recipe_id})
+
+        # Try regular recipes first, then Starbucks drinks
+        result = await delete_from_collection(recipes_collection)
+        if result.deleted_count == 0:
+            result = await delete_from_collection(starbucks_recipes_collection)
         
         if result.deleted_count == 0:
             return JSONResponse(

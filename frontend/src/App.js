@@ -28,6 +28,7 @@ const VIEW_TO_PATH = {
   'weekly-recipes': '/weekly-recipes',
   tutorial: '/tutorial',
   'starbucks-generator': '/starbucks-generator',
+  'starbucks-detail': '/starbucks-detail',
   'recipe-history': '/recipe-history',
   'recipe-detail': '/recipe-detail',
   settings: '/settings',
@@ -53,6 +54,7 @@ const PATH_ALIASES = {
   '/tutorial': 'tutorial',
   '/how-to-use': 'tutorial',
   '/starbucks-generator': 'starbucks-generator',
+  '/starbucks-detail': 'starbucks-detail',
   '/starbucks': 'starbucks-generator',
   '/recipe-history': 'recipe-history',
   '/history': 'recipe-history',
@@ -70,6 +72,7 @@ const FOOTER_VIEWS = new Set([
   'weekly-recipes',
   'tutorial',
   'starbucks-generator',
+  'starbucks-detail',
   'recipe-history',
   'recipe-detail',
   'settings',
@@ -409,10 +412,35 @@ function App() {
               setCurrentView('recipe-detail');
             }}
             onViewStarbucksRecipe={(recipe) => {
-              setSelectedRecipe(recipe);
+              setSelectedRecipe({ ...recipe, source: 'history' });
               setCurrentView('starbucks-detail');
             }}
           />
+        );
+
+      case 'starbucks-detail':
+        return selectedRecipe ? (
+          <StarbucksGeneratorScreen
+            user={user}
+            setCurrentScreen={setCurrentView}
+            showNotification={showNotification}
+            initialDrink={selectedRecipe}
+            backDestination="recipe-history"
+          />
+        ) : (
+          <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+              <div className="text-4xl mb-4">❌</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Drink Not Found</h2>
+              <p className="text-gray-600 mb-6">The Starbucks drink you're looking for could not be loaded.</p>
+              <button
+                onClick={() => setCurrentView('recipe-history')}
+                className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                ← Back to Recipe History
+              </button>
+            </div>
+          </div>
         );
 
       case 'recipe-detail':
