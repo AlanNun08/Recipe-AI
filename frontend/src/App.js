@@ -10,6 +10,7 @@ import WeeklyRecipesScreen from './components/WeeklyRecipesScreen';
 import StarbucksGeneratorScreen from './components/StarbucksGeneratorScreen';
 import RecipeHistoryScreen from './components/RecipeHistoryScreen';
 import TutorialScreen from './components/TutorialScreen';
+import TrialWelcomeScreen from './components/TrialWelcomeScreen';
 import SettingsScreen from './components/SettingsScreen';
 import SubscriptionSuccessScreen from './components/SubscriptionSuccessScreen';
 import LegalDocumentLink from './components/LegalDocumentLink';
@@ -22,6 +23,7 @@ const VIEW_TO_PATH = {
   login: '/login',
   verification: '/verify',
   dashboard: '/dashboard',
+  'trial-welcome': '/trial-welcome',
   'recipe-generator': '/recipe-generator',
   'weekly-recipes': '/weekly-recipes',
   tutorial: '/tutorial',
@@ -43,6 +45,7 @@ const PATH_ALIASES = {
   '/verify': 'verification',
   '/verification': 'verification',
   '/dashboard': 'dashboard',
+  '/trial-welcome': 'trial-welcome',
   '/recipe-generator': 'recipe-generator',
   '/generate-recipe': 'recipe-generator',
   '/weekly-recipes': 'weekly-recipes',
@@ -62,6 +65,7 @@ const PATH_ALIASES = {
 const getViewFromPath = (pathname) => PATH_ALIASES[pathname] || 'login';
 const FOOTER_VIEWS = new Set([
   'dashboard',
+  'trial-welcome',
   'recipe-generator',
   'weekly-recipes',
   'tutorial',
@@ -140,32 +144,38 @@ function App() {
     setTimeout(() => setNotification(null), 5000);
   };
 
-  const handleLoginSuccess = (userData) => {
-    
-    // FIX: Ensure consistent user object structure
-    const normalizedUser = {
+  const normalizeUserData = (userData) => ({
       user_id: userData.user_id,
       id: userData.user_id, // Add both fields for compatibility
       email: userData.email,
       name: userData.name || [userData.first_name, userData.last_name].filter(Boolean).join(' '),
       verified: userData.verified ?? userData.is_verified,
       subscription_status: userData.subscription_status
-    };
+    });
 
-    const rememberMe = userData.rememberMe !== false;
-    
+  const persistAuthenticatedUser = (normalizedUser, rememberMe = true) => {
     setUser(normalizedUser);
     if (rememberMe) {
       localStorage.setItem('user', JSON.stringify(normalizedUser));
       localStorage.setItem('rememberMe', 'true');
       sessionStorage.removeItem('user');
-    } else {
-      sessionStorage.setItem('user', JSON.stringify(normalizedUser));
-      localStorage.removeItem('user');
-      localStorage.removeItem('rememberMe');
+      return;
     }
-    setCurrentView('dashboard');
-    showNotification(`Welcome back, ${userData.name || userData.email}!`, 'success');
+
+    sessionStorage.setItem('user', JSON.stringify(normalizedUser));
+    localStorage.removeItem('user');
+    localStorage.removeItem('rememberMe');
+  };
+
+  const handleLoginSuccess = (userData, options = {}) => {
+    const { nextView = 'dashboard', successMessage } = options;
+
+    const normalizedUser = normalizeUserData(userData);
+    const rememberMe = userData.rememberMe !== false;
+
+    persistAuthenticatedUser(normalizedUser, rememberMe);
+    setCurrentView(nextView);
+    showNotification(successMessage || `Welcome back, ${userData.name || userData.email}!`, 'success');
   };
 
   const handleVerificationRequired = (data) => {
@@ -201,6 +211,9 @@ function App() {
           ...loginResult,
           verified: loginResult.is_verified,
           name: [loginResult.first_name, loginResult.last_name].filter(Boolean).join(' ')
+        }, {
+          nextView: 'trial-welcome',
+          successMessage: 'Email verified. Your free trial is ready.'
         });
         return;
       } catch (error) {
@@ -217,21 +230,18 @@ function App() {
   };
 
   const handleRegistrationComplete = (userData) => {
-    
-    // FIX: Ensure consistent user object structure
     const normalizedUser = {
       user_id: userData.user_id,
       id: userData.user_id, // Add both fields for compatibility
       email: userData.email,
-      name: userData.name,
+      name: userData.name || [userData.first_name, userData.last_name].filter(Boolean).join(' '),
       verified: userData.verified || false,
       subscription_status: userData.subscription_status || 'free'
     };
-    
-    setUser(normalizedUser);
-    localStorage.setItem('user', JSON.stringify(normalizedUser));
-    setCurrentView('dashboard');
-    showNotification('Welcome! Your account has been created.', 'success');
+
+    persistAuthenticatedUser(normalizedUser, true);
+    setCurrentView('trial-welcome');
+    showNotification('Welcome! Your free trial is active.', 'success');
   };
 
   const handleLogout = () => {
@@ -333,6 +343,15 @@ function App() {
             onRecipeSelect={handleRecipeSelect}
             showNotification={showNotification}
             setCurrentScreen={setCurrentView}
+          />
+        );
+
+      case 'trial-welcome':
+        return (
+          <TrialWelcomeScreen
+            user={user}
+            onContinue={() => setCurrentView(user ? 'dashboard' : 'login')}
+            showNotification={showNotification}
           />
         );
 
