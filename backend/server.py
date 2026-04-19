@@ -596,8 +596,8 @@ class RecipeGenerationRequest(BaseModel):
 
 class WeeklyPlanRequest(BaseModel):
     user_id: str
-    family_size: int
-    budget: float
+    family_size: int = Field(..., ge=1, le=12)
+    budget: float = Field(..., gt=0)
     dietary_preferences: Optional[List[str]] = []
     cuisines: Optional[List[str]] = []
     meal_types: List[str] = ["breakfast", "lunch", "dinner"]
@@ -2359,12 +2359,14 @@ async def generate_weekly_plan(request: WeeklyPlanRequest):
                 content={"detail": "AI meal planning is currently unavailable. Please contact support."}
             )
         
+        effective_family_size = int(request.family_size)
+
         # Create weekly plan prompt
         dietary_text = ", ".join(request.dietary_preferences) if request.dietary_preferences else "none"
         cuisines_text = ", ".join(request.cuisines) if request.cuisines else "varied cuisines"
         meal_types_text = ", ".join(request.meal_types)
         
-        prompt = f"""Create a 7-day meal plan for {request.family_size} people with a ${request.budget} budget:
+        prompt = f"""Create a 7-day meal plan for exactly {effective_family_size} people with a ${request.budget} budget:
 - Dietary preferences: {dietary_text}
 - Preferred cuisines: {cuisines_text}
 - Meal types: {meal_types_text}
@@ -2373,7 +2375,7 @@ async def generate_weekly_plan(request: WeeklyPlanRequest):
 Please respond with a JSON object containing:
 {{
     "week_of": "2024-XX-XX",
-    "family_size": {request.family_size},
+    "family_size": {effective_family_size},
     "total_estimated_cost": {request.budget},
     "ai_generated": true,
     "meals": [
@@ -2387,7 +2389,7 @@ Please respond with a JSON object containing:
             "prep_time": "20 minutes",
             "cook_time": "15 minutes",
             "total_time": "35 minutes",
-            "servings": {request.family_size},
+            "servings": {effective_family_size},
             "ingredients": ["ingredient 1", "ingredient 2"],
             "ingredients_clean": ["ingredient 1", "ingredient 2"],
             "instructions": ["step 1", "step 2"],
@@ -2403,6 +2405,7 @@ CRITICAL REQUIREMENTS:
 - Each meal must include ingredients_clean: simplified ingredient names for product search (same count as ingredients)
 - Remove quantities, measurements, articles, and descriptors from ingredients_clean
 - Keep only searchable ingredient names (e.g., "beef sirloin" not "1 lb beef sirloin, thinly sliced")
+- Every meal must serve exactly {effective_family_size} people
 - Include ALL fields shown above for each meal
 - Format prep_time, cook_time, total_time as "X minutes"
 """
@@ -2460,7 +2463,7 @@ CRITICAL REQUIREMENTS:
                 "prep_time": meal.get("prep_time", ""),
                 "cook_time": meal.get("cook_time", ""),
                 "total_time": meal.get("total_time", ""),
-                "servings": meal.get("servings", request.family_size),
+                "servings": effective_family_size,
                 "ingredients": meal.get("ingredients", []),
                 "ingredients_clean": meal.get("ingredients_clean", []),
                 "instructions": meal.get("instructions", []),
@@ -2489,7 +2492,7 @@ CRITICAL REQUIREMENTS:
             "id": plan_id,
             "user_id": request.user_id,
             "week_of": plan_data.get("week_of", ""),
-            "family_size": request.family_size,
+            "family_size": effective_family_size,
             "total_estimated_cost": request.budget,
             "meal_ids": recipe_ids,
             "created_at": datetime.utcnow().isoformat(),
@@ -2505,7 +2508,7 @@ CRITICAL REQUIREMENTS:
             "id": plan_id,
             "user_id": request.user_id,
             "week_of": plan_data.get("week_of", ""),
-            "family_size": request.family_size,
+            "family_size": effective_family_size,
             "total_estimated_cost": request.budget,
             "ai_generated": True,
             "meals": processed_meals,

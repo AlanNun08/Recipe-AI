@@ -140,36 +140,60 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
     }
   };
 
-  const copyIngredientsList = (drink) => {
+  const copyIngredientsList = async (drink) => {
     const drinkName = drink.drink_name || drink.name || drink.recipe_name || "Secret Menu Drink";
     const baseDrink = drink.base_drink || "Base drink";
     const ingredients = drink.ingredients || [];
     
     const ingredientText = `☕ ${drinkName}\n\nBase: ${baseDrink}\n\nIngredients:\n${ingredients.map(ing => `• ${ing}`).join('\n')}`;
-    
-    navigator.clipboard.writeText(ingredientText);
-    setShowCopySuccess(true);
-    setTimeout(() => setShowCopySuccess(false), 2000);
-    showNotification('📋 Ingredients copied to clipboard!', 'success');
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard API unavailable');
+      }
+
+      await navigator.clipboard.writeText(ingredientText);
+      setShowCopySuccess(true);
+      setTimeout(() => setShowCopySuccess(false), 2000);
+      showNotification('📋 Ingredients copied to clipboard!', 'success');
+    } catch (error) {
+      console.error('Failed to copy Starbucks drink ingredients:', error);
+      showNotification('❌ Could not copy ingredients. Please try again.', 'error');
+    }
   };
 
-  const shareDrink = (drink) => {
+  const shareDrink = async (drink) => {
     const drinkName = drink.drink_name || drink.name || drink.recipe_name;
     const baseDrink = drink.base_drink || "Base drink";
     const ingredients = drink.ingredients || [];
     const ingredientList = ingredients.map(ing => `• ${ing}`).join('\n');
     
     const shareText = `Check out this amazing Starbucks secret menu drink: ${drinkName}! 🤩\n\nBase: ${baseDrink}\n\nIngredients:\n${ingredientList}\n\n#StarbucksSecretMenu #DrinkHack`;
-    
-    if (navigator.share) {
-      navigator.share({
-        title: `${drinkName} - Starbucks Secret Menu`,
-        text: shareText,
-        url: window.location.href
-      });
-    } else {
-      navigator.clipboard.writeText(shareText);
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${drinkName} - Starbucks Secret Menu`,
+          text: shareText,
+          url: window.location.href
+        });
+        showNotification('📱 Share sheet opened!', 'success');
+        return;
+      }
+
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard API unavailable');
+      }
+
+      await navigator.clipboard.writeText(shareText);
       showNotification('📱 Drink details copied for sharing!', 'success');
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        return;
+      }
+
+      console.error('Failed to share Starbucks drink:', error);
+      showNotification('❌ Could not share this drink. Please try again.', 'error');
     }
   };
 
@@ -446,7 +470,6 @@ const StarbucksGeneratorScreen = ({ showNotification, setCurrentScreen, user }) 
                   setDrinkType('');
                   setFlavorInspiration('');
                 }}
-                onBackToDashboard={() => setCurrentScreen('dashboard')}
                 showActionButtons={true}
               />
             )}
@@ -690,7 +713,6 @@ const DrinkCard = ({
   onCopyOrder, 
   onShare, 
   onGenerateAnother, 
-  onBackToDashboard, 
   showActionButtons = true 
 }) => {
   const drinkName = drink.drink_name || drink.name || drink.recipe_name || "Secret Menu Drink";
@@ -939,7 +961,7 @@ const DrinkCard = ({
             </h3>
             <div className="flex flex-wrap gap-4 justify-center">
               <button
-                onClick={() => copyIngredientsList(drink)}
+                onClick={onCopyOrder}
                 className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-3"
               >
                 <span className="text-2xl animate-bounce">📋</span>
@@ -961,16 +983,6 @@ const DrinkCard = ({
                 >
                   <span className="text-2xl animate-bounce">🎲</span>
                   Generate Another
-                </button>
-              )}
-              
-              {onBackToDashboard && (
-                <button
-                  onClick={onBackToDashboard}
-                  className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-3"
-                >
-                  <span className="text-2xl animate-pulse">🏠</span>
-                  Back to Dashboard
                 </button>
               )}
             </div>

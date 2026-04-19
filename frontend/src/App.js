@@ -9,6 +9,7 @@ import RecipeGeneratorScreen from './components/RecipeGeneratorScreen';
 import WeeklyRecipesScreen from './components/WeeklyRecipesScreen';
 import StarbucksGeneratorScreen from './components/StarbucksGeneratorScreen';
 import RecipeHistoryScreen from './components/RecipeHistoryScreen';
+import TutorialScreen from './components/TutorialScreen';
 import SettingsScreen from './components/SettingsScreen';
 import SubscriptionSuccessScreen from './components/SubscriptionSuccessScreen';
 import LegalDocumentLink from './components/LegalDocumentLink';
@@ -23,6 +24,7 @@ const VIEW_TO_PATH = {
   dashboard: '/dashboard',
   'recipe-generator': '/recipe-generator',
   'weekly-recipes': '/weekly-recipes',
+  tutorial: '/tutorial',
   'starbucks-generator': '/starbucks-generator',
   'recipe-history': '/recipe-history',
   'recipe-detail': '/recipe-detail',
@@ -45,6 +47,8 @@ const PATH_ALIASES = {
   '/generate-recipe': 'recipe-generator',
   '/weekly-recipes': 'weekly-recipes',
   '/weekly-planner': 'weekly-recipes',
+  '/tutorial': 'tutorial',
+  '/how-to-use': 'tutorial',
   '/starbucks-generator': 'starbucks-generator',
   '/starbucks': 'starbucks-generator',
   '/recipe-history': 'recipe-history',
@@ -60,6 +64,7 @@ const FOOTER_VIEWS = new Set([
   'dashboard',
   'recipe-generator',
   'weekly-recipes',
+  'tutorial',
   'starbucks-generator',
   'recipe-history',
   'recipe-detail',
@@ -354,6 +359,14 @@ function App() {
               setSelectedRecipe({ id: recipeId, source });
               setCurrentView('recipe-detail');
             }}
+          />
+        );
+
+      case 'tutorial':
+        return (
+          <TutorialScreen
+            setCurrentScreen={setCurrentView}
+            showNotification={showNotification}
           />
         );
 
