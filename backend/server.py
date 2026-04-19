@@ -1092,6 +1092,59 @@ async def _enforce_generation_access(
             }
         }
     )
+
+
+OPENAI_TEXT_MODEL = os.environ.get("OPENAI_TEXT_MODEL", "gpt-4o-mini")
+OPENAI_WEEKLY_PLAN_MODEL = os.environ.get("OPENAI_WEEKLY_PLAN_MODEL", OPENAI_TEXT_MODEL)
+
+
+def parse_json_object_from_ai_response(raw_text: Any) -> Dict[str, Any]:
+    """Parse a JSON object from model text, tolerating fenced blocks and leading prose."""
+    text = str(raw_text or "").strip()
+    if not text:
+        raise ValueError("AI returned an empty response")
+
+    if text.startswith("```json"):
+        text = text[7:]
+    elif text.startswith("```"):
+        text = text[3:]
+
+    if text.endswith("```"):
+        text = text[:-3]
+
+    text = text.strip()
+
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if not match:
+            raise
+        parsed = json.loads(match.group(0))
+
+    if not isinstance(parsed, dict):
+        raise ValueError("AI response was not a JSON object")
+
+    return parsed
+
+
+def coerce_ai_number(value: Any, fallback: float = 0.0) -> float:
+    """Convert AI-produced numeric strings like '$12.50' into floats."""
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
+
+    text = str(value or "").strip()
+    if not text:
+        return fallback
+
+    normalized = re.sub(r"[^0-9.\-]", "", text)
+    if not normalized:
+        return fallback
+
+    try:
+        return float(normalized)
+    except ValueError:
+        return fallback
 import secrets
 import bcrypt
 
@@ -2410,32 +2463,53 @@ CRITICAL REQUIREMENTS:
 - Format prep_time, cook_time, total_time as "X minutes"
 """
 
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a meal planning expert. Create practical, budget-friendly meal plans with detailed recipes. Always respond with valid JSON."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=4000,
-            temperature=0.7
-        )
-        
-        plan_text = response.choices[0].message.content.strip()
-        
-        # Clean up JSON
-        if plan_text.startswith("```json"):
-            plan_text = plan_text[7:]
-        if plan_text.endswith("```"):
-            plan_text = plan_text[:-3]
-        
-        plan_data = json.loads(plan_text)
+        logger.info(f"🤖 Generating weekly plan with model: {OPENAI_WEEKLY_PLAN_MODEL}")
+
+        try:
+            response = openai_client.chat.completions.create(
+                model=OPENAI_WEEKLY_PLAN_MODEL,
+                messages=[
+                    {"role": "system", "content": "You are a meal planning expert. Create practical, budget-friendly meal plans with detailed recipes. Always respond with a valid JSON object."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"},
+                max_tokens=4000,
+                temperature=0.7
+            )
+        except Exception as openai_error:
+            logger.error(f"❌ Weekly plan OpenAI API error: {openai_error}")
+            return JSONResponse(
+                status_code=502,
+                content={"detail": f"Weekly plan generation failed while contacting OpenAI: {str(openai_error)}"}
+            )
+
+        plan_text = response.choices[0].message.content
+
+        try:
+            plan_data = parse_json_object_from_ai_response(plan_text)
+        except (json.JSONDecodeError, ValueError) as json_error:
+            logger.error(f"❌ Weekly plan JSON parse failed: {json_error}")
+            logger.error(f"❌ Raw weekly plan response: {plan_text}")
+            return JSONResponse(
+                status_code=502,
+                content={"detail": "AI returned an invalid weekly meal plan. Please try again."}
+            )
+
+        meals_from_ai = plan_data.get("meals", [])
+        if not isinstance(meals_from_ai, list) or not meals_from_ai:
+            logger.error(f"❌ Weekly plan response missing meals: {plan_data}")
+            return JSONResponse(
+                status_code=502,
+                content={"detail": "AI returned a weekly plan without meals. Please try again."}
+            )
+
         plan_id = str(uuid.uuid4())
         
         # Process each meal to match individual recipe schema
         processed_meals = []
         recipe_ids = []
         
-        for meal in plan_data.get("meals", []):
+        for meal in meals_from_ai:
             # Generate unique ID for each meal recipe
             meal_id = str(uuid.uuid4())
             recipe_ids.append(meal_id)
@@ -2469,7 +2543,7 @@ CRITICAL REQUIREMENTS:
                 "instructions": meal.get("instructions", []),
                 "nutrition": meal.get("nutrition", {}),
                 "cooking_tips": meal.get("cooking_tips", []),
-                "estimated_cost": meal.get("estimated_cost", 0),
+                "estimated_cost": coerce_ai_number(meal.get("estimated_cost", 0), 0.0),
                 "created_at": datetime.utcnow().isoformat(),
                 "ai_generated": True,
                 "source": "weekly_plan",
@@ -2488,10 +2562,15 @@ CRITICAL REQUIREMENTS:
                 logger.error(f"❌ Failed to save meal {meal_recipe.get('name', 'Unknown')}: {meal_error}")
         
         # Create weekly plan summary
+        week_of = plan_data.get("week_of") or datetime.utcnow().date().isoformat()
+        shopping_list = plan_data.get("shopping_list")
+        if not isinstance(shopping_list, list):
+            shopping_list = []
+
         weekly_plan_doc = {
             "id": plan_id,
             "user_id": request.user_id,
-            "week_of": plan_data.get("week_of", ""),
+            "week_of": week_of,
             "family_size": effective_family_size,
             "total_estimated_cost": request.budget,
             "meal_ids": recipe_ids,
@@ -2507,12 +2586,12 @@ CRITICAL REQUIREMENTS:
         response_data = {
             "id": plan_id,
             "user_id": request.user_id,
-            "week_of": plan_data.get("week_of", ""),
+            "week_of": week_of,
             "family_size": effective_family_size,
             "total_estimated_cost": request.budget,
             "ai_generated": True,
             "meals": processed_meals,
-            "shopping_list": plan_data.get("shopping_list", [])
+            "shopping_list": shopping_list
         }
         
         logger.info(f"✅ Weekly plan generated: {len(processed_meals)} meals, all saved as individual recipes")

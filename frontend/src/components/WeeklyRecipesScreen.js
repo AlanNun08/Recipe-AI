@@ -7,8 +7,57 @@ import {
   budgetStyleToWeeklyBudget,
 } from '../utils/userSettings';
 
+const ensureArray = (value) => (Array.isArray(value) ? value : []);
+
+const coerceNumber = (value, fallback = 0) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  const parsed = Number.parseFloat(String(value ?? '').replace(/[^0-9.-]/g, ''));
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const normalizeMealForDisplay = (meal, fallbackServings) => ({
+  ...meal,
+  day_of_week: meal?.day_of_week || meal?.day || '',
+  name: meal?.name || 'Untitled Meal',
+  description: meal?.description || '',
+  cuisine_type: meal?.cuisine_type || 'varied',
+  meal_type: meal?.meal_type || 'meal',
+  difficulty: meal?.difficulty || 'easy',
+  prep_time: meal?.prep_time || 'N/A',
+  cook_time: meal?.cook_time || 'N/A',
+  total_time: meal?.total_time || 'N/A',
+  servings: meal?.servings || fallbackServings,
+  ingredients: ensureArray(meal?.ingredients),
+  ingredients_clean: ensureArray(meal?.ingredients_clean),
+  instructions: ensureArray(meal?.instructions),
+  cooking_tips: ensureArray(meal?.cooking_tips),
+  nutrition: meal?.nutrition && typeof meal.nutrition === 'object' ? meal.nutrition : {},
+  estimated_cost: coerceNumber(meal?.estimated_cost, 0),
+});
+
+const normalizePlanForDisplay = (plan) => {
+  if (!plan || typeof plan !== 'object') {
+    return null;
+  }
+
+  const familySize = Number.parseInt(plan.family_size, 10) || 2;
+
+  return {
+    ...plan,
+    family_size: familySize,
+    total_estimated_cost: coerceNumber(plan.total_estimated_cost, 0),
+    meals: ensureArray(plan.meals).map((meal) => normalizeMealForDisplay(meal, familySize)),
+    shopping_list: ensureArray(plan.shopping_list),
+  };
+};
+
 const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) => {
   const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
+  const userId = user?.id || user?.user_id || '';
+  const hasStoredSession = Boolean(localStorage.getItem('user') || sessionStorage.getItem('user'));
   
   const [currentPlan, setCurrentPlan] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,12 +78,19 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
 
   // Load current week's plan and trial status on component mount
   useEffect(() => {
-    loadCurrentPlan();
-    loadTrialStatus();
-  }, []);
+    if (!userId) {
+      if (!hasStoredSession) {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    loadCurrentPlan(userId);
+    loadTrialStatus(userId);
+  }, [userId, hasStoredSession]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     const savedSettings = loadSavedUserSettings(user);
     const dietaryPrefs = normalizeDietaryPreferencesList(savedSettings.preferences?.dietaryPreferences);
     const familySize = householdSizeToNumber(savedSettings.preferences?.householdSize, 2);
@@ -46,7 +102,7 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
       budget: prev.budget === 100 ? budget : prev.budget,
       dietary_preferences: prev.dietary_preferences.length ? prev.dietary_preferences : dietaryPrefs,
     }));
-  }, [user?.id, user?.user_id]);
+  }, [user, userId]);
 
   const hasGenerationAccess = trialStatus ? Boolean(trialStatus.has_access) : true;
 
@@ -58,21 +114,30 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
     showNotification('Upgrade options are available in Settings.', 'info');
   };
 
-  const loadTrialStatus = async () => {
+  const loadTrialStatus = async (currentUserId = userId) => {
+    if (!currentUserId) {
+      return;
+    }
+
     try {
-      const response = await axios.get(`${API}/api/user/trial-status/${user.id}`);
+      const response = await axios.get(`${API}/api/user/trial-status/${currentUserId}`);
       setTrialStatus(response.data);
     } catch (error) {
       console.error('Failed to load trial status:', error);
     }
   };
 
-  const loadCurrentPlan = async () => {
+  const loadCurrentPlan = async (currentUserId = userId) => {
+    if (!currentUserId) {
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API}/api/weekly-recipes/current/${user.id}`);
+      const response = await axios.get(`${API}/api/weekly-recipes/current/${currentUserId}`);
       if (response.data.has_plan) {
-        setCurrentPlan(response.data.plan);
+        setCurrentPlan(normalizePlanForDisplay(response.data.plan));
       } else {
         setCurrentPlan(null);
       }
@@ -89,6 +154,14 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
   const generateWeeklyPlan = async (e) => {
     if (e?.preventDefault) {
       e.preventDefault();
+    }
+
+    if (!userId) {
+      showNotification('Please log in to create a weekly meal plan.', 'error');
+      if (typeof window.setCurrentScreen === 'function') {
+        window.setCurrentScreen('login');
+      }
+      return;
     }
 
     if (!hasGenerationAccess) {
@@ -108,7 +181,7 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
       const effectiveDietaryPrefs = formData.dietary_preferences.length > 0 ? formData.dietary_preferences : savedDietaryPrefs;
       
       const response = await axios.post(`${API}/api/weekly-recipes/generate`, {
-        user_id: user.id,
+        user_id: userId,
         family_size: effectiveFamilySize,
         budget: effectiveBudget,
         dietary_preferences: effectiveDietaryPrefs,
@@ -117,7 +190,7 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
         cooking_time_preference: 'medium'
       });
 
-      setCurrentPlan(response.data);
+      setCurrentPlan(normalizePlanForDisplay(response.data));
       showNotification('🎉 Weekly meal plan generated successfully!', 'success');
       setShowGenerator(false);
       
@@ -170,6 +243,30 @@ const WeeklyRecipesScreen = ({ user, onBack, showNotification, onViewRecipe }) =
           <div className="text-6xl mb-4 animate-bounce">📅</div>
           <div className="text-xl text-gray-600">Loading your weekly plan...</div>
           <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mt-4"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userId && !hasStoredSession) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-100 via-blue-100 to-purple-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full rounded-3xl bg-white p-8 text-center shadow-2xl">
+          <div className="text-6xl mb-4">🔐</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">Sign in to view weekly plans</h2>
+          <p className="text-gray-600 mb-6">
+            Weekly meal planning is tied to your account, so you need to be logged in before this page can load.
+          </p>
+          <button
+            onClick={() => {
+              if (typeof window.setCurrentScreen === 'function') {
+                window.setCurrentScreen('login');
+              }
+            }}
+            className="w-full rounded-2xl bg-gradient-to-r from-green-500 to-blue-500 px-6 py-3 font-bold text-white transition-all duration-300 hover:shadow-lg"
+          >
+            Go to Login
+          </button>
         </div>
       </div>
     );
