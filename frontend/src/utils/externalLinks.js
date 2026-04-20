@@ -4,14 +4,7 @@ export const isMobileBrowser = () => {
   return /android|iphone|ipad|ipod|mobile/i.test(ua) || window.innerWidth <= 768;
 };
 
-export const openExternalLink = (url, { preferSameTabOnMobile = false, allowSameTabFallback = true } = {}) => {
-  if (!url || typeof window === 'undefined') return false;
-
-  if (preferSameTabOnMobile && isMobileBrowser()) {
-    window.location.assign(url);
-    return true;
-  }
-
+const openExternalLinkInNewTab = (url) => {
   try {
     const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
     if (newWindow) {
@@ -23,7 +16,35 @@ export const openExternalLink = (url, { preferSameTabOnMobile = false, allowSame
       return true;
     }
   } catch (_) {
-    // fall through to same-tab fallback
+    // fall through to anchor fallback
+  }
+
+  try {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    return true;
+  } catch (_) {
+    return false;
+  }
+};
+
+export const openExternalLink = (url, { preferSameTabOnMobile = false, allowSameTabFallback = true } = {}) => {
+  if (!url || typeof window === 'undefined') return false;
+
+  if (preferSameTabOnMobile && isMobileBrowser()) {
+    window.location.assign(url);
+    return true;
+  }
+
+  const opened = openExternalLinkInNewTab(url);
+  if (opened) {
+    return true;
   }
 
   if (allowSameTabFallback) {
@@ -85,7 +106,7 @@ export const openWalmartCart = (itemIds, options = {}) => {
   const url = buildWalmartCartUrl(itemIds, options);
   if (!url) return false;
   return openExternalLink(url, {
-    preferSameTabOnMobile: true,
-    allowSameTabFallback: true,
+    preferSameTabOnMobile: false,
+    allowSameTabFallback: false,
   });
 };
