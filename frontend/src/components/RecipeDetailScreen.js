@@ -122,12 +122,14 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
         const bestProduct = products[0]; // First product is best price from backend sorting
         autoSelected[ingredient] = {
           id: bestProduct.itemId,
+          itemId: bestProduct.itemId,
           name: bestProduct.name,
           price: bestProduct.price,
           brand: bestProduct.brand,
           size: bestProduct.size,
           image: bestProduct.image,
           ingredient: ingredient,
+          walmart_url: bestProduct.walmart_url,
           availability: bestProduct.availability,
           rating: bestProduct.rating,
           reviewCount: bestProduct.reviewCount || 0,
@@ -150,12 +152,14 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
   const handleProductSelection = (ingredient, product, optionIndex = 0) => {
     const selectedItem = {
       id: product.itemId,
+      itemId: product.itemId,
       name: product.name,
       price: product.price,
       brand: product.brand,
       size: product.size,
       image: product.image,
       ingredient: ingredient,
+      walmart_url: product.walmart_url,
       availability: product.availability,
       rating: product.rating,
       reviewCount: product.reviewCount || 0,
@@ -782,7 +786,9 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
                           <div className="mt-4 space-y-2">
                             <button
                               onClick={() => {
-                                const itemIds = Object.values(selectedProducts).map(product => product.id).filter(Boolean);
+                                const itemIds = Object.values(selectedProducts)
+                                  .map(product => product.itemId || product.id || product.walmart_url)
+                                  .filter(Boolean);
                                 if (itemIds.length > 0) {
                                   const opened = openWalmartCart(itemIds);
                                   if (opened) {

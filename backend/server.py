@@ -3918,15 +3918,76 @@ async def search_walmart_products(query: str, consumer_id: str, private_key: str
         logger.error(f"❌ Stack trace: {traceback.format_exc()}")
         return []
 
+def extract_walmart_item_id(product: dict) -> str:
+    """Best-effort extraction of a Walmart item ID from API fields and URLs."""
+    import re
+
+    candidate_fields = [
+        product.get('itemId'),
+        product.get('usItemId'),
+        product.get('productId'),
+        product.get('offerId'),
+    ]
+
+    for candidate in candidate_fields:
+        if candidate is None:
+            continue
+        candidate_str = str(candidate).strip()
+        if candidate_str.isdigit():
+            return candidate_str
+
+    url_candidates = [
+        product.get('productUrl'),
+        product.get('canonicalUrl'),
+        product.get('addToCartUrl'),
+    ]
+
+    patterns = [
+        r'/ip(?:/[^/?#]+)?/(\d+)',
+        r'[?&]items=([\d,]+)',
+    ]
+
+    for raw_url in url_candidates:
+        if not raw_url:
+            continue
+        url = str(raw_url).strip()
+        for pattern in patterns:
+            match = re.search(pattern, url, re.IGNORECASE)
+            if not match:
+                continue
+            candidate = match.group(1).split(',')[0].strip()
+            if candidate.isdigit():
+                return candidate
+
+    return ''
+
+def normalize_walmart_product_url(raw_url: str, item_id: str) -> str:
+    """Return an absolute Walmart product URL with the resolved item ID when possible."""
+    url = str(raw_url or '').strip()
+
+    if url.startswith('//'):
+        return f"https:{url}"
+    if url.startswith('/'):
+        return f"https://www.walmart.com{url}"
+    if url.startswith('http://') or url.startswith('https://'):
+        return url
+    if item_id:
+        return f"https://www.walmart.com/ip/{item_id}"
+    return url
+
 def format_walmart_product(product: dict, ingredient: str, rank: int) -> dict:
     """Format Walmart API product response for our frontend"""
     try:
         logger.info(f"📦 [FORMAT] Formatting product #{rank + 1} for ingredient '{ingredient}'")
         # Extract product data
-        item_id = product.get('itemId', '')
+        item_id = extract_walmart_item_id(product)
         name = product.get('name', 'Unknown Product')
         price = float(product.get('salePrice', product.get('msrp', 0)))
         msrp = float(product.get('msrp', price))
+
+        if not item_id:
+            logger.warning(f"⚠️ [FORMAT] Skipping '{name}' because Walmart item ID is missing")
+            return None
         
         logger.info(f"📦 [FORMAT] Product name: '{name[:60]}...'" if len(name) > 60 else f"📦 [FORMAT] Product name: '{name}'")
         logger.info(f"📦 [FORMAT] Price: ${price}, MSRP: ${msrp}")
@@ -3978,7 +4039,7 @@ def format_walmart_product(product: dict, ingredient: str, rank: int) -> dict:
             "nutrition_facts": False,  # Walmart API doesn't provide this easily
             "organic": 'organic' in name.lower(),
             "store_brand": brand.lower() in ['great value', 'marketside', 'equate'],
-            "walmart_url": product.get('productUrl', f"https://walmart.com/ip/{item_id}"),
+            "walmart_url": normalize_walmart_product_url(product.get('productUrl', ''), item_id),
             "upc": product.get('upc', ''),
             "model_number": product.get('modelNumber', ''),
             "marketplace": product.get('marketplace', False)
