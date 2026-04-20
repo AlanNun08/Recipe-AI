@@ -3925,8 +3925,6 @@ def extract_walmart_item_id(product: dict) -> str:
     candidate_fields = [
         product.get('itemId'),
         product.get('usItemId'),
-        product.get('productId'),
-        product.get('offerId'),
     ]
 
     for candidate in candidate_fields:
