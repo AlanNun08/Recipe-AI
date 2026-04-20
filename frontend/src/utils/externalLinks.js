@@ -78,7 +78,7 @@ export const buildWalmartCartUrl = (itemIds, { affiliate = false } = {}) => {
   const items = ids.join(',');
   return affiliate
     ? `https://affil.walmart.com/cart/addToCart?items=${items}`
-    : `https://www.walmart.com/cart/addToCart?items=${items}`;
+    : `https://www.walmart.com/affil/cart/addToCart?items=${items}`;
 };
 
 export const openWalmartCart = (itemIds, options = {}) => {
