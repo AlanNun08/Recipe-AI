@@ -115,6 +115,7 @@ function RecipeDetailScreenMobile({ recipeId, recipeSource = 'weekly', onBack, s
         autoSelected[ingredient] = {
           id: bestProduct.itemId,
           itemId: bestProduct.itemId,
+          cartItemId: bestProduct.cartItemId || bestProduct.itemId,
           name: bestProduct.name,
           price: bestProduct.price,
           brand: bestProduct.brand,
@@ -145,6 +146,7 @@ function RecipeDetailScreenMobile({ recipeId, recipeSource = 'weekly', onBack, s
     const selectedItem = {
       id: product.itemId,
       itemId: product.itemId,
+      cartItemId: product.cartItemId || product.itemId,
       name: product.name,
       price: product.price,
       brand: product.brand,
@@ -566,7 +568,7 @@ function RecipeDetailScreenMobile({ recipeId, recipeSource = 'weekly', onBack, s
                       <button
                         onClick={() => {
                           const itemIds = Object.values(selectedProducts)
-                            .map(product => product.itemId || product.id || product.walmart_url)
+                            .map(product => product.cartItemId || product.itemId || product.id)
                             .filter(Boolean);
                           if (itemIds.length > 0) {
                             const opened = openWalmartCart(itemIds);

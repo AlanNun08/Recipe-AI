@@ -123,6 +123,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
         autoSelected[ingredient] = {
           id: bestProduct.itemId,
           itemId: bestProduct.itemId,
+          cartItemId: bestProduct.cartItemId || bestProduct.itemId,
           name: bestProduct.name,
           price: bestProduct.price,
           brand: bestProduct.brand,
@@ -153,6 +154,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
     const selectedItem = {
       id: product.itemId,
       itemId: product.itemId,
+      cartItemId: product.cartItemId || product.itemId,
       name: product.name,
       price: product.price,
       brand: product.brand,
@@ -787,7 +789,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
                             <button
                               onClick={() => {
                                 const itemIds = Object.values(selectedProducts)
-                                  .map(product => product.itemId || product.id || product.walmart_url)
+                                  .map(product => product.cartItemId || product.itemId || product.id)
                                   .filter(Boolean);
                                 if (itemIds.length > 0) {
                                   const opened = openWalmartCart(itemIds);

@@ -3918,47 +3918,6 @@ async def search_walmart_products(query: str, consumer_id: str, private_key: str
         logger.error(f"❌ Stack trace: {traceback.format_exc()}")
         return []
 
-def extract_walmart_item_id(product: dict) -> str:
-    """Best-effort extraction of a Walmart item ID from API fields and URLs."""
-    import re
-
-    candidate_fields = [
-        product.get('itemId'),
-        product.get('usItemId'),
-    ]
-
-    for candidate in candidate_fields:
-        if candidate is None:
-            continue
-        candidate_str = str(candidate).strip()
-        if candidate_str.isdigit():
-            return candidate_str
-
-    url_candidates = [
-        product.get('productUrl'),
-        product.get('canonicalUrl'),
-        product.get('addToCartUrl'),
-    ]
-
-    patterns = [
-        r'/ip(?:/[^/?#]+)?/(\d+)',
-        r'[?&]items=([\d,]+)',
-    ]
-
-    for raw_url in url_candidates:
-        if not raw_url:
-            continue
-        url = str(raw_url).strip()
-        for pattern in patterns:
-            match = re.search(pattern, url, re.IGNORECASE)
-            if not match:
-                continue
-            candidate = match.group(1).split(',')[0].strip()
-            if candidate.isdigit():
-                return candidate
-
-    return ''
-
 def normalize_walmart_product_url(raw_url: str, item_id: str) -> str:
     """Return an absolute Walmart product URL with the resolved item ID when possible."""
     url = str(raw_url or '').strip()
@@ -3978,17 +3937,22 @@ def format_walmart_product(product: dict, ingredient: str, rank: int) -> dict:
     try:
         logger.info(f"📦 [FORMAT] Formatting product #{rank + 1} for ingredient '{ingredient}'")
         # Extract product data
-        item_id = extract_walmart_item_id(product)
+        raw_item_id = product.get('itemId')
+        raw_us_item_id = product.get('usItemId')
+        item_id_source = 'itemId'
+        item_id = str(raw_item_id or '').strip()
+
+        if not item_id:
+            item_id = str(raw_us_item_id or '').strip()
+            item_id_source = 'usItemId'
+
         name = product.get('name', 'Unknown Product')
         price = float(product.get('salePrice', product.get('msrp', 0)))
         msrp = float(product.get('msrp', price))
-
-        if not item_id:
-            logger.warning(f"⚠️ [FORMAT] Skipping '{name}' because Walmart item ID is missing")
-            return None
         
         logger.info(f"📦 [FORMAT] Product name: '{name[:60]}...'" if len(name) > 60 else f"📦 [FORMAT] Product name: '{name}'")
         logger.info(f"📦 [FORMAT] Price: ${price}, MSRP: ${msrp}")
+        logger.info(f"📦 [FORMAT] Walmart cart item ID source: {item_id_source}, value: {item_id or '[missing]'}")
         
         # Calculate savings
         savings = max(0, msrp - price)
@@ -4018,6 +3982,10 @@ def format_walmart_product(product: dict, ingredient: str, rank: int) -> dict:
         
         formatted_product = {
             "itemId": item_id,
+            "cartItemId": item_id,
+            "cart_item_id_source": item_id_source,
+            "walmart_api_item_id": str(raw_item_id or '').strip(),
+            "walmart_api_us_item_id": str(raw_us_item_id or '').strip(),
             "name": name,
             "price": round(price, 2),
             "brand": brand,
