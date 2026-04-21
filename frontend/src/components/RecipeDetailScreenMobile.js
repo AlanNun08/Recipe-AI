@@ -537,6 +537,7 @@ function RecipeDetailScreenMobile({ recipeId, recipeSource = 'weekly', onBack, s
                                 </div>
 
                                 <button
+                                  type="button"
                                   className={`w-full py-2 rounded-lg font-medium text-sm ${
                                     isProductSelected
                                       ? 'bg-green-500 text-white'
@@ -566,7 +567,10 @@ function RecipeDetailScreenMobile({ recipeId, recipeSource = 'weekly', onBack, s
                         <div className="text-sm text-gray-600">{Object.keys(selectedProducts).length} items • ${calculateSelectedTotal().toFixed(2)}</div>
                       </div>
                       <button
-                        onClick={() => {
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
                           const itemIds = Object.values(selectedProducts)
                             .map(product => product.cartItemId || product.itemId || product.id)
                             .filter(Boolean);

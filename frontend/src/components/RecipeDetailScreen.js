@@ -666,6 +666,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
 
                                         {/* Select Button */}
                                         <button
+                                          type="button"
                                           className={`w-full mt-2 py-2 px-3 rounded-lg font-medium text-sm transition-colors ${
                                             isProductSelected
                                               ? 'bg-green-500 text-white'
@@ -746,6 +747,7 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
 
                                 {/* Remove Button */}
                                 <button
+                                  type="button"
                                   onClick={() => removeProductFromCart(ingredient)}
                                   className="ml-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-full p-1 w-6 h-6 flex items-center justify-center transition-colors text-xs flex-shrink-0"
                                   title="Remove from cart"
@@ -787,7 +789,10 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
                           {/* Action Buttons */}
                           <div className="mt-4 space-y-2">
                             <button
-                              onClick={() => {
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
                                 const itemIds = Object.values(selectedProducts)
                                   .map(product => product.cartItemId || product.itemId || product.id)
                                   .filter(Boolean);
@@ -813,7 +818,10 @@ function RecipeDetailScreen({ recipeId, recipeSource = 'weekly', onBack, showNot
                             </button>
                             
                             <button
-                              onClick={() => {
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
                                 const shoppingList = Object.entries(selectedProducts)
                                   .map(([ingredient, product]) => `• ${product.name} - $${product.price?.toFixed(2)} (For: ${ingredient})`)
                                   .join('\n');
